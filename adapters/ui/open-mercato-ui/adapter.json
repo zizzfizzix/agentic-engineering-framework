@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../schemas/adapter.schema.json",
+  "name": "open-mercato-ui",
+  "axis": "ui",
+  "description": "@open-mercato/ui adapter — design system with a bundled DS health-check (ds-guardian heritage).",
+  "augments": ["ui-consistency"],
+  "slots": {
+    "ui.tokens": "references/tokens.md",
+    "ui.components": "references/components.md",
+    "ui.health-check": "references/health-check.md"
+  }
+}

@@ -411,7 +411,9 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 - **Convergence vs. sync (decisions #5/#6):** flattening means `sync` is recompose + git 3-way
   merge, not a copy. Mitigate with the generated-header + manifest checksum so local edits are
   detected and prompted, never silently lost. **Render must be deterministic** so checksums and
-  merge bases are stable — this is a hard requirement, not a nicety.
+  merge bases are stable — this is a hard requirement, not a nicety. The digest must be **scoped
+  per-skill** (only the inputs that skill consumes), or an unrelated axis change churns every
+  skill's merge base — surfaced and fixed during the UI-axis stress-test (`bin/render.mjs`).
 - **Provenance is load-bearing (decision #7):** the `improve-framework` skill can only route
   edits back if the renderer emits per-region provenance (source file + slot). Build it into the
   renderer from day one; treat it as part of the render contract, not an add-on.

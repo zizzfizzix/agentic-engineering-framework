@@ -2,15 +2,12 @@
   "skill": "migrate-orm",
   "selection": {
     "orm": "drizzle",
+    "ui": "shadcn",
     "stack": "generic-node"
   },
-  "digest": "7d99c2a7148b",
-  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header)",
+  "digest": "c4fd843753d4",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
   "inputs": [
-    {
-      "path": "adapters/orm/drizzle/adapter.json",
-      "sha": "374bf3276bc4"
-    },
     {
       "path": "adapters/orm/drizzle/references/cheatsheet.md",
       "sha": "9c6f14b98b68"
