@@ -4,13 +4,15 @@
   "title": "adapter.json",
   "description": "An adapter declares which skills it augments and the slot content it provides. The renderer fills matching slots in generic skill bodies and prunes the rest.",
   "type": "object",
-  "required": ["name", "axis", "slots"],
+  "required": ["name", "axis"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
     "name": { "type": "string", "description": "Adapter id, e.g. 'drizzle'." },
     "axis": { "type": "string", "description": "Variation family.", "examples": ["orm", "ui", "stack", "harness"] },
     "description": { "type": "string" },
+    "skillsDir": { "type": "string", "description": "Harness adapters only: directory the per-skill links go in, e.g. '.claude/skills'." },
+    "linkBase": { "type": "string", "description": "Harness adapters only: relative link target base from skillsDir to the rendered skills, e.g. '../../.ai/skills'." },
     "augments": {
       "type": "array",
       "description": "Skill ids this adapter contributes slot content to.",

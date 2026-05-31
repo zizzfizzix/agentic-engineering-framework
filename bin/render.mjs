@@ -1,135 +1,27 @@
 #!/usr/bin/env node
-// Minimal DETERMINISTIC skill renderer (proof of concept) for decision #5.
+// Single-skill render PoC (thin wrapper over bin/lib/render-skill.mjs).
+// See docs/render-poc.md. For the full configured set + harness wiring, use bin/agentic.mjs init.
 //
-// Composes a generic skill body (core/ai/skills/<skill>/SKILL.md) with the slot
-// content of the adapters selected in framework.config.json, prunes unused slots,
-// and emits a flat SKILL.md + a deterministic provenance.json.
-//
-// Usage:
-//   node bin/render.mjs [--config <cfg>] [--skill <name>] [--out <dir>] [--root <repoRoot>]
-//
-// Properties proven here:
-//   * convergence  — only the selected adapter's content appears; others are pruned.
-//   * determinism  — identical inputs -> identical bytes (digest in the header).
-//   * provenance   — every output region maps back to a source file/adapter/slot.
+// Usage: node bin/render.mjs [--config <cfg>] [--skill <name>] [--out <dir>] [--root <repoRoot>]
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { createHash } from 'node:crypto'
+import { renderSkill } from './lib/render-skill.mjs'
 
-const argv = process.argv
 const arg = (flag, def) => {
-  const i = argv.indexOf(flag)
-  return i !== -1 && argv[i + 1] ? argv[i + 1] : def
+  const i = process.argv.indexOf(flag)
+  return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : def
 }
-
 const root = arg('--root', process.cwd())
-const cfgPath = arg('--config', join(root, 'framework.config.example.json'))
+const config = JSON.parse(readFileSync(arg('--config', join(root, 'framework.config.example.json')), 'utf8'))
 const skill = arg('--skill', 'migrate-orm')
 const outDir = arg('--out', join(root, 'examples/rendered'))
 
-const sha = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12)
-const norm = (s) => s.replace(/\r\n/g, '\n')
-const rel = (p) => relative(root, p)
-
-const config = JSON.parse(readFileSync(cfgPath, 'utf8'))
-
-// One adapter per axis from config.
-const AXES = ['orm', 'ui', 'stack']
-const selected = {}
-for (const axis of AXES) if (config[axis]) selected[axis] = config[axis]
-
-// Build slotName -> { adapter, axis, source, content } LOOKUP for active adapters.
-// Note: nothing is counted as an input here — only slots a skill actually consumes
-// become inputs (below), so an unrelated axis selection never perturbs this skill's digest.
-const slotProviders = {}
-for (const [axis, adapter] of Object.entries(selected)) {
-  const adDir = join(root, 'adapters', axis, adapter)
-  const adPath = join(adDir, 'adapter.json')
-  if (!existsSync(adPath)) continue
-  const ad = JSON.parse(readFileSync(adPath, 'utf8'))
-  for (const [slot, file] of Object.entries(ad.slots || {})) {
-    const fp = join(adDir, file)
-    const content = norm(readFileSync(fp, 'utf8')).replace(/\s+$/, '') + '\n'
-    slotProviders[slot] = { adapter, axis, source: rel(fp), content }
-  }
-}
-
-const genPath = join(root, 'core/ai/skills', skill, 'SKILL.md')
-const generic = norm(readFileSync(genPath, 'utf8'))
-
-// Inputs = ONLY the files that actually compose this skill's output (the generic body
-// plus the adapter fragments whose slots appear and are filled). The digest over these
-// fully determines the rendered bytes, so it is stable under unrelated axis changes.
-const inputs = [{ path: rel(genPath), sha: sha(generic) }]
-const seenInput = new Set([rel(genPath)])
-
-// Assemble body line-by-line, recording provenance run-lengths.
-const lines = generic.split('\n')
-const out = []
-const regions = []
-let bodyLine = 0
-const push = (line, source, meta) => {
-  out.push(line)
-  bodyLine++
-  const last = regions[regions.length - 1]
-  if (last && last.source === source && last.slot === (meta?.slot ?? null) && last.endLine === bodyLine - 1) {
-    last.endLine = bodyLine
-  } else {
-    regions.push({ source, adapter: meta?.adapter ?? null, slot: meta?.slot ?? null, startLine: bodyLine, endLine: bodyLine })
-  }
-}
-
-const openRe = /^<!--\s*SLOT:([\w.-]+)\s*-->$/
-const closeRe = /^<!--\s*\/SLOT:([\w.-]+)\s*-->$/
-const genSource = rel(genPath)
-
-let i = 0
-while (i < lines.length) {
-  const open = lines[i].match(openRe)
-  if (open) {
-    const slot = open[1]
-    let j = i + 1
-    while (j < lines.length && !(closeRe.test(lines[j]) && lines[j].match(closeRe)[1] === slot)) j++
-    const provider = slotProviders[slot]
-    if (provider) {
-      if (!seenInput.has(provider.source)) {
-        seenInput.add(provider.source)
-        inputs.push({ path: provider.source, sha: sha(provider.content) })
-      }
-      for (const cl of provider.content.replace(/\n$/, '').split('\n')) {
-        push(cl, provider.source, { adapter: provider.adapter, slot })
-      }
-    } // no provider (axis not selected, or active adapter omits this slot) -> prune
-    i = j + 1
-    continue
-  }
-  push(lines[i], genSource)
-  i++
-}
-
-const body = out.join('\n')
-// Digest over the SORTED consumed inputs only — these fully determine the output bytes.
-// Deliberately excludes the global selection, so picking a UI adapter does not perturb the
-// ORM skill's digest (keeps sync's 3-way merge base stable; decision #6).
-const sortedInputs = [...inputs].sort((a, b) => a.path.localeCompare(b.path))
-const digest = sha(JSON.stringify(sortedInputs))
-const header = `<!-- generated by agentic render — do not hand-edit; use the improve-framework skill or edit the framework source. digest:${digest} -->`
-const rendered = header + '\n\n' + body + '\n'
-
-const manifest = {
-  skill,
-  selection: selected,
-  digest,
-  note: 'region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only',
-  inputs: sortedInputs,
-  regions,
-}
-
+const { rendered, manifest, digest } = renderSkill(root, config, skill)
 const dest = join(outDir, skill)
 mkdirSync(dest, { recursive: true })
 writeFileSync(join(dest, 'SKILL.md'), rendered)
 writeFileSync(join(dest, 'provenance.json'), JSON.stringify(manifest, null, 2) + '\n')
 
-console.log(`Rendered '${skill}' (orm=${selected.orm || 'none'}) -> ${rel(dest)}`)
-console.log(`  digest ${digest} · ${regions.length} provenance regions · ${inputs.length} inputs`)
+console.log(`Rendered '${skill}' (orm=${manifest.selection.orm || 'none'}) -> ${relative(root, dest)}`)
+console.log(`  digest ${digest} · ${manifest.regions.length} provenance regions · ${manifest.inputs.length} inputs`)

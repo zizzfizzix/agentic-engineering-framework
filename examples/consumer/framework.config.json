@@ -1,7 +1,10 @@
 {
   "$schema": "./schemas/framework.config.schema.json",
   "projectName": "my-app",
-  "harnesses": ["claude-code", "codex"],
+  "harnesses": [
+    "claude-code",
+    "codex"
+  ],
   "orm": "drizzle",
   "ui": "shadcn",
   "stack": "generic-node",
@@ -10,7 +13,10 @@
     "specsRoot": ".ai/specs",
     "testsRoot": ".ai/qa/tests"
   },
-  "validation": ["npm run typecheck", "npm test"],
+  "validation": [
+    "npm run typecheck",
+    "npm test"
+  ],
   "git": {
     "defaultBranch": "main",
     "labels": []
