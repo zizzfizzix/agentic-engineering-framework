@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/adapter.schema.json",
+  "name": "next-js",
+  "axis": "stack",
+  "description": "Next.js (App Router) stack, optionally in a workspaces monorepo — server-first conventions, build/validation pipeline, and review rules.",
+  "augments": ["code-review", "implement-spec", "integration-tests", "create-agents-md", "open-pr"],
+  "slots": {
+    "stack.layout": "references/layout.md",
+    "stack.validation": "references/validation.md",
+    "stack.project-rules": "references/project-rules.md",
+    "stack.pr-workflow": "references/pr-workflow.md"
+  }
+}
