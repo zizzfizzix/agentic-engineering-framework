@@ -3,7 +3,7 @@
   "projectName": "my-app",
   "harnesses": ["claude-code"],
   "orm": "drizzle",
-  "ui": null,
+  "ui": "shadcn",
   "stack": "generic-node",
   "paths": {
     "modulesRoot": "src/modules",

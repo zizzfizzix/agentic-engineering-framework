@@ -25,7 +25,21 @@ node bin/render.mjs --config /tmp/cfg.json --skill migrate-orm --out /tmp/out
 | **Determinism** (decision #6) | normalized newlines, stable ordering, no timestamps; `digest` over inputs+selection | two runs → identical `digest` and byte-identical `SKILL.md` |
 | **Provenance** (decisions #7/#8) | every output line range maps to a source file / adapter / slot | `provenance.json` `regions[]` |
 
-`examples/rendered/migrate-orm/` is a committed sample of the drizzle output for reference.
+`examples/rendered/{migrate-orm,ui-consistency}/` are committed sample outputs for reference.
+
+## Validated on two axes
+
+The convention was stress-tested on a second axis (UI) with deliberately different content
+(token tables, component catalogs) and **heterogeneous adapters**. Two findings, both folded into
+`slot-convention.md`:
+
+1. **Per-skill digest scoping** — the digest must cover only the inputs a skill consumes, not the
+   global selection, or picking a UI adapter spuriously churns the ORM skill's `sync` base. Fixed;
+   proven: `migrate-orm` digest is identical for `ui=null` and `ui=shadcn`.
+2. **Optional-section heading rule** — when an active adapter omits a slot (`shadcn` ships no
+   health-check), a heading left in the generic body orphans. Optional sections move their heading
+   into the adapter fragment so pruning removes the whole section. Proven: `shadcn` render has no
+   orphaned "Health check" heading; `open-mercato-ui` render has the full section.
 
 ## Not yet (deliberately)
 

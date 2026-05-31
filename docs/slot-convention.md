@@ -47,6 +47,26 @@ A generic `SKILL.md` marks injection points with HTML comments (invisible in ren
    produced it (body-relative line ranges) plus the input SHAs. This is what `improve-framework`
    reads to route a consumer-side edit back to the right source fragment (decisions #7/#8).
 
+## Mandatory vs. optional sections (authoring rule)
+
+An active adapter may fill only *some* of a skill's slots (e.g. `shadcn` provides tokens +
+components but no health-check tool, while `open-mercato-ui` provides all three). The renderer
+prunes any slot the active adapter doesn't fill — but a bare `## Heading` left above a pruned slot
+becomes an orphan. So:
+
+- **Mandatory section** (always present when the axis is selected): keep the `## Heading` in the
+  generic body, put only the body in the slot.
+- **Optional section** (some adapters omit it): move the `## Heading` *into the slot* — i.e. the
+  adapter fragment supplies its own heading. When pruned, the whole section disappears cleanly.
+
+## Digest scoping (sync stability)
+
+A rendered skill's digest covers **only the inputs it actually consumes** (its generic body + the
+adapter fragments whose slots it fills) — never the global axis selection. So selecting a UI
+adapter does not change the ORM skill's digest, and `sync`'s 3-way merge base (decision #6) stays
+stable across unrelated config changes. Proven: `migrate-orm` renders to the same digest whether
+`ui` is `null` or `shadcn`.
+
 ## Why HTML-comment markers
 
 They already work in open-mercato (the Codex `enforcement-rules` splice uses
