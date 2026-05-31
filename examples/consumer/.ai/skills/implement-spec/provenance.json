@@ -1,0 +1,25 @@
+{
+  "skill": "implement-spec",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "ab3bc8694a1f",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "core/ai/skills/implement-spec/SKILL.md",
+      "sha": "6b86bf9fdcf1"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/implement-spec/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 230
+    }
+  ]
+}

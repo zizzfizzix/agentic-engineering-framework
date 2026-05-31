@@ -9,6 +9,60 @@
     ]
   },
   "skills": {
+    "check-and-commit": {
+      "digest": "dae6eb9cc857",
+      "inputs": [
+        {
+          "path": "core/ai/skills/check-and-commit/SKILL.md",
+          "sha": "56b062e348e3"
+        }
+      ]
+    },
+    "code-review": {
+      "digest": "e4a9b67086ff",
+      "inputs": [
+        {
+          "path": "core/ai/skills/code-review/SKILL.md",
+          "sha": "2bc2c3c3a16c"
+        }
+      ]
+    },
+    "create-agents-md": {
+      "digest": "6c264193d00e",
+      "inputs": [
+        {
+          "path": "core/ai/skills/create-agents-md/SKILL.md",
+          "sha": "d9e2c9312a28"
+        }
+      ]
+    },
+    "fix-specs": {
+      "digest": "7eb0392e292e",
+      "inputs": [
+        {
+          "path": "core/ai/skills/fix-specs/SKILL.md",
+          "sha": "2f2ad371df01"
+        }
+      ]
+    },
+    "implement-spec": {
+      "digest": "ab3bc8694a1f",
+      "inputs": [
+        {
+          "path": "core/ai/skills/implement-spec/SKILL.md",
+          "sha": "6b86bf9fdcf1"
+        }
+      ]
+    },
+    "integration-tests": {
+      "digest": "d94954af0531",
+      "inputs": [
+        {
+          "path": "core/ai/skills/integration-tests/SKILL.md",
+          "sha": "abf7283de3dc"
+        }
+      ]
+    },
     "migrate-orm": {
       "digest": "c259362a982a",
       "inputs": [
@@ -23,6 +77,42 @@
         {
           "path": "core/ai/skills/migrate-orm/SKILL.md",
           "sha": "309b17f24b9d"
+        }
+      ]
+    },
+    "pre-implement-spec": {
+      "digest": "f39e4d8d9c07",
+      "inputs": [
+        {
+          "path": "core/ai/skills/pre-implement-spec/SKILL.md",
+          "sha": "c5ed2fc2e96f"
+        }
+      ]
+    },
+    "skill-creator": {
+      "digest": "144515d05cd0",
+      "inputs": [
+        {
+          "path": "core/ai/skills/skill-creator/SKILL.md",
+          "sha": "20c3995fc352"
+        }
+      ]
+    },
+    "smart-test": {
+      "digest": "a68ae84264ca",
+      "inputs": [
+        {
+          "path": "core/ai/skills/smart-test/SKILL.md",
+          "sha": "ae68ead5f602"
+        }
+      ]
+    },
+    "spec-writing": {
+      "digest": "a8c018f493d3",
+      "inputs": [
+        {
+          "path": "core/ai/skills/spec-writing/SKILL.md",
+          "sha": "df66a61de820"
         }
       ]
     },

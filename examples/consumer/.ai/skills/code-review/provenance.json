@@ -1,0 +1,25 @@
+{
+  "skill": "code-review",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "e4a9b67086ff",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "core/ai/skills/code-review/SKILL.md",
+      "sha": "2bc2c3c3a16c"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/code-review/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 299
+    }
+  ]
+}
