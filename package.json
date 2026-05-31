@@ -1,0 +1,16 @@
+{
+  "name": "agentic-engineering-framework",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "agentic": "bin/agentic.mjs" },
+  "scripts": {
+    "gate": "node bin/check-render.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "goldens:update": "node bin/render.mjs --skill migrate-orm --out examples/rendered && node bin/render.mjs --skill ui-consistency --out examples/rendered && rm -rf examples/consumer && node bin/agentic.mjs init --out examples/consumer"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  }
+}
