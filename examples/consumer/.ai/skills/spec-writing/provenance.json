@@ -1,0 +1,25 @@
+{
+  "skill": "spec-writing",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "a8c018f493d3",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "core/ai/skills/spec-writing/SKILL.md",
+      "sha": "df66a61de820"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/spec-writing/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 108
+    }
+  ]
+}

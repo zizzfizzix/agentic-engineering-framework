@@ -1,0 +1,25 @@
+{
+  "skill": "integration-tests",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "d94954af0531",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "core/ai/skills/integration-tests/SKILL.md",
+      "sha": "abf7283de3dc"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/integration-tests/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 359
+    }
+  ]
+}
