@@ -1,0 +1,7 @@
+# Generated harness wiring (regenerate with `agentic dev` for framework development,
+# or `agentic init` in a consumer). Anchored to repo root so examples/consumer/ stays tracked.
+/.claude/
+/.codex/
+/.cursor/
+
+node_modules/
