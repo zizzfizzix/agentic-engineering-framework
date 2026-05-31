@@ -1,0 +1,25 @@
+{
+  "skill": "skill-creator",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "144515d05cd0",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "core/ai/skills/skill-creator/SKILL.md",
+      "sha": "20c3995fc352"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/skill-creator/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 356
+    }
+  ]
+}
