@@ -4,6 +4,10 @@
     "core": {
       "description": "Daily-driver skills installed by default.",
       "skills": ["migrate-orm", "ui-consistency"]
+    },
+    "framework": {
+      "description": "Opt-in: contribute fixes/lessons back to the framework itself.",
+      "skills": ["improve-framework"]
     }
   },
   "requires": {
