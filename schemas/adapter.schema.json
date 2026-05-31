@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zizzfizzix/agentic-engineering-framework/schemas/adapter.schema.json",
+  "title": "adapter.json",
+  "description": "An adapter declares which skills it augments and the slot content it provides. The renderer fills matching slots in generic skill bodies and prunes the rest.",
+  "type": "object",
+  "required": ["name", "axis", "slots"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string", "description": "Adapter id, e.g. 'drizzle'." },
+    "axis": { "type": "string", "description": "Variation family.", "examples": ["orm", "ui", "stack", "harness"] },
+    "description": { "type": "string" },
+    "augments": {
+      "type": "array",
+      "description": "Skill ids this adapter contributes slot content to.",
+      "items": { "type": "string" }
+    },
+    "slots": {
+      "type": "object",
+      "description": "slotName -> path (relative to the adapter dir) of the fragment that fills it. Slot names are '<axis>.<key>'.",
+      "patternProperties": {
+        "^[a-z][\\w-]*\\.[a-z][\\w-]*$": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "tiers": {
+      "type": "array",
+      "description": "Optional skills this adapter adds, and the tier each joins.",
+      "items": {
+        "type": "object",
+        "required": ["skill", "tier"],
+        "additionalProperties": false,
+        "properties": {
+          "skill": { "type": "string" },
+          "tier": { "type": "string" }
+        }
+      }
+    }
+  }
+}
