@@ -20,6 +20,7 @@ These were confirmed with the project owner and shape the rest of the plan:
 | 5 | **Author modular, ship converged** | Source stays fragmented (generic body + per-adapter fragments) for maintainability. `init` **resolves and flattens** the selected adapters into concrete, self-contained skills in the consumer repo — irrelevant adapters are omitted entirely (drizzle, not prisma). No runtime pointer-chasing. |
 | 6 | **`sync` = git-native 3-way merge** | Sync stores the last render as BASE and uses git's own machinery (`git merge-file` / vendor branch + `git merge`) to combine framework updates with local edits. Standard `<<<<<<<` conflict markers land in the working tree; review with `git diff` and commit — same ritual as a plain copy-sync, but local edits are preserved instead of clobbered. No custom merge engine. |
 | 7 | **The framework develops itself via a skill** | The round-trip (fix/enhance the framework from inside a consumer repo) is an opt-in skill, `improve-framework`, not bespoke CLI commands. It knows the render model + provenance, edits the framework source (delegating heavy work to a subagent), re-renders, and syncs back. Dissolves the need for engineered `link`/`promote` commands. See §4a. |
+| 8 | **Re-close the self-improving loop across the boundary** | open-mercato's loop (capture lessons → `lessons.md`/AGENTS.md → reread at session start) works because it's a monorepo. Split out, it breaks at the repo edge. Re-close it with **scope-tagged lessons** (`project` stays local; `framework`/`adapter:*` go to a `.ai/framework-feedback/` outbox), upstreamed by `improve-framework` (feedback mode), **triaged + deduped** on the framework side, then synced back to all consumers as a generic `lessons.framework.md`. Opt-in, sanitized, human-confirmed; git/GitHub only, no telemetry backend. See §4b. |
 
 The unifying idea: **a generic core + pluggable adapters along every axis of variation**
 (harness, ORM, UI/design-system, stack/config) — but the fragmentation lives **only in the
@@ -167,7 +168,8 @@ who want live adapter-switching, but converged is the default and the only v1 mo
   `dev-container-maintenance`.
 
 - **New framework-native skills (not from open-mercato):** `improve-framework` (§4a) — the
-  self-development round-trip skill. Opt-in tier.
+  self-development round-trip skill, with a feedback mode that drains the lessons outbox (§4b);
+  `triage-feedback` (§4b) — framework-side dedup/intake of inbound consumer feedback. Both opt-in.
 
 Net: very little is truly discarded — most "domain" content becomes an adapter reference.
 
@@ -235,6 +237,62 @@ promote it using provenance. Both paths end at the framework source as the singl
 
 ---
 
+## 4b. Re-closing the self-improving loop across the repo boundary (decision #8)
+
+**The problem.** open-mercato's self-improvement loop is concrete: root `AGENTS.md` says *"After
+corrections, update `.ai/lessons.md` or relevant AGENTS.md. Write rules that prevent the same
+mistake,"* and `lessons.md` is reread at session start. It works **only because framework and
+usage share one repo**. Extract the framework to N consumers and the loop severs at the boundary:
+a generic insight learned in consumer A never reaches the framework or consumers B…Z. We must
+re-close it for *generic* learnings while keeping *project* learnings local.
+
+**Scope tag = the fork.** Every captured lesson gets a `scope:` the agent proposes and the human
+confirms:
+| Scope | Sink | Travels upstream? |
+|-------|------|-------------------|
+| `project` (default) | `.ai/lessons.md` (local, editable) | No — stays in the consumer forever |
+| `framework` | `.ai/framework-feedback/<ts>-<slug>.md` (outbox) | Yes — generic workflow/skill insight |
+| `adapter:<axis>:<name>` (e.g. `adapter:orm:drizzle`) | outbox, tagged to the adapter | Yes — adapter-specific |
+
+**Outbox entry shape** (structured, sanitized): `scope`, target skill/adapter, symptom, proposed
+rule/fix, a *scrubbed* minimal repro, and **provenance** (the rendered region that triggered it —
+the same map `sync`/`improve-framework` use).
+
+**Upstream channel = `improve-framework` feedback mode.** It drains the outbox → sanitizes →
+folds each lesson into the right framework *source* (skill body / adapter fragment / framework
+`lessons.md`) → opens a framework **PR** (or issue when the fix isn't obvious). Subagent +
+provenance machinery already exist from §4a.
+
+**Framework-side triage = the dedup point.** A `triage-feedback` skill (or the existing
+`sync-merged-pr-issues` / `review-prs` family) on the framework repo collects inbound feedback
+from many consumers, dedupes overlapping reports, and routes each to: fold into a skill, add an
+adapter case, promote to a framework-level lesson, or reject. This replaces the monorepo's
+"everyone edits one `lessons.md`" with a curated intake.
+
+**Loop closure back to all consumers.** The framework ships its **own** generic
+`lessons.framework.md`; `sync` renders it into each consumer beside the local file. So a lesson
+born in A, once merged, becomes session-start context for **every** consumer. Each consumer holds
+two lessons files — synced-read-only-generic + local-editable-project — mirroring the converged
+skill model. The originating outbox entry is retired once its content is detected in synced output.
+
+**Privacy gate (hard requirement).** Feedback mode is **opt-in** (`framework.config.json →
+feedback.enabled: false` by default), **sanitizes** (generalized rule + scrubbed repro only — no
+secrets, proprietary identifiers, or raw source dumps), is **human-confirmed before anything
+leaves the repo**, and routes to a configurable `feedback.channel` (public framework PR / issue /
+an org's private framework fork). **No central telemetry backend** — git/GitHub primitives only,
+consistent with decisions #1 and #4.
+
+```
+consumer A ──capture(scope)──▶ .ai/framework-feedback/  ──improve-framework──▶ framework PR
+                                      │ (project lessons stay in .ai/lessons.md)        │
+                                      ▼                                        triage-feedback (dedup)
+                              session-start context                                    │
+                                      ▲                                                 ▼
+   all consumers ◀────── sync renders lessons.framework.md ◀────── merged into framework source
+```
+
+---
+
 ## 5. Target layout for the extracted repo
 
 ```
@@ -273,7 +331,9 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 
 1. **`framework.config.json`** — the keystone. Fields: `harnesses[]`, `orm`, `ui`, `stack`,
    `paths` (`modulesRoot`, `specsRoot`, `testsRoot`), `validation` (command list), `git`
-   (`defaultBranch`, PR `labels`). Skills + scripts read it instead of hard-coding.
+   (`defaultBranch`, PR `labels`), `source` (framework checkout path for `improve-framework`),
+   and `feedback` (`enabled` default false, `channel`, `sanitize`). Skills + scripts read it
+   instead of hard-coding.
 2. **Harness adapter interface** — formalize `adapter.json` so the CLI loops over harnesses
    instead of the hard-coded `generateClaudeCode/Codex/Cursor` functions; port the Codex
    marker-splice and per-harness skills-symlink as adapter operations.
@@ -309,8 +369,10 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
   (+open-mercato-ui/shadcn), assemble `packs/open-mercato`.
 - **Phase 5 — Sync + provenance:** build `agentic sync` (+`add`/`remove`) with git-native 3-way
   merge; ensure the renderer is deterministic and emits the provenance manifest.
-- **Phase 6 — Self-development skill:** author `improve-framework` (§4a) and validate the full
-  round-trip from a real consumer repo (fix → subagent re-render + validate → sync back).
+- **Phase 6 — Self-development + feedback loop:** author `improve-framework` (§4a, incl. feedback
+  mode) and `triage-feedback` (§4b); add scope-tagged lessons, the `.ai/framework-feedback/`
+  outbox, and the synced `lessons.framework.md`; validate the full round-trip from a real consumer
+  (fix/lesson → subagent re-render + validate → framework PR → triage → sync back).
 - **Phase 7 — Dogfood + docs:** adopt into 1–2 unrelated repos with different orm/ui/harness
   combos; write `authoring-skills.md` + `authoring-adapters.md`; tag `v0.1.0`.
 
@@ -358,5 +420,8 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 - **The framework improves itself with a skill:** `improve-framework` handles the round-trip
   (edit source → subagent re-render + validate → sync back), so there's nothing to hand-port.
   Its one dependency: the renderer must emit deterministic output + provenance.
+- **The self-improving loop spans repos:** scope-tagged lessons keep project learnings local and
+  push generic ones through an outbox → `improve-framework` → framework triage → synced
+  `lessons.framework.md` back to all consumers. Opt-in, sanitized, git-only — no telemetry.
 - An opt-in `open-mercato` pack reselects the Mercato adapters to reconstruct today's behavior.
 ```
