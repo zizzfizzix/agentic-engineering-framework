@@ -18,11 +18,14 @@ These were confirmed with the project owner and shape the rest of the plan:
 | 3 | **Generalize, don't discard** | Domain skills are split into a **generic body + adapter references**. Specifics (ORM, design system, stack) live in adapters following the same pattern as harnesses. Only truly irreducible one-shots stay adapter-scoped. |
 | 4 | **Hard fork, diverge** | Snapshot from open-mercato and evolve independently. No upstream-sync machinery; MIT `LICENSE` + attribution preserved. |
 | 5 | **Author modular, ship converged** | Source stays fragmented (generic body + per-adapter fragments) for maintainability. `init` **resolves and flattens** the selected adapters into concrete, self-contained skills in the consumer repo — irrelevant adapters are omitted entirely (drizzle, not prisma). No runtime pointer-chasing. |
+| 6 | **`sync` = git-native 3-way merge** | Sync stores the last render as BASE and uses git's own machinery (`git merge-file` / vendor branch + `git merge`) to combine framework updates with local edits. Standard `<<<<<<<` conflict markers land in the working tree; review with `git diff` and commit — same ritual as a plain copy-sync, but local edits are preserved instead of clobbered. No custom merge engine. |
+| 7 | **The framework develops itself via a skill** | The round-trip (fix/enhance the framework from inside a consumer repo) is an opt-in skill, `improve-framework`, not bespoke CLI commands. It knows the render model + provenance, edits the framework source (delegating heavy work to a subagent), re-renders, and syncs back. Dissolves the need for engineered `link`/`promote` commands. See §4a. |
 
 The unifying idea: **a generic core + pluggable adapters along every axis of variation**
 (harness, ORM, UI/design-system, stack/config) — but the fragmentation lives **only in the
 framework source**. The consumer repo receives a **converged** render: each installed skill is a
-single flat file containing exactly the selected adapters' content and nothing else. See §3.4.
+single flat file containing exactly the selected adapters' content and nothing else. See §3.3a.
+The framework is **made of skills, and improves itself with one** (§4a).
 
 ---
 
@@ -163,6 +166,9 @@ who want live adapter-switching, but converged is the default and the only v1 mo
   `auto-upgrade-0.4.10-to-0.5.0`, `integration-builder` (Mercato marketplace),
   `dev-container-maintenance`.
 
+- **New framework-native skills (not from open-mercato):** `improve-framework` (§4a) — the
+  self-development round-trip skill. Opt-in tier.
+
 Net: very little is truly discarded — most "domain" content becomes an adapter reference.
 
 ---
@@ -176,10 +182,11 @@ Port `agentic-setup.ts` into a standalone, dependency-light CLI (Node, no `creat
   composing generic bodies with only the selected adapters, omitting the rest — runs the
   (generalized) `install-skills.sh`, and invokes each selected **harness adapter** to wire its
   files + skills dir.
-- `agentic sync` — recomposes skills/templates from the installed framework version and
-  **3-way-merges** against the render manifest. **Conflict-aware**: locally modified files are
-  never silently overwritten (per-file prompt / `--ours`/`--theirs`/`--diff`), reusing the UX
-  from open-mercato's `2026-04-24-mercato-cli-skills-sync.md` spec.
+- `agentic sync` — recomposes skills/templates from the installed framework version and runs a
+  **git-native 3-way merge** (decision #6): the last render is BASE, the consumer file is LOCAL,
+  the fresh render is NEW. Uses `git merge-file` (or a vendor branch + `git merge`) so the result
+  + standard `<<<<<<<`/`>>>>>>>` markers land in the working tree; you review with `git diff` and
+  commit — local edits preserved, no custom merge engine, no silent clobber.
 - `agentic add <adapter>` / `agentic remove <adapter>` — re-render the affected skills with the
   new adapter selection (drops/adds slot content, harness files, tier additions; re-runs the
   installer). Removing the last adapter on an axis uninstalls that axis's skills.
@@ -187,6 +194,44 @@ Port `agentic-setup.ts` into a standalone, dependency-light CLI (Node, no `creat
 Git submodule is **explicitly out of scope** for v1 (decision #1), but the layout keeps the
 "single source of truth = `.ai/skills/`" invariant, so a submodule mode could be added later
 without restructuring.
+
+The CLI stays deliberately **mechanical and deterministic** — `init`, `sync`, `add`, `remove`,
+render. The *judgment-heavy* work of changing the framework itself lives in a skill, §4a.
+
+---
+
+## 4a. Developing the framework from a consumer repo — the `improve-framework` skill (decision #7)
+
+The framework is made of skills, so the act of fixing/enhancing it is **also a skill**, not a set
+of engineered commands. `improve-framework` is opt-in (lives in an `automation`/`infra`-style
+tier; normal consumers never load it) and encodes the round-trip knowledge:
+
+**Why a skill, not `link`/`promote` commands.** Routing a consumer-side edit back to the right
+place is judgment, not mechanics: does this fix belong in the generic body, the `drizzle`
+fragment, or a specific slot? An agent reasons about that well given provenance breadcrumbs; a
+CLI command would need brittle heuristics. So we encode the *workflow* and let the agent drive
+plain `git` + the renderer + `sync`.
+
+**What the skill knows / does:**
+1. Locates the framework **source** — a path in `framework.config.json` (a local checkout) or
+   clones it on demand into a scratch dir.
+2. Reads **provenance breadcrumbs** the renderer leaves (which source file + slot produced each
+   region of a rendered skill — the same manifest `sync` uses) to map a consumer-side symptom
+   back to its source fragment.
+3. **Delegates heavy lifting to a subagent**: edit the framework source in the checkout →
+   re-render → run the framework's own validation/tests → report the diff back. This keeps the
+   consumer session's context clean.
+4. Commits on a framework branch, pushes, optionally opens a framework PR.
+5. Runs `agentic sync` in the consumer so the fix flows back down via the normal 3-way merge —
+   leaving you a `git diff` to review and commit, your usual ritual.
+
+**Consequence for the renderer:** it MUST emit deterministic output **and** provenance metadata
+(source path + slot per region). Cheap to add, doubles as the `sync` manifest, and is the single
+dependency that makes the skill possible. Without it the skill is guessing.
+
+This means there is **nothing to manually port back**: either you use `improve-framework` (which
+edits source first), or — for a quick hand-fix — you edit the rendered file and let the skill
+promote it using provenance. Both paths end at the framework source as the single source of truth.
 
 ---
 
@@ -244,6 +289,11 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
    `auto-*-pr` via `framework.config.json`.
 8. **Author the `open-mercato` meta-pack** that re-selects the Mercato adapters, proving the
    round-trip (generic core + pack ≈ original experience).
+9. **Deterministic renderer + provenance** — the compose step must be byte-stable and emit a
+   per-region provenance map (source file + slot) into the render manifest. Required by both
+   `sync` (decision #6) and `improve-framework` (decision #7).
+10. **Author `improve-framework`** — the self-development skill (§4a): locate/clone source, read
+    provenance, delegate edit+render+validate to a subagent, push framework branch, re-sync.
 
 ---
 
@@ -257,8 +307,11 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
   split `code-review`; parameterize paths/commands.
 - **Phase 4 — Domain adapters:** `migrate-orm` (+mikro-orm/prisma), `ui-consistency`
   (+open-mercato-ui/shadcn), assemble `packs/open-mercato`.
-- **Phase 5 — Sync:** build `agentic sync` (+`add`/`remove`) with conflict UX.
-- **Phase 6 — Dogfood + docs:** adopt into 1–2 unrelated repos with different orm/ui/harness
+- **Phase 5 — Sync + provenance:** build `agentic sync` (+`add`/`remove`) with git-native 3-way
+  merge; ensure the renderer is deterministic and emits the provenance manifest.
+- **Phase 6 — Self-development skill:** author `improve-framework` (§4a) and validate the full
+  round-trip from a real consumer repo (fix → subagent re-render + validate → sync back).
+- **Phase 7 — Dogfood + docs:** adopt into 1–2 unrelated repos with different orm/ui/harness
   combos; write `authoring-skills.md` + `authoring-adapters.md`; tag `v0.1.0`.
 
 ---
@@ -272,9 +325,16 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
   proof, then replicate the pattern.
 - **Adapter contract drift:** if a skill's generic body and its adapter references disagree,
   agents get confused. The `_contract.md` per skill is the guard — validate adapters against it.
-- **Convergence vs. sync (decision #5):** flattening means `sync` is recompose + 3-way-merge, not
-  a copy. Mitigate with the generated-header + manifest checksum so local edits are detected and
-  prompted, never silently lost. Render must be deterministic so checksums are stable.
+- **Convergence vs. sync (decisions #5/#6):** flattening means `sync` is recompose + git 3-way
+  merge, not a copy. Mitigate with the generated-header + manifest checksum so local edits are
+  detected and prompted, never silently lost. **Render must be deterministic** so checksums and
+  merge bases are stable — this is a hard requirement, not a nicety.
+- **Provenance is load-bearing (decision #7):** the `improve-framework` skill can only route
+  edits back if the renderer emits per-region provenance (source file + slot). Build it into the
+  renderer from day one; treat it as part of the render contract, not an add-on.
+- **Skill/subagent reliability:** `improve-framework` automates a sensitive operation (editing the
+  framework, opening PRs). Keep it opt-in, require human review of the framework `git diff` before
+  push, and have it run the framework's own validation in the subagent before reporting success.
 - **Skill context budget:** keep `core` tier small; every adapter-added skill defaults to an
   opt-in tier so harness description budgets don't overflow.
 - **Hard-fork maintenance (decision #4):** improvements in open-mercato won't flow in
@@ -293,5 +353,10 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 - **Author modular, ship converged:** the framework source is fragmented for maintainability;
   `init` renders it down to flat, self-contained skills holding only the selected adapters —
   no fragmentation and no irrelevant parts in the consumer repo.
+- **`sync` = git-native 3-way merge:** last render is BASE; git combines framework updates with
+  local edits and writes normal conflict markers — same review-and-commit ritual, no clobber.
+- **The framework improves itself with a skill:** `improve-framework` handles the round-trip
+  (edit source → subagent re-render + validate → sync back), so there's nothing to hand-port.
+  Its one dependency: the renderer must emit deterministic output + provenance.
 - An opt-in `open-mercato` pack reselects the Mercato adapters to reconstruct today's behavior.
 ```
