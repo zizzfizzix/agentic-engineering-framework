@@ -2,8 +2,26 @@
 
 > A plan for lifting the agentic engineering harness out of
 > [`open-mercato/open-mercato`](https://github.com/open-mercato/open-mercato)
-> into a standalone, reusable repository that other projects can adopt
-> (git submodule, copy-and-sync, or npm).
+> into a standalone, reusable, **harness-agnostic** framework that any project can
+> adopt — built around one generic core plus pluggable adapters.
+
+---
+
+## 0. Locked decisions
+
+These were confirmed with the project owner and shape the rest of the plan:
+
+| # | Decision | Consequence |
+|---|----------|-------------|
+| 1 | **Distribution = copy + CLI sync only** | Port open-mercato's `agentic:init` + a conflict-aware `sync`. No git-submodule path (deferred, not built). |
+| 2 | **Harness-agnostic** | Built-in adapters for Claude Code, Codex, Cursor, but the wiring is an **adapter interface** so new harnesses (Windsurf, Cline, Gemini CLI, …) drop in without touching skills. |
+| 3 | **Generalize, don't discard** | Domain skills are split into a **generic body + adapter references**. Specifics (ORM, design system, stack) live in adapters following the same pattern as harnesses. Only truly irreducible one-shots stay adapter-scoped. |
+| 4 | **Hard fork, diverge** | Snapshot from open-mercato and evolve independently. No upstream-sync machinery; MIT `LICENSE` + attribution preserved. |
+
+The unifying idea: **a generic core + pluggable adapters along every axis of variation**
+(harness, ORM, UI/design-system, stack/config). A skill stays generic and reads
+`framework.config.json` to learn which adapters are active, then loads the matching
+`references/<adapter>.md`.
 
 ---
 
@@ -17,164 +35,128 @@ layered system made of:
    `AGENTS.md` / `CLAUDE.md` convention, multi-harness wiring for Claude Code / Codex / Cursor,
    the spec / run / qa folder conventions, and a set of **meta-skills** (`skill-creator`,
    `create-agents-md`, `spec-writing`, `fix-specs`) that contain almost no domain coupling.
-2. A **domain-coupled content layer** (Open-Mercato-specific): the Task Router, per-package
-   `AGENTS.md` files, design-system rules (`ds-guardian`, `backend-ui-design`, `.ai/ds-rules.md`,
-   `.ai/ui-components.md`), ORM/migration skills (`migrate-mikro-orm`), and `code-review` rules
-   that encode Mercato architecture.
+2. A **domain-coupled content layer** (currently Open-Mercato-specific): the Task Router,
+   per-package `AGENTS.md` files, design-system rules (`ds-guardian`, `backend-ui-design`,
+   `.ai/ds-rules.md`, `.ai/ui-components.md`), ORM/migration skills (`migrate-mikro-orm`), and
+   `code-review` rules that encode Mercato architecture.
 
-**Key finding:** open-mercato has *already* extracted a version of this for downstream apps.
-`packages/create-app/agentic/` is a purpose-built portable kit, and `yarn mercato agentic:init`
-copies it into any repo, wiring Claude Code, Codex, and Cursor. A spec
-(`.ai/specs/2026-04-24-mercato-cli-skills-sync.md`) proposes `yarn mercato skills sync` to keep
-those copies fresh — and **explicitly rejected the git-submodule and plugin approaches** for
-skills, in favour of copy-at-init + conflict-aware CLI sync.
+Per **decision #3**, layer 2 is not left behind — it is **decomposed into generic skills +
+adapters**. The framework becomes genuinely reusable in unrelated repos while still letting an
+"open-mercato adapter pack" restore the full Mercato experience.
 
-This plan therefore (a) inventories what to extract, (b) separates portable from domain layers,
-(c) compares distribution mechanisms (including the submodule idea the user raised, with the
-tradeoffs open-mercato already discovered), and (d) lays out a phased roadmap.
+**Key finding:** open-mercato has *already* extracted a copy-based version of this for downstream
+apps. `packages/create-app/agentic/` is a purpose-built portable kit, and `yarn mercato
+agentic:init` copies it into any repo, wiring Claude Code, Codex, and Cursor. That proves the
+copy-at-init model (decision #1) and shows the framework is already **profile-able** — the same
+skeleton ships different skill payloads per context. We build on that and generalize it.
 
 ---
 
 ## 2. Inventory: what exists today
 
 ### 2.1 Root-level convention files
-| Path | Role | Portability |
+| Path | Role | Disposition |
 |------|------|-------------|
-| `AGENTS.md` (40 KB) | Master agent guide + Task Router | Mostly domain-specific; structure is reusable |
-| `CLAUDE.md` | One line: `@AGENTS.md` (Claude reads AGENTS.md) | Fully portable pattern |
-| Per-package `CLAUDE.md` | Also `@AGENTS.md` | Portable pattern |
-| Per-package `AGENTS.md` (core, ui, shared, cache, …) | Local architecture rules | Domain-specific |
+| `AGENTS.md` (40 KB) | Master agent guide + Task Router | Templatize skeleton; Task Router becomes an adapter-injected region |
+| `CLAUDE.md` | One line: `@AGENTS.md` | Portable pattern — keep |
+| Per-package `CLAUDE.md` / `AGENTS.md` | Local architecture rules | Mercato-specific → open-mercato adapter pack |
 
 ### 2.2 The `.ai/` directory
-| Subdir | Contents | Portability |
+| Subdir | Contents | Disposition |
 |--------|----------|-------------|
-| `.ai/skills/` | 35 skill folders + `tiers.json` + `tiers.schema.json` + `README.md` | **The crown jewel** — mixed portability (see §3) |
-| `.ai/specs/` | ~150 specs + `README.md`, `AGENTS.md`, `SPEC-000` template, `LICENSE.md` | Content domain-specific; **convention is portable** |
-| `.ai/runs/` | Per-run plan/handoff/notify artifacts (automation skills write here) | Convention portable; content is project history |
-| `.ai/qa/` | Playwright scenarios/tests + `AGENTS.md` | Convention portable; harness-specific |
-| `.ai/analysis/`, `.ai/reports/`, `.ai/drafts/` | Skill output sinks | Convention portable |
-| `.ai/scripts/` | `ds-health-check.sh`, color/typography migrators | Domain-specific (design system) |
-| `.ai/ds-rules.md`, `.ai/ui-components.md`, `.ai/lessons.md` | DS rules + lessons log | DS files domain-specific; `lessons.md` pattern portable |
+| `.ai/skills/` | 35 skill folders + `tiers.json` + `tiers.schema.json` + `README.md` | **Crown jewel** — generic bodies into core, specifics into adapters (§3) |
+| `.ai/specs/` | ~150 specs + `README.md`, `AGENTS.md`, `SPEC-000` template, `LICENSE.md` | Convention + template into core; content stays in Mercato history |
+| `.ai/runs/` | Per-run plan/handoff/notify artifacts | Convention into core |
+| `.ai/qa/` | Playwright scenarios/tests + `AGENTS.md` | Convention into core; test-runner is an adapter concern |
+| `.ai/analysis/`, `.ai/reports/`, `.ai/drafts/` | Skill output sinks | Convention into core |
+| `.ai/scripts/` | `ds-health-check.sh`, color/typography migrators | Design-system adapter |
+| `.ai/ds-rules.md`, `.ai/ui-components.md` | DS rules | Design-system adapter references |
+| `.ai/lessons.md` | Lessons log | Pattern into core (empty starter) |
 
-### 2.3 The installer + tier system
+### 2.3 The installer + tier system (port verbatim)
 - `scripts/install-skills.sh` — POSIX shell, reads `tiers.json`, creates **per-skill symlinks**
-  under `.claude/skills/` and `.codex/skills/`. Sweeps stale links; idempotent; `--with`,
-  `--tiers`, `--all`, `--list`, `--clean` flags. **Highly portable** (only assumes `jq` + git root).
-- `scripts/validate-skills-tiers.sh` — asserts every skill folder is in exactly one tier.
-- `.ai/skills/tiers.json` — single source of truth: `core` (default, 14 skills) +
-  `automation`, `security`, `migration`, `infra` (opt-in). Solves the harness "2% skill-description
-  context budget" overflow by only symlinking what's needed.
+  under each harness dir. Idempotent; `--with`, `--tiers`, `--all`, `--list`, `--clean`.
+  Only assumes `jq` + a git root → **highly portable**. Generalize the harness-dir list so it is
+  driven by the active harness adapters rather than hard-coded `.claude` / `.codex`.
+- `scripts/validate-skills-tiers.sh` — asserts every skill is in exactly one tier.
+- `.ai/skills/tiers.json` — single source of truth: `core` (default) + opt-in tiers. Solves the
+  harness "2% skill-description context budget" overflow by only symlinking what's needed.
 
-### 2.4 The already-extracted kit: `packages/create-app/agentic/`
-This is the existing answer to "make it reusable", and the single most important reference for
-this plan:
+### 2.4 The already-extracted kit: `packages/create-app/agentic/` (the model to port)
 ```
 packages/create-app/agentic/
-├── shared/
-│   ├── AGENTS.md.template          # {{PROJECT_NAME}} placeholder
-│   └── ai/{skills,specs,qa,lessons.md}   # adapted, slimmer skill set
-├── claude-code/
-│   ├── CLAUDE.md.template          # @AGENTS.md
-│   ├── settings.json               # PostToolUse hook wiring
-│   ├── hooks/entity-migration-check.ts
-│   └── mcp.json.example
-├── codex/
-│   ├── enforcement-rules.md        # spliced into AGENTS.md between markers
-│   └── mcp.json.example
-└── cursor/
-    ├── rules/*.mdc                 # alwaysApply rules + guards
-    ├── hooks.json + hooks/*.mjs
-    └── mcp.json.example
+├── shared/{AGENTS.md.template, ai/{skills,specs,qa,lessons.md}}   # {{PROJECT_NAME}}, slimmer skills
+├── claude-code/{CLAUDE.md.template, settings.json, hooks/, mcp.json.example}
+├── codex/{enforcement-rules.md, mcp.json.example}                # spliced between markers
+└── cursor/{rules/*.mdc, hooks.json, hooks/*.mjs, mcp.json.example}
 ```
-Driven by `packages/cli/src/lib/agentic-setup.ts`:
-- `{{PROJECT_NAME}}` placeholder substitution.
-- Per-tool generators (claude-code / codex / cursor) selected via wizard or `--tool=` flag.
-- Symlinks `.claude/skills` / `.codex/skills` / `.cursor/skills` → `../.ai/skills`.
-- Codex integration **splices** enforcement rules into `AGENTS.md` between
-  `<!-- CODEX_ENFORCEMENT_RULES_START/END -->` markers (idempotent re-runs).
-- Exposed as `yarn mercato agentic:init [--tool=...] [--force]`.
-
-**Note the skill set divergence** (the standalone kit deliberately swaps domain skills):
-- Standalone-only (genericized for app builders): `module-scaffold`, `data-model-design`,
-  `system-extension`, `eject-and-customize`, `trim-unused-modules`, `troubleshooter`.
-- Monorepo-only (core-contributor tools, not shipped downstream): `ds-guardian`, `code-review`
-  (mercato variant), `migrate-mikro-orm`, `create-agents-md`, `skill-creator`, `pre-implement-spec`,
-  `smart-test`, `merge-buddy`, `review-prs`, `sync-merged-pr-issues`, `auto-*-changelog/qa/sec`,
-  `dev-container-maintenance`, `fix`, `root-cause`, `verify-in-repo`, `open-pr`, `check-and-commit`.
-
-This proves the framework is **profile-able**: the same harness skeleton ships different skill
-payloads per consumer context.
+Driven by `packages/cli/src/lib/agentic-setup.ts`: `{{PROJECT_NAME}}` substitution, per-tool
+generators, skills symlink per harness, idempotent Codex marker-splice
+(`<!-- CODEX_ENFORCEMENT_RULES_START/END -->`), exposed as
+`yarn mercato agentic:init [--tool=...] [--force]`. **This is exactly the copy+init logic we
+port and generalize into a harness-adapter interface.**
 
 ---
 
-## 3. Coupling analysis — what's reusable vs what must be genericized
+## 3. From "domain content" to "generic skill + adapters"
 
-Classify every piece into three buckets:
+Each skill is split along a stable seam: **workflow (generic) vs facts (adapter)**.
 
-### Bucket A — Portable as-is (the extractable core)
-- `install-skills.sh` + `validate-skills-tiers.sh` + `tiers.json` + `tiers.schema.json` +
-  `.ai/skills/README.md` (the **skill distribution engine**).
-- The `CLAUDE.md → @AGENTS.md` indirection pattern.
-- Folder conventions: `.ai/{specs,runs,qa,analysis,reports,drafts,lessons.md}` + their
-  `AGENTS.md`/`README.md` scaffolds and `SPEC-000-template.md`.
-- Meta-skills with ~zero domain coupling: `skill-creator`, `spec-writing` (with light edits),
-  `fix-specs`, `create-agents-md`, `root-cause`, `verify-in-repo`, `open-pr`, `fix`.
-- Multi-harness wiring: `claude-code/settings.json`, `codex/enforcement-rules.md` + marker
-  splice, `cursor/rules` + `hooks.json`, `mcp.json.example` per tool.
-- The PR/issue automation skills (`auto-create-pr`, `auto-continue-pr`, `auto-review-pr`,
-  `auto-fix-github`, loop variants) — **moderately** coupled: they reference `yarn typecheck`,
-  `develop` branch, pipeline labels. Genericize via config, not rewrite.
+### 3.1 The pattern
+```
+.ai/skills/<skill>/
+├── SKILL.md                 # generic workflow; references adapters by capability, not name
+└── references/
+    ├── _contract.md         # what an adapter for this skill must provide
+    └── <adapter>.md         # injected/symlinked by an installed adapter pack
+```
+`SKILL.md` says *"load the ORM cheatsheet for the active `orm` adapter from
+`framework.config.json`"* instead of hard-coding MikroORM. Adapters drop a `references/<adapter>.md`
+into the skill (copy or symlink at init/sync time).
 
-### Bucket B — Genericize (template the domain out)
-- `AGENTS.md` Task Router → keep the *structure* (Always / Ask First / Never / Validation
-  Commands / Task Router / Core Principles), replace Mercato rows with `{{PLACEHOLDER}}`s or a
-  generated section. The standalone `AGENTS.md.template` already shows the slimmed form.
-- `code-review` skill → split into a generic review harness + a project-specific rules
-  reference file (`references/<project>-rules.md`).
-- `spec-writing`, `implement-spec`, `pre-implement-spec`, `integration-tests` → parameterize
-  paths (`packages/core/src/modules/` vs `src/modules/`) and validation commands.
-- Automation skills → extract branch name (`develop`), label names, and validation gate into a
-  small `framework.config.json` consumed by the skills.
+### 3.2 Axes of variation (each an adapter family)
+| Axis | Generic skill(s) | Adapter examples | What the adapter provides |
+|------|------------------|------------------|---------------------------|
+| **Harness** | n/a (wiring only) | claude-code, codex, cursor, windsurf, cline | settings/rules files, hook format, skills-dir path, mcp example |
+| **ORM** | `data-model-design`, `migrate-orm` (generalized from `migrate-mikro-orm`) | mikro-orm, prisma, typeorm, drizzle | entity DSL cheatsheet, migration codemods, query idioms |
+| **UI / Design system** | `ui-consistency` (from `backend-ui-design` + `ds-guardian`) | open-mercato-ui, shadcn, mui | component catalog, semantic-token map, health-check script |
+| **Stack / repo config** | `code-review`, `implement-spec`, `integration-tests`, `auto-*-pr` | next.js, generic-node, monorepo, single-app | paths (`modulesRoot`, `specsRoot`), validation commands, branch + label vocab, test runner |
+| **One-shot migrations** | — | `upgrade-0.4.10-to-0.5.0` (Mercato-only) | stays as an adapter-scoped optional skill |
 
-### Bucket C — Leave behind / make optional plugins (Open-Mercato-only)
-- `ds-guardian`, `backend-ui-design`, `.ai/ds-rules.md`, `.ai/ui-components.md`,
-  `.ai/scripts/ds-*.sh` (design system tied to `@open-mercato/ui`).
-- `migrate-mikro-orm`, `auto-upgrade-0.4.10-to-0.5.0` (ORM/version-pinned).
-- `integration-builder`, `dev-container-maintenance` (Mercato marketplace / devcontainer).
-- All `.ai/specs/*` content and per-package `AGENTS.md` (project history / architecture).
+### 3.3 Disposition of each existing skill
+- **Stay generic in core (light edits):** `skill-creator`, `spec-writing`, `fix-specs`,
+  `create-agents-md`, `root-cause`, `verify-in-repo`, `open-pr`, `fix`, `check-and-commit`,
+  `pre-implement-spec`, `implement-spec`, `integration-tests`, `smart-test`, and the
+  `auto-*-pr` / `review` / `merge-buddy` / `sync-merged-pr-issues` automation family
+  (parameterized via `framework.config.json`).
+- **Generalize + adapterize:** `migrate-mikro-orm` → `migrate-orm`; `backend-ui-design` +
+  `ds-guardian` → `ui-consistency`; `code-review` → generic harness + `references/project-rules.md`;
+  `data-model-design` (already generic-ish in the standalone kit).
+- **Adapter-scoped optional skills:** `migrate-orm/mikro-orm`, `ui-consistency/open-mercato-ui`,
+  `auto-upgrade-0.4.10-to-0.5.0`, `integration-builder` (Mercato marketplace),
+  `dev-container-maintenance`.
 
-These belong in a **domain pack** that layers on top of the core, not in the core itself.
+Net: very little is truly discarded — most "domain" content becomes an adapter reference.
 
 ---
 
-## 4. Distribution mechanisms — options & recommendation
+## 4. Distribution: copy-at-init + conflict-aware sync (decision #1)
 
-The user specifically asked about **git submodule**. Here is the honest comparison, informed by
-the approaches open-mercato itself evaluated.
+Port `agentic-setup.ts` into a standalone, dependency-light CLI (Node, no `create-app` coupling):
 
-| Mechanism | How it works | Pros | Cons |
-|-----------|-------------|------|------|
-| **A. Git submodule** | Consumer repo adds the framework repo at e.g. `.ai/` or `vendor/agentic`; harness dirs symlink into it | Single source of truth; `git submodule update --remote` to refresh; exact version pinning via commit SHA | Submodule friction (detached HEAD, extra `--recurse-submodules`/`update --init` steps, CI gotchas); **can't locally edit** a skill without committing upstream; harness skill symlinks must resolve *into* the submodule path; contributors forget to init |
-| **B. Copy-at-init + CLI sync** *(open-mercato's choice)* | A CLI copies the kit into the repo once; a `sync` command refreshes from upstream with per-file conflict handling | Zero submodule friction; local edits allowed and respected; tool-agnostic; works for existing repos | Copies drift until synced; needs a distribution CLI/tool; harder to guarantee everyone is current |
-| **C. npm package** | `npm i -D @org/agentic-framework`; a `bin` runs `init`/`sync`; version via semver | Familiar versioning; lockfile pins it; easy `npx` bootstrap | Node-only ecosystem; postinstall side effects frowned upon; still needs an init step to place files |
-| **D. Claude Code plugin / marketplace** | Ship as a CC plugin | Native `/plugin` install, auto skill discovery | **Tool-specific** (Claude only) — loses Codex/Cursor; the very reason open-mercato rejected it |
+- `agentic init` — interactive or `--harness=claude-code,codex,…`, `--orm=`, `--ui=`, `--stack=`.
+  Copies the core kit, writes `framework.config.json`, runs the (generalized) `install-skills.sh`,
+  and invokes each selected **harness adapter** to wire its files + skills dir.
+- `agentic sync` — refreshes core skills/templates from the installed framework version.
+  **Conflict-aware**: locally modified files are never silently overwritten (per-file prompt /
+  `--ours`/`--theirs`/`--diff`), reusing the UX described in open-mercato's
+  `2026-04-24-mercato-cli-skills-sync.md` spec.
+- `agentic add <adapter>` / `agentic remove <adapter>` — install/uninstall an adapter pack
+  (drops its `references/*.md`, harness files, and tier additions; re-runs the installer).
 
-### Recommendation: a **layered hybrid**
-
-1. **This repo (`agentic-engineering-framework`) = the portable core** (Bucket A + Bucket B
-   templates). Harness-agnostic. No Mercato domain content.
-2. Support **both** consumption modes from day one, because they serve different users:
-   - **Submodule mode** for teams that want lockstep, audited, version-pinned adoption across
-     many internal repos (answers the user's question directly). Provide a one-command
-     `bootstrap` that adds the submodule and creates the per-harness symlinks.
-   - **Copy + `sync` mode** (port open-mercato's `agentic-setup.ts` logic) for repos that want
-     to own and locally tweak their skills, or that can't use submodules (e.g. some CI/import
-     flows). This is the lower-friction default and matches the proven open-mercato model.
-3. Keep **domain packs** (e.g. an `open-mercato` pack) as separate, opt-in overlays so the core
-   stays generic.
-
-The core insight to preserve: **`.ai/skills/` is the single source of truth; what changes is what
-gets symlinked/copied into each harness's directory.** Both submodule and copy modes honour that.
+Git submodule is **explicitly out of scope** for v1 (decision #1), but the layout keeps the
+"single source of truth = `.ai/skills/`" invariant, so a submodule mode could be added later
+without restructuring.
 
 ---
 
@@ -182,107 +164,97 @@ gets symlinked/copied into each harness's directory.** Both submodule and copy m
 
 ```
 agentic-engineering-framework/
-├── README.md                       # what it is, install both ways
+├── README.md
 ├── EXTRACTION_PLAN.md              # (this file)
-├── framework.config.example.json   # branch name, validation cmds, labels, paths
-├── bin/
-│   ├── agentic-init                # copy mode: place kit + wire harnesses
-│   ├── agentic-sync                # refresh skills (conflict-aware)
-│   └── install-skills.sh           # tiered per-skill symlink installer (ported)
-├── scripts/
-│   └── validate-skills-tiers.sh
-├── core/                           # the portable payload
-│   ├── ai/
-│   │   ├── skills/                 # Bucket A + genericized B skills
-│   │   │   ├── tiers.json
-│   │   │   ├── tiers.schema.json
-│   │   │   └── README.md
-│   │   ├── specs/{README.md,SPEC-000-template.md,AGENTS.md}
-│   │   ├── qa/…  runs/README.md  lessons.md
-│   ├── AGENTS.md.template          # {{PROJECT_NAME}} + generated Task Router region
-│   └── harnesses/
-│       ├── claude-code/{CLAUDE.md.template,settings.json,hooks/,mcp.json.example}
-│       ├── codex/{enforcement-rules.md,mcp.json.example}
-│       └── cursor/{rules/,hooks.json,hooks/,mcp.json.example}
-├── packs/                          # opt-in domain overlays
-│   └── open-mercato/               # ds-guardian, code-review rules, mikro-orm, task router rows…
-└── docs/
-    ├── adopting-via-submodule.md
-    ├── adopting-via-copy-sync.md
-    └── authoring-skills.md
+├── LICENSE                         # MIT, attribution to open-mercato
+├── package.json                    # exposes the `agentic` CLI bin
+├── bin/agentic                     # init / sync / add / remove
+├── scripts/{install-skills.sh, validate-skills-tiers.sh}
+├── core/
+│   ├── framework.config.example.json   # harness[], orm, ui, stack: paths/cmds/branch/labels
+│   ├── AGENTS.md.template              # skeleton + <!-- TASK_ROUTER_START/END --> region
+│   └── ai/
+│       ├── skills/                     # generic skill bodies + tiers.json + schema + README
+│       ├── specs/{README.md, SPEC-000-template.md, AGENTS.md}
+│       ├── qa/  runs/README.md  lessons.md
+├── adapters/
+│   ├── harness/{claude-code,codex,cursor}/   # wiring files + adapter.json manifest
+│   ├── orm/{mikro-orm,prisma,typeorm,drizzle}/   # references + optional skills
+│   ├── ui/{open-mercato-ui,shadcn,mui}/
+│   └── stack/{next-monorepo,generic-node}/
+├── packs/
+│   └── open-mercato/               # meta-pack: selects the Mercato adapters + Task Router rows
+└── docs/{getting-started.md, authoring-skills.md, authoring-adapters.md}
 ```
+
+Each adapter ships an `adapter.json` declaring: which skills it augments, the `references/*.md`
+it provides, harness/wiring files, and any tier additions — so `install-skills.sh` and the CLI
+can wire it generically.
 
 ---
 
 ## 6. Genericization tasks (concrete)
 
-1. **Introduce `framework.config.json`** with: default branch (`develop`/`main`), validation
-   command list, PR label vocabulary, and path map (`modulesRoot`, `specsRoot`). Skills read it
-   instead of hard-coding `yarn typecheck` / `develop` / `packages/core/...`.
-2. **Templatize `AGENTS.md`**: keep the section skeleton; mark the Task Router as a
-   generated/overlay region (`<!-- TASK_ROUTER_START/END -->`) so packs can inject rows — mirrors
-   the existing Codex marker-splice technique.
-3. **Split `code-review`** into harness logic + `references/project-rules.md` (empty in core).
-4. **Parameterize paths** in `spec-writing`, `implement-spec`, `integration-tests`,
-   `auto-*-pr` (modules root, test dirs, branch).
-5. **Port `install-skills.sh`** verbatim (it only needs `jq` + a git root) and reuse `tiers.json`.
-6. **Port `agentic-setup.ts`** into a small standalone CLI (drop the `create-app` coupling; keep
-   placeholder substitution, per-tool generators, symlink + Codex marker-splice logic).
-7. **Move Mercato-only skills** into `packs/open-mercato/` and have a pack manifest declare which
-   tiers/skills it adds.
+1. **`framework.config.json`** — the keystone. Fields: `harnesses[]`, `orm`, `ui`, `stack`,
+   `paths` (`modulesRoot`, `specsRoot`, `testsRoot`), `validation` (command list), `git`
+   (`defaultBranch`, PR `labels`). Skills + scripts read it instead of hard-coding.
+2. **Harness adapter interface** — formalize `adapter.json` so the CLI loops over harnesses
+   instead of the hard-coded `generateClaudeCode/Codex/Cursor` functions; port the Codex
+   marker-splice and per-harness skills-symlink as adapter operations.
+3. **Generalize `install-skills.sh`** — derive the target harness dirs from active adapters;
+   keep `jq`-only footprint; add a `--copy` fallback for symlink-hostile environments.
+4. **Templatize `AGENTS.md`** — keep Always / Ask First / Never / Validation / Task Router /
+   Core Principles skeleton; make the Task Router an adapter-injected region between markers.
+5. **Split `code-review`** into generic logic + `references/project-rules.md` (empty in core,
+   filled by stack/UI adapters).
+6. **Generalize `migrate-mikro-orm` → `migrate-orm`** and `backend-ui-design`+`ds-guardian` →
+   `ui-consistency`, moving specifics into `adapters/orm/*` and `adapters/ui/*`.
+7. **Parameterize paths/commands** across `spec-writing`, `implement-spec`, `integration-tests`,
+   `auto-*-pr` via `framework.config.json`.
+8. **Author the `open-mercato` meta-pack** that re-selects the Mercato adapters, proving the
+   round-trip (generic core + pack ≈ original experience).
 
 ---
 
 ## 7. Phased roadmap
 
-- **Phase 0 — Decisions (blocking):** confirm primary consumption mode (submodule vs copy vs
-  both), licensing/attribution from open-mercato (it's MIT — preserve `LICENSE`), and which
-  harnesses to support v1 (recommend all three since the kit already does).
-- **Phase 1 — Lift the core skeleton:** copy Bucket A files into `core/`; port
-  `install-skills.sh`, `validate-skills-tiers.sh`, `tiers.json`, harness wiring. Get
-  `install-skills.sh --list` working in this repo against a minimal skill set.
-- **Phase 2 — Genericize Bucket B:** add `framework.config.json`, templatize `AGENTS.md`, split
-  `code-review`, parameterize paths. Trim each skill's `tiers.json` membership.
-- **Phase 3 — Build the two adoption paths:**
-  - Submodule: `docs/adopting-via-submodule.md` + a `bootstrap` script that runs
-    `git submodule add`, then `install-skills.sh`, then writes harness symlinks pointing into the
-    submodule.
-  - Copy/sync: port `agentic-init` + a conflict-aware `agentic-sync` (the open-mercato spec
-    describes the conflict UX to copy).
-- **Phase 4 — Domain pack:** move Mercato-only skills/rules into `packs/open-mercato/`; prove the
-  core stays green without it.
-- **Phase 5 — Dogfood:** adopt the framework into 1–2 unrelated test repos via *each* mode; fix
-  path/symlink assumptions surfaced.
-- **Phase 6 — Docs + release:** author `authoring-skills.md`, tag `v0.1.0`.
+- **Phase 1 — Core skeleton:** copy portable files into `core/`; port `install-skills.sh`,
+  `validate-skills-tiers.sh`, `tiers.json`. Get `install-skills.sh --list` green here.
+- **Phase 2 — Config + harness adapters:** add `framework.config.json`, define `adapter.json`,
+  port claude-code/codex/cursor as harness adapters, build `bin/agentic init`.
+- **Phase 3 — Generic skills:** move Bucket-generic skills into core; templatize `AGENTS.md`;
+  split `code-review`; parameterize paths/commands.
+- **Phase 4 — Domain adapters:** `migrate-orm` (+mikro-orm/prisma), `ui-consistency`
+  (+open-mercato-ui/shadcn), assemble `packs/open-mercato`.
+- **Phase 5 — Sync:** build `agentic sync` (+`add`/`remove`) with conflict UX.
+- **Phase 6 — Dogfood + docs:** adopt into 1–2 unrelated repos with different orm/ui/harness
+  combos; write `authoring-skills.md` + `authoring-adapters.md`; tag `v0.1.0`.
 
 ---
 
-## 8. Risks & open decisions
+## 8. Risks & open items
 
-- **Symlink portability:** Windows (non-dev-mode) and some CI checkouts don't honour symlinks.
-  `install-skills.sh` is symlink-based. Mitigation: offer a `--copy` fallback that hard-copies
-  skill folders, and document Git `core.symlinks`.
-- **Submodule + symlink interaction:** symlinks must resolve into the submodule path; relative
-  link targets differ from the current `../../.ai/skills/<skill>`. The installer needs a
-  configurable skills root.
-- **Skill context budget:** the whole reason for tiers — keep `core` small so harnesses don't
-  truncate descriptions. Any pack that adds many skills must default them to opt-in tiers.
-- **Drift vs control tradeoff** is the real decision: submodule favours control, copy favours
-  ergonomics. The hybrid defers it to the adopter, at the cost of maintaining two paths.
-- **Upstream sync:** decide whether the core tracks open-mercato's `.ai/skills` (and how to pull
-  improvements) or hard-forks. A `sync-from-upstream` script + a documented diff process is
-  cheaper than manual reconciliation.
+- **Symlink portability:** Windows (non-dev-mode) and some CI checkouts don't honour symlinks;
+  `install-skills.sh` is symlink-based → ship the `--copy` fallback and document `core.symlinks`.
+- **Generalization effort:** splitting skills into generic-body + adapter is more upfront work
+  than dropping domain content. Mitigate by adapterizing **one** axis end-to-end first (ORM) as a
+  proof, then replicate the pattern.
+- **Adapter contract drift:** if a skill's generic body and its adapter references disagree,
+  agents get confused. The `_contract.md` per skill is the guard — validate adapters against it.
+- **Skill context budget:** keep `core` tier small; every adapter-added skill defaults to an
+  opt-in tier so harness description budgets don't overflow.
+- **Hard-fork maintenance (decision #4):** improvements in open-mercato won't flow in
+  automatically. Accepted tradeoff; optionally cherry-pick notable upstream skill changes by hand.
 
 ---
 
-## 9. TL;DR for the impatient
+## 9. TL;DR
 
-- The framework = **skill catalog + tier manifest + tiered symlink installer + AGENTS/CLAUDE
-  convention + multi-harness wiring**, with a meta-skill set for authoring more of it.
-- Open-mercato already ships a portable version (`packages/create-app/agentic/` +
-  `yarn mercato agentic:init`) and **chose copy+CLI-sync over submodule/plugin** for skills.
-- Extract the **harness-agnostic core** into this repo; push all Mercato domain content into an
-  opt-in **pack**.
-- Support **both** the user's submodule idea (for lockstep teams) **and** copy+sync (lower
-  friction, proven model) — they share one source of truth: `.ai/skills/`.
+- Framework = **skill catalog + tier manifest + tiered installer + AGENTS/CLAUDE convention +
+  per-harness wiring**, plus meta-skills for authoring more.
+- **Decisions:** copy+CLI-sync (no submodule) · harness-agnostic via adapters · **generalize**
+  domain skills into generic-body + adapters (ORM / UI / stack), don't discard · hard fork.
+- Organizing principle everywhere: **generic core + pluggable adapters**, all reading one
+  `framework.config.json`, all sharing one source of truth: `.ai/skills/`.
+- An opt-in `open-mercato` pack reselects the Mercato adapters to reconstruct today's behavior.
 ```
