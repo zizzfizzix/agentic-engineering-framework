@@ -185,10 +185,11 @@ Port `agentic-setup.ts` into a standalone, dependency-light CLI (Node, no `creat
   (generalized) `install-skills.sh`, and invokes each selected **harness adapter** to wire its
   files + skills dir.
 - `agentic sync` — recomposes skills/templates from the installed framework version and runs a
-  **git-native 3-way merge** (decision #6): the last render is BASE, the consumer file is LOCAL,
-  the fresh render is NEW. Uses `git merge-file` (or a vendor branch + `git merge`) so the result
+  **git-native 3-way merge** (decision #6): the last render (snapshotted at `.ai/.base/`) is BASE,
+  the consumer file is LOCAL, the fresh render is NEW. Uses `git merge-file` so the result
   + standard `<<<<<<<`/`>>>>>>>` markers land in the working tree; you review with `git diff` and
-  commit — local edits preserved, no custom merge engine, no silent clobber.
+  commit — local edits preserved, no custom merge engine, no silent clobber. _(PoC landed: BASE
+  snapshot + all four reconcile cases proven; see `docs/render-poc.md`.)_
 - `agentic add <adapter>` / `agentic remove <adapter>` — re-render the affected skills with the
   new adapter selection (drops/adds slot content, harness files, tier additions; re-runs the
   installer). Removing the last adapter on an axis uninstalls that axis's skills.
@@ -391,7 +392,8 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 - **Phase 4 — Domain adapters:** `migrate-orm` (+mikro-orm/prisma), `ui-consistency`
   (+open-mercato-ui/shadcn), assemble `packs/open-mercato`.
 - **Phase 5 — Sync + provenance:** build `agentic sync` (+`add`/`remove`) with git-native 3-way
-  merge; ensure the renderer is deterministic and emits the provenance manifest.
+  merge; ensure the renderer is deterministic and emits the provenance manifest. _(PoC landed:
+  `agentic sync` via `git merge-file` against a `.ai/.base/` snapshot; `add`/`remove` still ahead.)_
 - **Phase 6 — Self-development + feedback loop:** author `improve-framework` (§4a, incl. feedback
   mode) and `triage-feedback` (§4b); add scope-tagged lessons, the `.ai/framework-feedback/`
   outbox, and the synced `lessons.framework.md`; validate the full round-trip from a real consumer

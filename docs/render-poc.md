@@ -65,8 +65,26 @@ It does three things:
 `examples/consumer/` is a committed sample of a full `init` (drizzle + shadcn, claude-code +
 codex).
 
+## Sync — git-native 3-way merge (`agentic sync`)
+
+`init` snapshots a **BASE** under `<out>/.ai/.base/`. `agentic sync` re-renders from the
+(updated) framework source (NEW), reads the on-disk file (LOCAL, possibly hand-edited) and the
+BASE, and reconciles per skill — no custom merge engine, just `git merge-file`:
+
+| Situation | Result |
+|-----------|--------|
+| NEW == BASE | framework unchanged; local edits left untouched |
+| LOCAL == BASE | fast-forward: write NEW |
+| both changed, different regions | clean 3-way merge — local edit **and** framework update both kept |
+| both changed, same region | standard `<<<<<<< ours / ======= / >>>>>>> theirs` markers; exit 2; review with `git diff` |
+
+All four proven end-to-end (see commit history): a fast-forward, a clean merge that preserved a
+local edit while taking a framework note, and a same-line collision that produced labelled
+conflict markers. This is exactly decision #6: same review-and-commit ritual as a plain sync, but
+local edits survive instead of being clobbered.
+
 ## Not yet (deliberately)
 
-Still ahead: the `sync` 3-way merge driven by the manifest digests, the genericized
-`install-skills.sh` tier installer, `AGENTS.md` rendering, and the `improve-framework` /
-`triage-feedback` skills. See the roadmap (§7).
+Still ahead: the genericized `install-skills.sh` tier installer, `AGENTS.md` rendering, and the
+`improve-framework` / `triage-feedback` skills (now writable against the stable provenance +
+manifest). See the roadmap (§7).
