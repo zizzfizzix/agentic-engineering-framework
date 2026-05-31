@@ -1,29 +1,29 @@
 # Render PoC — the executable contract
 
-`bin/render.mjs` is a dependency-free proof that the §5/§3.3a render model works. It is the
-seed of the real `agentic init`/`sync` renderer; the interface it exercises
+`agentic render` (the pure renderer in `src/core/render.ts`, exposed as a CLI subcommand) proves
+the §5/§3.3a render model. The same renderer backs `agentic init`/`sync`; the interface it exercises
 (`framework.config.json` + `adapter.json` + the slot convention) is what everything else builds on.
 
 ## Run it
 
 ```bash
-# default config (orm=drizzle)
-node bin/render.mjs --skill migrate-orm --out /tmp/out
+# default config (orm=drizzle); omit --out to stream the body to stdout
+pnpm cli render --skill migrate-orm --out /tmp/out
 
 # pick a different ORM
 sed 's/"drizzle"/"mikro-orm"/' framework.config.example.json > /tmp/cfg.json
-node bin/render.mjs --config /tmp/cfg.json --skill migrate-orm --out /tmp/out
+pnpm cli render --config /tmp/cfg.json --skill migrate-orm --out /tmp/out
 
 # no ORM -> slots pruned (in practice the skill wouldn't install at all)
 ```
 
 ## What it proves
 
-| Property | How | Evidence |
-|----------|-----|----------|
-| **Convergence** (decision #5) | only the selected adapter's fragments fill slots; others pruned | drizzle render: 0 MikroORM mentions; mikro render: 0 Drizzle mentions; null-orm: 0 slot markers left |
-| **Determinism** (decision #6) | normalized newlines, stable ordering, no timestamps; `digest` over inputs+selection | two runs → identical `digest` and byte-identical `SKILL.md` |
-| **Provenance** (decisions #7/#8) | every output line range maps to a source file / adapter / slot | `provenance.json` `regions[]` |
+| Property                         | How                                                                                 | Evidence                                                                                             |
+| -------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Convergence** (decision #5)    | only the selected adapter's fragments fill slots; others pruned                     | drizzle render: 0 MikroORM mentions; mikro render: 0 Drizzle mentions; null-orm: 0 slot markers left |
+| **Determinism** (decision #6)    | normalized newlines, stable ordering, no timestamps; `digest` over inputs+selection | two runs → identical `digest` and byte-identical `SKILL.md`                                          |
+| **Provenance** (decisions #7/#8) | every output line range maps to a source file / adapter / slot                      | `provenance.json` `regions[]`                                                                        |
 
 `examples/rendered/{migrate-orm,ui-consistency}/` are committed sample outputs for reference.
 
@@ -43,18 +43,19 @@ The convention was stress-tested on a second axis (UI) with deliberately differe
 
 ## Full set + harness wiring — `agentic init`
 
-`bin/agentic.mjs` renders the **whole configured skill set** and wires each harness:
+`agentic init` renders the **whole configured skill set** and wires each harness:
 
 ```bash
-node bin/agentic.mjs init --out examples/consumer        # symlink mode (default)
-node bin/agentic.mjs init --out /tmp/c --copy            # copy mode (symlink-hostile envs)
+pnpm cli init --out examples/consumer        # symlink mode (default)
+pnpm cli init --out /tmp/c --copy            # copy mode (symlink-hostile envs)
+pnpm cli init --interactive                  # build the config via prompts (@clack/prompts)
 ```
 
 It does three things:
 
 1. **Selects skills** = tier membership (`core/ai/skills/tiers.json`) **AND** required-axis
-   availability (`tiers.requires`). Proven: with `ui: null`, `ui-consistency` is *not installed
-   at all* — "skipped (axis not configured)" — not merely pruned.
+   availability (`tiers.requires`). Proven: with `ui: null`, `ui-consistency` is _not installed
+   at all_ — "skipped (axis not configured)" — not merely pruned.
 2. **Renders** each selected skill into `<out>/.ai/skills/<skill>/` and writes
    `<out>/.ai/.render-manifest.json` — the per-skill digest + inputs map that is the **sync base**
    (decision #6) and the routing source for `improve-framework` (decisions #7/#8).
@@ -71,12 +72,12 @@ codex).
 (updated) framework source (NEW), reads the on-disk file (LOCAL, possibly hand-edited) and the
 BASE, and reconciles per skill — no custom merge engine, just `git merge-file`:
 
-| Situation | Result |
-|-----------|--------|
-| NEW == BASE | framework unchanged; local edits left untouched |
-| LOCAL == BASE | fast-forward: write NEW |
-| both changed, different regions | clean 3-way merge — local edit **and** framework update both kept |
-| both changed, same region | standard `<<<<<<< ours / ======= / >>>>>>> theirs` markers; exit 2; review with `git diff` |
+| Situation                       | Result                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| NEW == BASE                     | framework unchanged; local edits left untouched                                            |
+| LOCAL == BASE                   | fast-forward: write NEW                                                                    |
+| both changed, different regions | clean 3-way merge — local edit **and** framework update both kept                          |
+| both changed, same region       | standard `<<<<<<< ours / ======= / >>>>>>> theirs` markers; exit 2; review with `git diff` |
 
 All four proven end-to-end (see commit history): a fast-forward, a clean merge that preserved a
 local edit while taking a framework note, and a same-line collision that produced labelled

@@ -11,17 +11,17 @@
 
 These were confirmed with the project owner and shape the rest of the plan:
 
-| # | Decision | Consequence |
-|---|----------|-------------|
-| 1 | **Distribution = copy + CLI sync only** | Port open-mercato's `agentic:init` + a conflict-aware `sync`. No git-submodule path (deferred, not built). |
-| 2 | **Harness-agnostic** | Built-in adapters for Claude Code, Codex, Cursor, but the wiring is an **adapter interface** so new harnesses (Windsurf, Cline, Gemini CLI, …) drop in without touching skills. |
-| 3 | **Generalize, don't discard** | Domain skills are split into a **generic body + adapter references**. Specifics (ORM, design system, stack) live in adapters following the same pattern as harnesses. Only truly irreducible one-shots stay adapter-scoped. |
-| 4 | **Hard fork, diverge** | Snapshot from open-mercato and evolve independently. No upstream-sync machinery; MIT `LICENSE` + attribution preserved. |
-| 5 | **Author modular, ship converged** | Source stays fragmented (generic body + per-adapter fragments) for maintainability. `init` **resolves and flattens** the selected adapters into concrete, self-contained skills in the consumer repo — irrelevant adapters are omitted entirely (drizzle, not prisma). No runtime pointer-chasing. |
-| 6 | **`sync` = git-native 3-way merge** | Sync stores the last render as BASE and uses git's own machinery (`git merge-file` / vendor branch + `git merge`) to combine framework updates with local edits. Standard `<<<<<<<` conflict markers land in the working tree; review with `git diff` and commit — same ritual as a plain copy-sync, but local edits are preserved instead of clobbered. No custom merge engine. |
-| 7 | **The framework develops itself via a skill** | The round-trip (fix/enhance the framework from inside a consumer repo) is an opt-in skill, `improve-framework`, not bespoke CLI commands. It knows the render model + provenance, edits the framework source (delegating heavy work to a subagent), re-renders, and syncs back. Dissolves the need for engineered `link`/`promote` commands. See §4a. |
-| 8 | **Re-close the self-improving loop across the boundary, semi-automatically** | open-mercato's loop works because it's a monorepo; split out, it breaks at the repo edge. Re-close it with **scope-tagged lessons** (`project` stays local; `framework`/`adapter:*` go to a `.ai/framework-feedback/` outbox). **Capture is continuous + local-only and on by default**; **upstreaming is a scheduled job** that batches the outbox into a **draft PR** to the framework (reusing the `auto-create-pr` machinery), human-gated at *merge* not creation; a framework-side `triage-feedback` loop dedupes across consumers; merged improvements flow back via scheduled `sync` PRs. Default-on but **asked at init** (private repos default to a private channel). Sanitized; git/GitHub only, no telemetry. See §4b. |
-| 9 | **The framework repo is a special consumer; develop it in "dev mode"** | Source and usage coincide here (like a monorepo), so it can't use converged `init`. Two skill populations: **shipped** (`core/ai/skills/`, the product — authored + validated, not run here) vs **dev** (`dev/skills/`, the toolchain — `adapter-creator`, skill authoring, the dev side of `improve-framework`). `agentic dev` symlinks the maintainer's harness to the **dev skills' source** (gitignored, regenerated). Changes are validated by a **render matrix** (`bin/check-render.mjs`: deterministic, no leftover/orphan slots, all slots fillable) — the same gate `improve-framework` runs before a PR. See §4c. |
+| #   | Decision                                                                     | Consequence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Distribution = copy + CLI sync only**                                      | Port open-mercato's `agentic:init` + a conflict-aware `sync`. No git-submodule path (deferred, not built).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 2   | **Harness-agnostic**                                                         | Built-in adapters for Claude Code, Codex, Cursor, but the wiring is an **adapter interface** so new harnesses (Windsurf, Cline, Gemini CLI, …) drop in without touching skills.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 3   | **Generalize, don't discard**                                                | Domain skills are split into a **generic body + adapter references**. Specifics (ORM, design system, stack) live in adapters following the same pattern as harnesses. Only truly irreducible one-shots stay adapter-scoped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 4   | **Hard fork, diverge**                                                       | Snapshot from open-mercato and evolve independently. No upstream-sync machinery; MIT `LICENSE` + attribution preserved.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 5   | **Author modular, ship converged**                                           | Source stays fragmented (generic body + per-adapter fragments) for maintainability. `init` **resolves and flattens** the selected adapters into concrete, self-contained skills in the consumer repo — irrelevant adapters are omitted entirely (drizzle, not prisma). No runtime pointer-chasing.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 6   | **`sync` = git-native 3-way merge**                                          | Sync stores the last render as BASE and uses git's own machinery (`git merge-file` / vendor branch + `git merge`) to combine framework updates with local edits. Standard `<<<<<<<` conflict markers land in the working tree; review with `git diff` and commit — same ritual as a plain copy-sync, but local edits are preserved instead of clobbered. No custom merge engine.                                                                                                                                                                                                                                                                                                                                                    |
+| 7   | **The framework develops itself via a skill**                                | The round-trip (fix/enhance the framework from inside a consumer repo) is an opt-in skill, `improve-framework`, not bespoke CLI commands. It knows the render model + provenance, edits the framework source (delegating heavy work to a subagent), re-renders, and syncs back. Dissolves the need for engineered `link`/`promote` commands. See §4a.                                                                                                                                                                                                                                                                                                                                                                               |
+| 8   | **Re-close the self-improving loop across the boundary, semi-automatically** | open-mercato's loop works because it's a monorepo; split out, it breaks at the repo edge. Re-close it with **scope-tagged lessons** (`project` stays local; `framework`/`adapter:*` go to a `.ai/framework-feedback/` outbox). **Capture is continuous + local-only and on by default**; **upstreaming is a scheduled job** that batches the outbox into a **draft PR** to the framework (reusing the `auto-create-pr` machinery), human-gated at _merge_ not creation; a framework-side `triage-feedback` loop dedupes across consumers; merged improvements flow back via scheduled `sync` PRs. Default-on but **asked at init** (private repos default to a private channel). Sanitized; git/GitHub only, no telemetry. See §4b. |
+| 9   | **The framework repo is a special consumer; develop it in "dev mode"**       | Source and usage coincide here (like a monorepo), so it can't use converged `init`. Two skill populations: **shipped** (`core/ai/skills/`, the product — authored + validated, not run here) vs **dev** (`dev/skills/`, the toolchain — `adapter-creator`, skill authoring, the dev side of `improve-framework`). `agentic dev` symlinks the maintainer's harness to the **dev skills' source** (gitignored, regenerated). Changes are validated by a **render matrix** (`scripts/check-render.ts` via `pnpm gate`: deterministic, no leftover/orphan slots, all slots fillable) — the same gate `improve-framework` runs before a PR. See §4c.                                                                                     |
 
 The unifying idea: **a generic core + pluggable adapters along every axis of variation**
 (harness, ORM, UI/design-system, stack/config) — but the fragmentation lives **only in the
@@ -50,7 +50,7 @@ Per **decision #3**, layer 2 is not left behind — it is **decomposed into gene
 adapters**. The framework becomes genuinely reusable in unrelated repos while still letting an
 "open-mercato adapter pack" restore the full Mercato experience.
 
-**Key finding:** open-mercato has *already* extracted a copy-based version of this for downstream
+**Key finding:** open-mercato has _already_ extracted a copy-based version of this for downstream
 apps. `packages/create-app/agentic/` is a purpose-built portable kit, and `yarn mercato
 agentic:init` copies it into any repo, wiring Claude Code, Codex, and Cursor. That proves the
 copy-at-init model (decision #1) and shows the framework is already **profile-able** — the same
@@ -61,25 +61,28 @@ skeleton ships different skill payloads per context. We build on that and genera
 ## 2. Inventory: what exists today
 
 ### 2.1 Root-level convention files
-| Path | Role | Disposition |
-|------|------|-------------|
-| `AGENTS.md` (40 KB) | Master agent guide + Task Router | Templatize skeleton; Task Router becomes an adapter-injected region |
-| `CLAUDE.md` | One line: `@AGENTS.md` | Portable pattern — keep |
-| Per-package `CLAUDE.md` / `AGENTS.md` | Local architecture rules | Mercato-specific → open-mercato adapter pack |
+
+| Path                                  | Role                             | Disposition                                                         |
+| ------------------------------------- | -------------------------------- | ------------------------------------------------------------------- |
+| `AGENTS.md` (40 KB)                   | Master agent guide + Task Router | Templatize skeleton; Task Router becomes an adapter-injected region |
+| `CLAUDE.md`                           | One line: `@AGENTS.md`           | Portable pattern — keep                                             |
+| Per-package `CLAUDE.md` / `AGENTS.md` | Local architecture rules         | Mercato-specific → open-mercato adapter pack                        |
 
 ### 2.2 The `.ai/` directory
-| Subdir | Contents | Disposition |
-|--------|----------|-------------|
-| `.ai/skills/` | 35 skill folders + `tiers.json` + `tiers.schema.json` + `README.md` | **Crown jewel** — generic bodies into core, specifics into adapters (§3) |
-| `.ai/specs/` | ~150 specs + `README.md`, `AGENTS.md`, `SPEC-000` template, `LICENSE.md` | Convention + template into core; content stays in Mercato history |
-| `.ai/runs/` | Per-run plan/handoff/notify artifacts | Convention into core |
-| `.ai/qa/` | Playwright scenarios/tests + `AGENTS.md` | Convention into core; test-runner is an adapter concern |
-| `.ai/analysis/`, `.ai/reports/`, `.ai/drafts/` | Skill output sinks | Convention into core |
-| `.ai/scripts/` | `ds-health-check.sh`, color/typography migrators | Design-system adapter |
-| `.ai/ds-rules.md`, `.ai/ui-components.md` | DS rules | Design-system adapter references |
-| `.ai/lessons.md` | Lessons log | Pattern into core (empty starter) |
+
+| Subdir                                         | Contents                                                                 | Disposition                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `.ai/skills/`                                  | 35 skill folders + `tiers.json` + `tiers.schema.json` + `README.md`      | **Crown jewel** — generic bodies into core, specifics into adapters (§3) |
+| `.ai/specs/`                                   | ~150 specs + `README.md`, `AGENTS.md`, `SPEC-000` template, `LICENSE.md` | Convention + template into core; content stays in Mercato history        |
+| `.ai/runs/`                                    | Per-run plan/handoff/notify artifacts                                    | Convention into core                                                     |
+| `.ai/qa/`                                      | Playwright scenarios/tests + `AGENTS.md`                                 | Convention into core; test-runner is an adapter concern                  |
+| `.ai/analysis/`, `.ai/reports/`, `.ai/drafts/` | Skill output sinks                                                       | Convention into core                                                     |
+| `.ai/scripts/`                                 | `ds-health-check.sh`, color/typography migrators                         | Design-system adapter                                                    |
+| `.ai/ds-rules.md`, `.ai/ui-components.md`      | DS rules                                                                 | Design-system adapter references                                         |
+| `.ai/lessons.md`                               | Lessons log                                                              | Pattern into core (empty starter)                                        |
 
 ### 2.3 The installer + tier system (port verbatim)
+
 - `scripts/install-skills.sh` — POSIX shell, reads `tiers.json`, creates **per-skill symlinks**
   under each harness dir. Idempotent; `--with`, `--tiers`, `--all`, `--list`, `--clean`.
   Only assumes `jq` + a git root → **highly portable**. Generalize the harness-dir list so it is
@@ -89,6 +92,7 @@ skeleton ships different skill payloads per context. We build on that and genera
   harness "2% skill-description context budget" overflow by only symlinking what's needed.
 
 ### 2.4 The already-extracted kit: `packages/create-app/agentic/` (the model to port)
+
 ```
 packages/create-app/agentic/
 ├── shared/{AGENTS.md.template, ai/{skills,specs,qa,lessons.md}}   # {{PROJECT_NAME}}, slimmer skills
@@ -96,6 +100,7 @@ packages/create-app/agentic/
 ├── codex/{enforcement-rules.md, mcp.json.example}                # spliced between markers
 └── cursor/{rules/*.mdc, hooks.json, hooks/*.mjs, mcp.json.example}
 ```
+
 Driven by `packages/cli/src/lib/agentic-setup.ts`: `{{PROJECT_NAME}}` substitution, per-tool
 generators, skills symlink per harness, idempotent Codex marker-splice
 (`<!-- CODEX_ENFORCEMENT_RULES_START/END -->`), exposed as
@@ -109,6 +114,7 @@ port and generalize into a harness-adapter interface.**
 Each skill is split along a stable seam: **workflow (generic) vs facts (adapter)**.
 
 ### 3.1 The pattern
+
 ```
 .ai/skills/<skill>/
 ├── SKILL.md                 # generic workflow; references adapters by capability, not name
@@ -116,33 +122,36 @@ Each skill is split along a stable seam: **workflow (generic) vs facts (adapter)
     ├── _contract.md         # what an adapter for this skill must provide
     └── <adapter>.md         # injected/symlinked by an installed adapter pack
 ```
-`SKILL.md` says *"load the ORM cheatsheet for the active `orm` adapter from
-`framework.config.json`"* instead of hard-coding MikroORM. Adapters drop a `references/<adapter>.md`
+
+`SKILL.md` says _"load the ORM cheatsheet for the active `orm` adapter from
+`framework.config.json`"_ instead of hard-coding MikroORM. Adapters drop a `references/<adapter>.md`
 into the skill (copy or symlink at init/sync time).
 
 ### 3.2 Axes of variation (each an adapter family)
-| Axis | Generic skill(s) | Adapter examples | What the adapter provides |
-|------|------------------|------------------|---------------------------|
-| **Harness** | n/a (wiring only) | claude-code, codex, cursor, windsurf, cline | settings/rules files, hook format, skills-dir path, mcp example |
-| **ORM** | `data-model-design`, `migrate-orm` (generalized from `migrate-mikro-orm`) | mikro-orm, prisma, typeorm, drizzle | entity DSL cheatsheet, migration codemods, query idioms |
-| **UI / Design system** | `ui-consistency` (from `backend-ui-design` + `ds-guardian`) | open-mercato-ui, shadcn, mui | component catalog, semantic-token map, health-check script |
-| **Stack / repo config** | `code-review`, `implement-spec`, `integration-tests`, `auto-*-pr` | next.js, generic-node, monorepo, single-app | paths (`modulesRoot`, `specsRoot`), validation commands, branch + label vocab, test runner |
-| **One-shot migrations** | — | `upgrade-0.4.10-to-0.5.0` (Mercato-only) | stays as an adapter-scoped optional skill |
+
+| Axis                    | Generic skill(s)                                                          | Adapter examples                            | What the adapter provides                                                                  |
+| ----------------------- | ------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Harness**             | n/a (wiring only)                                                         | claude-code, codex, cursor, windsurf, cline | settings/rules files, hook format, skills-dir path, mcp example                            |
+| **ORM**                 | `data-model-design`, `migrate-orm` (generalized from `migrate-mikro-orm`) | mikro-orm, prisma, typeorm, drizzle         | entity DSL cheatsheet, migration codemods, query idioms                                    |
+| **UI / Design system**  | `ui-consistency` (from `backend-ui-design` + `ds-guardian`)               | open-mercato-ui, shadcn, mui                | component catalog, semantic-token map, health-check script                                 |
+| **Stack / repo config** | `code-review`, `implement-spec`, `integration-tests`, `auto-*-pr`         | next.js, generic-node, monorepo, single-app | paths (`modulesRoot`, `specsRoot`), validation commands, branch + label vocab, test runner |
+| **One-shot migrations** | —                                                                         | `upgrade-0.4.10-to-0.5.0` (Mercato-only)    | stays as an adapter-scoped optional skill                                                  |
 
 ### 3.3a Convergence: modular source → flat output (decision #5)
 
 The §3.1 split is a **source-tree** concern, not what lands in the consumer repo. Two models
 were considered:
 
-| | Runtime indirection (rejected for output) | Init-time resolution (chosen) |
-|---|---|---|
-| Skill body | Generic; follows a pointer to `references/<adapter>.md` at run time | Generic body **composed with** the selected adapter fragment into one flat `SKILL.md` |
-| Irrelevant adapters | Files linger in the repo (prisma.md while using drizzle) | **Omitted entirely** — never written |
-| Agent cost | Resolve config → pick adapter → load reference (extra hops, risk of loading the wrong/both) | Reads one self-contained file |
-| Repo feel | Fragmented | Clean, minimal |
+|                     | Runtime indirection (rejected for output)                                                   | Init-time resolution (chosen)                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Skill body          | Generic; follows a pointer to `references/<adapter>.md` at run time                         | Generic body **composed with** the selected adapter fragment into one flat `SKILL.md` |
+| Irrelevant adapters | Files linger in the repo (prisma.md while using drizzle)                                    | **Omitted entirely** — never written                                                  |
+| Agent cost          | Resolve config → pick adapter → load reference (extra hops, risk of loading the wrong/both) | Reads one self-contained file                                                         |
+| Repo feel           | Fragmented                                                                                  | Clean, minimal                                                                        |
 
 **`init` is a resolver/renderer, not a copier.** Given `framework.config.json`
 (`orm: drizzle`, `ui: shadcn`, …) it:
+
 1. Selects which skills install at all (no `orm` → no `migrate-orm`).
 2. For each, composes the generic body + **only the selected adapter fragments** via named
    slots — reusing open-mercato's marker-splice technique
@@ -156,6 +165,7 @@ local edits. (A future `--mode=linked` could keep the modular split + symlinks f
 who want live adapter-switching, but converged is the default and the only v1 mode.)
 
 ### 3.3 Disposition of each existing skill
+
 - **Stay generic in core (light edits):** `skill-creator`, `spec-writing`, `fix-specs`,
   `create-agents-md`, `root-cause`, `verify-in-repo`, `open-pr`, `fix`, `check-and-commit`,
   `pre-implement-spec`, `implement-spec`, `integration-tests`, `smart-test`, and the
@@ -188,9 +198,9 @@ Port `agentic-setup.ts` into a standalone, dependency-light CLI (Node, no `creat
 - `agentic sync` — recomposes skills/templates from the installed framework version and runs a
   **git-native 3-way merge** (decision #6): the last render (snapshotted at `.ai/.base/`) is BASE,
   the consumer file is LOCAL, the fresh render is NEW. Uses `git merge-file` so the result
-  + standard `<<<<<<<`/`>>>>>>>` markers land in the working tree; you review with `git diff` and
-  commit — local edits preserved, no custom merge engine, no silent clobber. _(PoC landed: BASE
-  snapshot + all four reconcile cases proven; see `docs/render-poc.md`.)_
+  - standard `<<<<<<<`/`>>>>>>>` markers land in the working tree; you review with `git diff` and
+    commit — local edits preserved, no custom merge engine, no silent clobber. _(PoC landed: BASE
+    snapshot + all four reconcile cases proven; see `docs/render-poc.md`.)_
 - `agentic add <adapter>` / `agentic remove <adapter>` — re-render the affected skills with the
   new adapter selection (drops/adds slot content, harness files, tier additions; re-runs the
   installer). Removing the last adapter on an axis uninstalls that axis's skills.
@@ -200,7 +210,7 @@ Git submodule is **explicitly out of scope** for v1 (decision #1), but the layou
 without restructuring.
 
 The CLI stays deliberately **mechanical and deterministic** — `init`, `sync`, `add`, `remove`,
-render. The *judgment-heavy* work of changing the framework itself lives in a skill, §4a.
+render. The _judgment-heavy_ work of changing the framework itself lives in a skill, §4a.
 
 ---
 
@@ -213,10 +223,11 @@ tier; normal consumers never load it) and encodes the round-trip knowledge:
 **Why a skill, not `link`/`promote` commands.** Routing a consumer-side edit back to the right
 place is judgment, not mechanics: does this fix belong in the generic body, the `drizzle`
 fragment, or a specific slot? An agent reasons about that well given provenance breadcrumbs; a
-CLI command would need brittle heuristics. So we encode the *workflow* and let the agent drive
+CLI command would need brittle heuristics. So we encode the _workflow_ and let the agent drive
 plain `git` + the renderer + `sync`.
 
 **What the skill knows / does:**
+
 1. Locates the framework **source** — a path in `framework.config.json` (a local checkout) or
    clones it on demand into a scratch dir.
 2. Reads **provenance breadcrumbs** the renderer leaves (which source file + slot produced each
@@ -241,12 +252,12 @@ promote it using provenance. Both paths end at the framework source as the singl
 
 ## 4b. Re-closing the self-improving loop across the repo boundary (decision #8)
 
-**The problem.** open-mercato's self-improvement loop is concrete: root `AGENTS.md` says *"After
+**The problem.** open-mercato's self-improvement loop is concrete: root `AGENTS.md` says _"After
 corrections, update `.ai/lessons.md` or relevant AGENTS.md. Write rules that prevent the same
-mistake,"* and `lessons.md` is reread at session start. It works **only because framework and
+mistake,"_ and `lessons.md` is reread at session start. It works **only because framework and
 usage share one repo**. Extract the framework to N consumers and the loop severs at the boundary:
 a generic insight learned in consumer A never reaches the framework or consumers B…Z. We must
-re-close it for *generic* learnings while keeping *project* learnings local.
+re-close it for _generic_ learnings while keeping _project_ learnings local.
 
 **Scope tag = the fork.** Every captured lesson gets a `scope:` the agent proposes and the human
 confirms:
@@ -257,11 +268,11 @@ confirms:
 | `adapter:<axis>:<name>` (e.g. `adapter:orm:drizzle`) | outbox, tagged to the adapter | Yes — adapter-specific |
 
 **Outbox entry shape** (structured, sanitized): `scope`, target skill/adapter, symptom, proposed
-rule/fix, a *scrubbed* minimal repro, and **provenance** (the rendered region that triggered it —
+rule/fix, a _scrubbed_ minimal repro, and **provenance** (the rendered region that triggered it —
 the same map `sync`/`improve-framework` use).
 
 **Upstream channel = `improve-framework` feedback mode.** It drains the outbox → sanitizes →
-folds each lesson into the right framework *source* (skill body / adapter fragment / framework
+folds each lesson into the right framework _source_ (skill body / adapter fragment / framework
 `lessons.md`) → opens a framework **PR** (or issue when the fix isn't obvious). Subagent +
 provenance machinery already exist from §4a.
 
@@ -279,6 +290,7 @@ skill model. The originating outbox entry is retired once its content is detecte
 
 **Capture vs. send — the split that makes default-on safe (decision #8).** Two phases with
 different automation and different risk:
+
 - **Capture** (`feedback.capture`, **on by default**): agents write scope-tagged framework
   lessons to the outbox. **Zero egress** — just files in the repo — so it's safe to default on,
   and it also grows the consumer's own local lessons. Always reviewable in `git diff`.
@@ -286,9 +298,10 @@ different automation and different risk:
 
 **Automation & triggers (points 3/4).** Capture is continuous. Upstreaming is **scheduled, not
 human-triggered**:
+
 - A scheduled job (CI cron or the `/loop` skill) runs `improve-framework` feedback mode, which
   **batches** the outbox (reduces noise + eases dedup), sanitizes, and opens a **draft PR** to the
-  framework — this *is* `auto-create-pr` aimed at a different repo with the outbox as input.
+  framework — this _is_ `auto-create-pr` aimed at a different repo with the outbox as input.
 - A `Stop`/`SessionEnd` hook is a **nudge only** ("N unsent framework lessons — upstream now?"); it
   never does synchronous networked work.
 - The **human gate is at PR merge, not PR creation.** Three automated PR hops, each reviewed only
@@ -322,10 +335,11 @@ open-mercato had as a monorepo. It therefore can't be `init`'d like a normal con
 render flat skills on top of the modular source you're editing). Instead:
 
 **Two skill populations.**
-- **Shipped** (`core/ai/skills/`): the product. A maintainer *authors and validates* these; they
+
+- **Shipped** (`core/ai/skills/`): the product. A maintainer _authors and validates_ these; they
   are never "installed/run" in the framework repo.
 - **Dev** (`dev/skills/`): the toolchain for building the framework — `adapter-creator`, skill
-  authoring, the dev side of `improve-framework`. These *are* loaded into a maintainer's harness.
+  authoring, the dev side of `improve-framework`. These _are_ loaded into a maintainer's harness.
 
 **The "meta" install.** `agentic dev` symlinks the framework's own harness dirs
 (`.claude/skills`, `.codex/skills`, `.cursor/skills`) to the **dev skills' source**. No rendering,
@@ -335,15 +349,15 @@ harness dirs are **gitignored** (anchored to root so `examples/` stays tracked) 
 open-mercato has you run `install-skills`.
 
 **Validation = the render matrix.** You don't run shipped skills here; you prove them.
-`bin/check-render.mjs` renders every shipped skill across an adapter matrix and asserts:
-deterministic output, **no leftover `SLOT:` markers** (every slot filled or pruned), and **every
+`scripts/check-render.ts` (run via `pnpm gate`) renders every shipped skill across an adapter matrix
+and asserts: deterministic output, **no leftover `SLOT:` markers** (every slot filled or pruned), and **every
 declared slot is fillable** by some adapter on its axis (typo guard). This is the gate for any
 framework change — and exactly what `improve-framework` (§4a) runs before opening its PR, so
 direct development and consumer-driven contributions converge on one check.
 
 **Adding an axis member needs no code change.** A new ORM/UI/harness = drop a folder under
 `adapters/<axis>/<name>/` with an `adapter.json` (+ fragments). The `adapter-creator` dev skill
-scaffolds it; `check-render.mjs` verifies it.
+scaffolds it; `pnpm gate` verifies it.
 
 ---
 
@@ -354,9 +368,10 @@ agentic-engineering-framework/
 ├── README.md
 ├── EXTRACTION_PLAN.md              # (this file)
 ├── LICENSE                         # MIT, attribution to open-mercato
-├── package.json                    # exposes the `agentic` CLI bin
-├── bin/agentic                     # init / sync / add / remove
-├── scripts/{install-skills.sh, validate-skills-tiers.sh}
+├── package.json                    # exposes the `agentic` CLI bin (built to dist/)
+├── src/core/                       # pure renderer, tier select, 3-way merge, zod contracts
+├── src/cli/                        # the `agentic` CLI: init / sync / render / dev
+├── scripts/                        # dev-only: check-render (gate), gen-schemas, update-examples
 ├── core/
 │   ├── framework.config.example.json   # harness[], orm, ui, stack: paths/cmds/branch/labels
 │   ├── AGENTS.md.template              # skeleton + <!-- TASK_ROUTER_START/END --> region
@@ -485,7 +500,10 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
   upstream as draft PRs (reusing `auto-create-pr`) → framework triage/dedup → synced back to all
   consumers via `sync` PRs. Human-gated at merge; default-on but asked at init; git-only, no telemetry.
 - **The framework repo develops in "dev mode":** it's a special consumer (source == usage), so
-  `agentic dev` installs the *dev* toolchain skills (not the shipped product), and changes are
+  `agentic dev` installs the _dev_ toolchain skills (not the shipped product), and changes are
   gated by a render matrix (`check-render.mjs`) rather than by running the shipped skills.
 - An opt-in `open-mercato` pack reselects the Mercato adapters to reconstruct today's behavior.
+
+```
+
 ```

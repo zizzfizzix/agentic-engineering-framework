@@ -5,3 +5,8 @@
 /.cursor/
 
 node_modules/
+
+# Build + test artifacts
+dist/
+coverage/
+*.tsbuildinfo

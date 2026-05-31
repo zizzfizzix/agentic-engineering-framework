@@ -11,6 +11,7 @@ for everyone if it lands in the **framework source**. This skill routes a change
 it, opens a PR, and brings it back down.
 
 Two modes:
+
 - **Direct fix** — something is wrong/missing in a rendered skill or adapter.
 - **Feedback drain** — upstream scope-tagged lessons from `.ai/framework-feedback/`.
 
@@ -47,11 +48,11 @@ Decide placement deliberately:
 Spawn a subagent to work in the framework checkout so this session's context stays clean. Instruct it to:
 
 1. Apply the **minimal** edit at the location from step 1. One logical change.
-2. Run the gate: `node bin/check-render.mjs`. It must pass — deterministic output, no leftover
+2. Run the gate: `pnpm gate`. It must pass — deterministic output, no leftover
    `SLOT:` markers, every declared slot fillable. **Never** proceed on a failing gate; fix the
    determinism/slot problem first.
 3. If a rendered shape is worth eyeballing, render the affected skill
-   (`node bin/render.mjs --skill <skill>`) and inspect.
+   (`pnpm cli render --skill <skill>`) and inspect.
 4. Report back the `git diff` and the gate result.
 
 ## 3. Open a framework PR (human-gated at merge)
