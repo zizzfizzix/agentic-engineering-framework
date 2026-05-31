@@ -1,0 +1,65 @@
+# Agent Context — {{PROJECT_NAME}}
+
+This file is the entry point for any AI agent working in this repo. `CLAUDE.md` is just
+`@AGENTS.md`, so everything an agent needs to know starts here.
+
+## Always
+
+- Read this file first. Match your task against the **Task Router** below and load the listed
+  context before writing any code.
+- Use the canonical helpers and components the project already provides; reuse before you build.
+- Run the project's verification gate — every command in `framework.config.json` → `validation` —
+  before declaring work done. Treat any non-zero exit as a failure to fix.
+- After a correction, record a durable rule in `.ai/lessons.md` so the same mistake doesn't recur.
+
+## Ask first
+
+- Applying database migrations or any destructive/irreversible operation.
+- Adding a new dependency, service, or external integration.
+- Anything outward-facing (opening PRs, posting comments, sending data off the machine).
+
+## Never
+
+- Edit generated output or `node_modules` directly.
+- Hard-code colors, sizes, secrets, or environment-specific paths.
+- Commit directly to `git.defaultBranch` — branch first.
+- Roll your own substitute for a concern the project already has a canonical mechanism for.
+
+## Validation
+
+The verification gate is defined in `framework.config.json` → `validation`. Run it in full; it is
+all-or-nothing. Paths (`modulesRoot`, `specsRoot`, `testsRoot`) come from the same config.
+
+## Task Router
+
+Match your task, then **stop and read the listed file(s)** before writing code. A task may match
+multiple rows — load all of them.
+
+<!-- TASK_ROUTER_START -->
+
+| Task                        | Load                                        |
+| --------------------------- | ------------------------------------------- |
+| Write a spec                | `.ai/skills/spec-writing/SKILL.md`          |
+| Implement a spec            | `.ai/skills/implement-spec/SKILL.md`        |
+| Review code changes         | `.ai/skills/code-review/SKILL.md`           |
+| Debug / find a root cause   | `.ai/skills/root-cause/SKILL.md`            |
+| Create / run integration tests | `.ai/skills/integration-tests/SKILL.md`  |
+| Commit work                 | `.ai/skills/check-and-commit/SKILL.md`      |
+| Author a new skill          | `.ai/skills/skill-creator/SKILL.md`         |
+
+<!-- TASK_ROUTER_END -->
+
+> Adapter packs (e.g. `open-mercato`) inject additional rows into the `TASK_ROUTER` region above
+> at render time. Keep the markers intact.
+
+## Core principles
+
+- Concise context is a public good — load only what the task needs.
+- Prefer the smallest change that satisfies the spec; don't refactor unrelated code.
+- Validate all inputs; keep types explicit at boundaries.
+- Make behaviour observable and testable.
+
+## Stack
+
+Resolve specifics from `framework.config.json` (`stack`, `orm`, `ui`, `harnesses`). This skeleton
+is stack-agnostic; the installed adapter pack fills in the project's concrete conventions.
