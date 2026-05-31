@@ -10,7 +10,7 @@
   },
   "skills": {
     "migrate-orm": {
-      "digest": "c4fd843753d4",
+      "digest": "c259362a982a",
       "inputs": [
         {
           "path": "adapters/orm/drizzle/references/cheatsheet.md",
@@ -22,12 +22,12 @@
         },
         {
           "path": "core/ai/skills/migrate-orm/SKILL.md",
-          "sha": "be49ba2db1e4"
+          "sha": "309b17f24b9d"
         }
       ]
     },
     "ui-consistency": {
-      "digest": "dd557900b76e",
+      "digest": "1d6edf84839d",
       "inputs": [
         {
           "path": "adapters/ui/shadcn/references/components.md",
@@ -35,11 +35,11 @@
         },
         {
           "path": "adapters/ui/shadcn/references/tokens.md",
-          "sha": "79dad3c86ec5"
+          "sha": "6e7febf90708"
         },
         {
           "path": "core/ai/skills/ui-consistency/SKILL.md",
-          "sha": "55cb8f6401f0"
+          "sha": "16529a574932"
         }
       ]
     }

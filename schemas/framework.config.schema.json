@@ -2,82 +2,150 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/zizzfizzix/agentic-engineering-framework/schemas/framework.config.schema.json",
   "title": "framework.config.json",
-  "description": "Per-consumer configuration the renderer, install-skills, and skills all read. One axis selection per family; init resolves these into a converged skill set.",
+  "description": "Per-consumer configuration the renderer, init/sync, and skills all read. One axis selection per family; init resolves these into a converged skill set.",
   "type": "object",
-  "required": ["harnesses"],
-  "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
-    "projectName": { "type": "string", "description": "Substituted for {{PROJECT_NAME}} in templates." },
+    "$schema": {
+      "type": "string"
+    },
+    "projectName": {
+      "type": "string",
+      "description": "Substituted for {{PROJECT_NAME}} in templates."
+    },
     "harnesses": {
       "type": "array",
-      "description": "Active harness adapters; each wires its files + skills dir.",
-      "items": { "type": "string", "examples": ["claude-code", "codex", "cursor"] },
+      "items": {
+        "type": "string"
+      },
       "minItems": 1,
-      "uniqueItems": true
+      "description": "Active harness adapters; each wires its files + skills dir."
     },
-    "orm": { "type": ["string", "null"], "description": "Selected ORM adapter, or null to omit ORM skills.", "examples": ["drizzle", "mikro-orm", "prisma", "typeorm"] },
-    "ui": { "type": ["string", "null"], "examples": ["open-mercato-ui", "shadcn", "mui"] },
-    "stack": { "type": ["string", "null"], "examples": ["generic-node", "next-monorepo"] },
+    "orm": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Selected ORM adapter, or null to omit ORM skills."
+    },
+    "ui": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stack": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "paths": {
       "type": "object",
-      "additionalProperties": false,
       "properties": {
-        "modulesRoot": { "type": "string" },
-        "specsRoot": { "type": "string" },
-        "testsRoot": { "type": "string" }
-      }
+        "modulesRoot": {
+          "type": "string"
+        },
+        "specsRoot": {
+          "type": "string"
+        },
+        "testsRoot": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "validation": {
       "type": "array",
-      "description": "Commands skills run as the verification gate.",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      },
+      "description": "Commands skills run as the verification gate."
     },
     "git": {
       "type": "object",
-      "additionalProperties": false,
       "properties": {
-        "defaultBranch": { "type": "string" },
-        "labels": { "type": "array", "items": { "type": "string" } }
-      }
+        "defaultBranch": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "source": {
       "type": "object",
-      "description": "Where improve-framework finds the framework SOURCE (decisions #7/#8).",
-      "additionalProperties": false,
       "properties": {
-        "path": { "type": ["string", "null"], "description": "Local checkout path; if null, clone repo on demand." },
-        "repo": { "type": ["string", "null"] }
-      }
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Local checkout path; if null, clone repo on demand."
+        },
+        "repo": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "description": "Where improve-framework finds the framework SOURCE."
     },
     "feedback": {
       "type": "object",
-      "description": "Cross-repo self-improving loop (decision #8). Capture is local + on by default; sending upstream is gated and asked at init.",
-      "additionalProperties": false,
       "properties": {
         "capture": {
           "type": "boolean",
           "default": true,
-          "description": "Write scope-tagged framework lessons to .ai/framework-feedback/. Local-only, zero egress."
+          "description": "Write scope-tagged lessons locally; zero egress."
         },
         "upstream": {
           "type": "object",
-          "description": "The gated phase where content leaves the repo. Asked at init; private repos default channel to 'fork'.",
-          "additionalProperties": false,
           "properties": {
             "mode": {
               "type": "string",
-              "enum": ["scheduled-pr", "prompt", "off"],
-              "default": "scheduled-pr",
-              "description": "scheduled-pr: a cron/loop batches the outbox into a draft PR. prompt: only on explicit human request. off: never send."
+              "enum": [
+                "scheduled-pr",
+                "prompt",
+                "off"
+              ],
+              "default": "scheduled-pr"
             },
-            "channel": { "type": "string", "enum": ["pr", "issue", "fork"], "default": "pr" },
-            "schedule": { "type": "string", "default": "weekly", "examples": ["daily", "weekly", "on-threshold"] },
-            "sanitize": { "type": "boolean", "default": true },
-            "requireHumanApproval": { "type": "boolean", "default": true, "description": "Human gate at PR merge (not creation)." }
-          }
+            "channel": {
+              "type": "string",
+              "enum": [
+                "pr",
+                "issue",
+                "fork"
+              ],
+              "default": "pr"
+            },
+            "schedule": {
+              "type": "string",
+              "default": "weekly"
+            },
+            "sanitize": {
+              "type": "boolean",
+              "default": true
+            },
+            "requireHumanApproval": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "additionalProperties": false
         }
-      }
+      },
+      "additionalProperties": false
     }
-  }
+  },
+  "required": [
+    "harnesses"
+  ],
+  "additionalProperties": false
 }

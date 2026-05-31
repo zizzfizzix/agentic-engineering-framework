@@ -18,14 +18,15 @@ should require **no** changes to the renderer or to generic skill bodies.
 3. **Write `adapter.json`** (validate against `schemas/adapter.schema.json`):
    ```json
    {
-     "name": "prisma", "axis": "orm",
+     "name": "prisma",
+     "axis": "orm",
      "augments": ["migrate-orm", "data-model-design"],
      "slots": { "orm.cheatsheet": "references/cheatsheet.md", "orm.migration": "references/migration.md" }
    }
    ```
 4. **Write the reference fragments** referenced in `slots`. Keep them focused and self-contained;
-   for an *optional* section include its `## Heading` at the top of the fragment.
-5. **Validate**: `node bin/check-render.mjs` — confirms no leftover slots and deterministic output
+   for an _optional_ section include its `## Heading` at the top of the fragment.
+5. **Validate**: `pnpm gate` — confirms no leftover slots and deterministic output
    across the adapter matrix.
 6. For a **harness** adapter, set `skillsDir` + `linkBase` instead of `slots` (see
    `adapters/harness/*`).

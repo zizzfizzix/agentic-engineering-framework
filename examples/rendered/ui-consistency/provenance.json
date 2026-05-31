@@ -5,7 +5,7 @@
     "ui": "shadcn",
     "stack": "generic-node"
   },
-  "digest": "dd557900b76e",
+  "digest": "1d6edf84839d",
   "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
   "inputs": [
     {
@@ -14,11 +14,11 @@
     },
     {
       "path": "adapters/ui/shadcn/references/tokens.md",
-      "sha": "79dad3c86ec5"
+      "sha": "6e7febf90708"
     },
     {
       "path": "core/ai/skills/ui-consistency/SKILL.md",
-      "sha": "55cb8f6401f0"
+      "sha": "16529a574932"
     }
   ],
   "regions": [

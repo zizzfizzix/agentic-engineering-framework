@@ -18,13 +18,17 @@ configured this skill is not installed.
 ## Semantic tokens (active design system)
 
 <!-- SLOT:ui.tokens -->
+
 _(Filled at render time with the active design system's token map.)_
+
 <!-- /SLOT:ui.tokens -->
 
 ## Component catalog (active design system)
 
 <!-- SLOT:ui.components -->
+
 _(Filled at render time with the active design system's component catalog.)_
+
 <!-- /SLOT:ui.components -->
 
 <!-- SLOT:ui.health-check -->

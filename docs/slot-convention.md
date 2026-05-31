@@ -49,14 +49,14 @@ A generic `SKILL.md` marks injection points with HTML comments (invisible in ren
 
 ## Mandatory vs. optional sections (authoring rule)
 
-An active adapter may fill only *some* of a skill's slots (e.g. `shadcn` provides tokens +
+An active adapter may fill only _some_ of a skill's slots (e.g. `shadcn` provides tokens +
 components but no health-check tool, while `open-mercato-ui` provides all three). The renderer
 prunes any slot the active adapter doesn't fill — but a bare `## Heading` left above a pruned slot
 becomes an orphan. So:
 
 - **Mandatory section** (always present when the axis is selected): keep the `## Heading` in the
   generic body, put only the body in the slot.
-- **Optional section** (some adapters omit it): move the `## Heading` *into the slot* — i.e. the
+- **Optional section** (some adapters omit it): move the `## Heading` _into the slot_ — i.e. the
   adapter fragment supplies its own heading. When pruned, the whole section disappears cleanly.
 
 ## Digest scoping (sync stability)
