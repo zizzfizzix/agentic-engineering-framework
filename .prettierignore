@@ -1,0 +1,13 @@
+dist
+node_modules
+coverage
+pnpm-lock.yaml
+
+# Generated artifacts — produced by tooling and regenerated, never hand-formatted:
+#   examples/  -> `pnpm goldens:update` (must match renderer output byte-for-byte)
+#   schemas/   -> `pnpm schemas` (emitted from the zod contracts)
+# Everything else IS formatted, including skill bodies and adapter fragments: the
+# renderer is deterministic and preserves slot markers, so formatted content stays
+# render-stable. Regenerate goldens after editing content.
+examples
+schemas

@@ -18,13 +18,17 @@ installed at all.
 ## Cheatsheet (active ORM)
 
 <!-- SLOT:orm.cheatsheet -->
+
 _(Filled at render time with the active ORM's entity/query cheatsheet.)_
+
 <!-- /SLOT:orm.cheatsheet -->
 
 ## Migration workflow (active ORM)
 
 <!-- SLOT:orm.migration -->
+
 _(Filled at render time with the active ORM's migration commands.)_
+
 <!-- /SLOT:orm.migration -->
 
 ## Generic rules (always apply)
