@@ -9,7 +9,7 @@
 // sync  re-renders from the (updated) framework source and reconciles with local edits using a
 //       git-native 3-way merge (BASE = last render, LOCAL = on-disk, NEW = fresh render).
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, lstatSync, rmSync, cpSync, symlinkSync, mkdtempSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, existsSync, lstatSync, rmSync, cpSync, symlinkSync, mkdtempSync, readdirSync } from 'node:fs'
 import { join, relative, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -29,7 +29,37 @@ const isLink = (p) => { try { return lstatSync(p).isSymbolicLink() } catch { ret
 const cmd = process.argv[2]
 if (cmd === 'init') cmdInit()
 else if (cmd === 'sync') cmdSync()
-else { console.error('usage: agentic <init|sync> --out <consumerDir> [--config <cfg>] [--copy]'); process.exit(1) }
+else if (cmd === 'dev') cmdDev()
+else { console.error('usage: agentic <init|sync|dev> [--out <consumerDir>] [--config <cfg>] [--copy]'); process.exit(1) }
+
+// ── dev: "meta" install for developing THIS framework ──────────────────────────
+// Wires the framework repo's own harness skill dirs to the dev/ skills (source symlinks).
+// Installs the toolchain, not the shipped product; harness dirs are gitignored.
+function cmdDev() {
+  const devSkillsDir = join(ROOT, 'dev', 'skills')
+  if (!existsSync(devSkillsDir)) { console.error('no dev/skills/ found'); process.exit(1) }
+  const devSkills = readdirSync(devSkillsDir).filter((d) => existsSync(join(devSkillsDir, d, 'SKILL.md')))
+  const harnessRoot = join(ROOT, 'adapters', 'harness')
+  const harnesses = readdirSync(harnessRoot).filter((d) => existsSync(join(harnessRoot, d, 'adapter.json')))
+
+  const wired = []
+  for (const harness of harnesses) {
+    const ad = JSON.parse(readFileSync(join(harnessRoot, harness, 'adapter.json'), 'utf8'))
+    const hdir = join(ROOT, ad.skillsDir)
+    mkdirSync(hdir, { recursive: true })
+    const target = relative(hdir, devSkillsDir) // robust relative link target
+    for (const skill of devSkills) {
+      const link = join(hdir, skill)
+      if (existsSync(link) || isLink(link)) rmSync(link, { recursive: true, force: true })
+      symlinkSync(join(target, skill), link)
+    }
+    wired.push(`${harness} -> ${ad.skillsDir}`)
+  }
+  console.log('Framework dev install (meta):')
+  console.log(`  dev skills: ${devSkills.join(', ') || '(none)'}`)
+  console.log(`  harnesses : ${wired.join(' | ')}`)
+  console.log('  (harness dirs are gitignored; re-run after adding a dev skill)')
+}
 
 // ── init ──────────────────────────────────────────────────────────────────────
 function cmdInit() {
