@@ -7,7 +7,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { renderSkill } from './lib/render-skill.mjs'
+import { renderSkill, SLOT_OPEN, SLOT_ANY } from './lib/render-skill.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const ls = (p) => (existsSync(p) ? readdirSync(p) : [])
@@ -31,12 +31,12 @@ for (const axis of Object.keys(adaptersByAxis))
 const skills = ls(join(ROOT, 'core/ai/skills')).filter((n) =>
   existsSync(join(ROOT, 'core/ai/skills', n, 'SKILL.md')))
 
-// Which slots does each skill's generic body declare?
-const slotRe = /<!--\s*SLOT:([\w.-]+)\s*-->/g
+// Which slots does each skill's generic body declare? Use the renderer's own (anchored,
+// full-line) definition so the gate and renderer agree — a `SLOT:` mention in prose is not a slot.
 const declaredSlots = {}
 for (const s of skills) {
   const body = readFileSync(join(ROOT, 'core/ai/skills', s, 'SKILL.md'), 'utf8')
-  declaredSlots[s] = [...body.matchAll(slotRe)].map((m) => m[1])
+  declaredSlots[s] = body.split('\n').map((l) => l.match(SLOT_OPEN)).filter(Boolean).map((m) => m[1])
 }
 
 // Every declared slot must be fillable by at least one adapter on its axis (typo guard).
@@ -66,7 +66,7 @@ for (const s of skills) {
     const b = renderSkill(ROOT, sel, s)
     checks += 2
     if (a.digest !== b.digest) fail(`${s} @ ${JSON.stringify(sel)}: non-deterministic (${a.digest} != ${b.digest})`)
-    if (/<!--\s*\/?SLOT:/.test(a.rendered)) fail(`${s} @ ${JSON.stringify(sel)}: leftover SLOT marker (neither filled nor pruned)`)
+    if (a.rendered.split('\n').some((l) => SLOT_ANY.test(l))) fail(`${s} @ ${JSON.stringify(sel)}: leftover SLOT marker (neither filled nor pruned)`)
   }
 }
 

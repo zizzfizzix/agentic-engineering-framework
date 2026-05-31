@@ -15,6 +15,12 @@ const norm = (s) => s.replace(/\r\n/g, '\n')
 const OPEN = /^<!--\s*SLOT:([\w.-]+)\s*-->$/
 const CLOSE = /^<!--\s*\/SLOT:([\w.-]+)\s*-->$/
 
+// Shared, single source of truth for what a slot marker is — imported by bin/check-render.mjs
+// so the gate and the renderer can never disagree (a slot is a marker ALONE ON ITS OWN LINE;
+// `SLOT:` mentioned in prose/backticks is not a slot and is never touched).
+export const SLOT_OPEN = OPEN
+export const SLOT_ANY = /^<!--\s*\/?SLOT:[\w.-]+\s*-->$/
+
 export function renderSkill(root, config, skill) {
   const rel = (p) => relative(root, p)
 
