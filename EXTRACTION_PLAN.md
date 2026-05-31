@@ -383,7 +383,9 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 - **Phase 1 — Core skeleton:** copy portable files into `core/`; port `install-skills.sh`,
   `validate-skills-tiers.sh`, `tiers.json`. Get `install-skills.sh --list` green here.
 - **Phase 2 — Config + harness adapters:** add `framework.config.json`, define `adapter.json`,
-  port claude-code/codex/cursor as harness adapters, build `bin/agentic init`.
+  port claude-code/codex/cursor as harness adapters, build `bin/agentic init`. _(PoC landed:
+  schemas, harness adapters, `agentic init` renders the full set with tier ∧ axis selection and
+  symlink/copy harness wiring + a render-manifest sync base; see `docs/render-poc.md`.)_
 - **Phase 3 — Generic skills:** move Bucket-generic skills into core; templatize `AGENTS.md`;
   split `code-review`; parameterize paths/commands.
 - **Phase 4 — Domain adapters:** `migrate-orm` (+mikro-orm/prisma), `ui-consistency`

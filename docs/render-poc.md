@@ -41,8 +41,32 @@ The convention was stress-tested on a second axis (UI) with deliberately differe
    into the adapter fragment so pruning removes the whole section. Proven: `shadcn` render has no
    orphaned "Health check" heading; `open-mercato-ui` render has the full section.
 
+## Full set + harness wiring — `agentic init`
+
+`bin/agentic.mjs` renders the **whole configured skill set** and wires each harness:
+
+```bash
+node bin/agentic.mjs init --out examples/consumer        # symlink mode (default)
+node bin/agentic.mjs init --out /tmp/c --copy            # copy mode (symlink-hostile envs)
+```
+
+It does three things:
+
+1. **Selects skills** = tier membership (`core/ai/skills/tiers.json`) **AND** required-axis
+   availability (`tiers.requires`). Proven: with `ui: null`, `ui-consistency` is *not installed
+   at all* — "skipped (axis not configured)" — not merely pruned.
+2. **Renders** each selected skill into `<out>/.ai/skills/<skill>/` and writes
+   `<out>/.ai/.render-manifest.json` — the per-skill digest + inputs map that is the **sync base**
+   (decision #6) and the routing source for `improve-framework` (decisions #7/#8).
+3. **Wires harnesses** named in `config.harnesses` via their adapter (`adapters/harness/<h>/`),
+   creating per-skill symlinks (e.g. `.claude/skills/migrate-orm -> ../../.ai/skills/migrate-orm`)
+   or copies with `--copy`. New harnesses are pure data — drop in an `adapter.json`.
+
+`examples/consumer/` is a committed sample of a full `init` (drizzle + shadcn, claude-code +
+codex).
+
 ## Not yet (deliberately)
 
-This PoC renders one skill. The real renderer adds: rendering the whole selected skill set,
-harness wiring, `install-skills.sh` integration, and the `sync` 3-way merge driven by the
-manifest digests. See the roadmap (§7).
+Still ahead: the `sync` 3-way merge driven by the manifest digests, the genericized
+`install-skills.sh` tier installer, `AGENTS.md` rendering, and the `improve-framework` /
+`triage-feedback` skills. See the roadmap (§7).

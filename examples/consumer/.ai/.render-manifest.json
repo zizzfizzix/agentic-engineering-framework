@@ -1,0 +1,47 @@
+{
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node",
+    "harnesses": [
+      "claude-code",
+      "codex"
+    ]
+  },
+  "skills": {
+    "migrate-orm": {
+      "digest": "c4fd843753d4",
+      "inputs": [
+        {
+          "path": "adapters/orm/drizzle/references/cheatsheet.md",
+          "sha": "9c6f14b98b68"
+        },
+        {
+          "path": "adapters/orm/drizzle/references/migration.md",
+          "sha": "64b35816fa30"
+        },
+        {
+          "path": "core/ai/skills/migrate-orm/SKILL.md",
+          "sha": "be49ba2db1e4"
+        }
+      ]
+    },
+    "ui-consistency": {
+      "digest": "dd557900b76e",
+      "inputs": [
+        {
+          "path": "adapters/ui/shadcn/references/components.md",
+          "sha": "1585503b9e2c"
+        },
+        {
+          "path": "adapters/ui/shadcn/references/tokens.md",
+          "sha": "79dad3c86ec5"
+        },
+        {
+          "path": "core/ai/skills/ui-consistency/SKILL.md",
+          "sha": "55cb8f6401f0"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "default": ["core"],
+  "tiers": {
+    "core": {
+      "description": "Daily-driver skills installed by default.",
+      "skills": ["migrate-orm", "ui-consistency"]
+    }
+  },
+  "requires": {
+    "migrate-orm": "orm",
+    "ui-consistency": "ui"
+  }
+}
