@@ -52,12 +52,31 @@
     },
     "feedback": {
       "type": "object",
-      "description": "Cross-repo self-improving loop (decision #8). Off by default.",
+      "description": "Cross-repo self-improving loop (decision #8). Capture is local + on by default; sending upstream is gated and asked at init.",
       "additionalProperties": false,
       "properties": {
-        "enabled": { "type": "boolean", "default": false },
-        "channel": { "type": "string", "enum": ["pr", "issue", "fork"], "default": "issue" },
-        "sanitize": { "type": "boolean", "default": true }
+        "capture": {
+          "type": "boolean",
+          "default": true,
+          "description": "Write scope-tagged framework lessons to .ai/framework-feedback/. Local-only, zero egress."
+        },
+        "upstream": {
+          "type": "object",
+          "description": "The gated phase where content leaves the repo. Asked at init; private repos default channel to 'fork'.",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["scheduled-pr", "prompt", "off"],
+              "default": "scheduled-pr",
+              "description": "scheduled-pr: a cron/loop batches the outbox into a draft PR. prompt: only on explicit human request. off: never send."
+            },
+            "channel": { "type": "string", "enum": ["pr", "issue", "fork"], "default": "pr" },
+            "schedule": { "type": "string", "default": "weekly", "examples": ["daily", "weekly", "on-threshold"] },
+            "sanitize": { "type": "boolean", "default": true },
+            "requireHumanApproval": { "type": "boolean", "default": true, "description": "Human gate at PR merge (not creation)." }
+          }
+        }
       }
     }
   }

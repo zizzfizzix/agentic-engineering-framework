@@ -20,7 +20,7 @@ These were confirmed with the project owner and shape the rest of the plan:
 | 5 | **Author modular, ship converged** | Source stays fragmented (generic body + per-adapter fragments) for maintainability. `init` **resolves and flattens** the selected adapters into concrete, self-contained skills in the consumer repo — irrelevant adapters are omitted entirely (drizzle, not prisma). No runtime pointer-chasing. |
 | 6 | **`sync` = git-native 3-way merge** | Sync stores the last render as BASE and uses git's own machinery (`git merge-file` / vendor branch + `git merge`) to combine framework updates with local edits. Standard `<<<<<<<` conflict markers land in the working tree; review with `git diff` and commit — same ritual as a plain copy-sync, but local edits are preserved instead of clobbered. No custom merge engine. |
 | 7 | **The framework develops itself via a skill** | The round-trip (fix/enhance the framework from inside a consumer repo) is an opt-in skill, `improve-framework`, not bespoke CLI commands. It knows the render model + provenance, edits the framework source (delegating heavy work to a subagent), re-renders, and syncs back. Dissolves the need for engineered `link`/`promote` commands. See §4a. |
-| 8 | **Re-close the self-improving loop across the boundary** | open-mercato's loop (capture lessons → `lessons.md`/AGENTS.md → reread at session start) works because it's a monorepo. Split out, it breaks at the repo edge. Re-close it with **scope-tagged lessons** (`project` stays local; `framework`/`adapter:*` go to a `.ai/framework-feedback/` outbox), upstreamed by `improve-framework` (feedback mode), **triaged + deduped** on the framework side, then synced back to all consumers as a generic `lessons.framework.md`. Opt-in, sanitized, human-confirmed; git/GitHub only, no telemetry backend. See §4b. |
+| 8 | **Re-close the self-improving loop across the boundary, semi-automatically** | open-mercato's loop works because it's a monorepo; split out, it breaks at the repo edge. Re-close it with **scope-tagged lessons** (`project` stays local; `framework`/`adapter:*` go to a `.ai/framework-feedback/` outbox). **Capture is continuous + local-only and on by default**; **upstreaming is a scheduled job** that batches the outbox into a **draft PR** to the framework (reusing the `auto-create-pr` machinery), human-gated at *merge* not creation; a framework-side `triage-feedback` loop dedupes across consumers; merged improvements flow back via scheduled `sync` PRs. Default-on but **asked at init** (private repos default to a private channel). Sanitized; git/GitHub only, no telemetry. See §4b. |
 
 The unifying idea: **a generic core + pluggable adapters along every axis of variation**
 (harness, ORM, UI/design-system, stack/config) — but the fragmentation lives **only in the
@@ -275,20 +275,40 @@ born in A, once merged, becomes session-start context for **every** consumer. Ea
 two lessons files — synced-read-only-generic + local-editable-project — mirroring the converged
 skill model. The originating outbox entry is retired once its content is detected in synced output.
 
-**Privacy gate (hard requirement).** Feedback mode is **opt-in** (`framework.config.json →
-feedback.enabled: false` by default), **sanitizes** (generalized rule + scrubbed repro only — no
-secrets, proprietary identifiers, or raw source dumps), is **human-confirmed before anything
-leaves the repo**, and routes to a configurable `feedback.channel` (public framework PR / issue /
-an org's private framework fork). **No central telemetry backend** — git/GitHub primitives only,
-consistent with decisions #1 and #4.
+**Capture vs. send — the split that makes default-on safe (decision #8).** Two phases with
+different automation and different risk:
+- **Capture** (`feedback.capture`, **on by default**): agents write scope-tagged framework
+  lessons to the outbox. **Zero egress** — just files in the repo — so it's safe to default on,
+  and it also grows the consumer's own local lessons. Always reviewable in `git diff`.
+- **Send / upstream** (`feedback.upstream.mode`): the gated phase where content leaves the repo.
+
+**Automation & triggers (points 3/4).** Capture is continuous. Upstreaming is **scheduled, not
+human-triggered**:
+- A scheduled job (CI cron or the `/loop` skill) runs `improve-framework` feedback mode, which
+  **batches** the outbox (reduces noise + eases dedup), sanitizes, and opens a **draft PR** to the
+  framework — this *is* `auto-create-pr` aimed at a different repo with the outbox as input.
+- A `Stop`/`SessionEnd` hook is a **nudge only** ("N unsent framework lessons — upstream now?"); it
+  never does synchronous networked work.
+- The **human gate is at PR merge, not PR creation.** Three automated PR hops, each reviewed only
+  at merge: consumer→framework, framework triage consolidation, framework→consumer `sync`.
+
+**Privacy gate (hard requirement, applies whenever content egresses).** Sanitize (generalized
+rule + scrubbed repro only — no secrets, proprietary identifiers, or raw source dumps); route to a
+configurable `feedback.upstream.channel` (public framework PR / issue / an org's **private**
+framework fork). **Default-on but asked at init** — onboarding surfaces the choice with send
+pre-selected; **private repos default the channel to the private fork**. **No central telemetry
+backend** — git/GitHub primitives only, consistent with decisions #1 and #4.
 
 ```
-consumer A ──capture(scope)──▶ .ai/framework-feedback/  ──improve-framework──▶ framework PR
-                                      │ (project lessons stay in .ai/lessons.md)        │
-                                      ▼                                        triage-feedback (dedup)
-                              session-start context                                    │
-                                      ▲                                                 ▼
-   all consumers ◀────── sync renders lessons.framework.md ◀────── merged into framework source
+consumer work ─capture(scope, local)─▶ .ai/framework-feedback/   (project lessons stay in .ai/lessons.md)
+                                              │
+                                   [SCHEDULED] improve-framework → draft PR ──▶ framework repo
+                                                                                     │
+                                                                    [SCHEDULED] triage-feedback (dedup)
+                                                                                     │ human merge
+                                                                            framework source + lessons.framework.md
+                                                                                     │
+   all consumers ◀── human merge ◀── [SCHEDULED] agentic sync opens a local PR ◀─────┘
 ```
 
 ---
@@ -332,8 +352,9 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 1. **`framework.config.json`** — the keystone. Fields: `harnesses[]`, `orm`, `ui`, `stack`,
    `paths` (`modulesRoot`, `specsRoot`, `testsRoot`), `validation` (command list), `git`
    (`defaultBranch`, PR `labels`), `source` (framework checkout path for `improve-framework`),
-   and `feedback` (`enabled` default false, `channel`, `sanitize`). Skills + scripts read it
-   instead of hard-coding.
+   and `feedback` (`capture` default true/local-only; `upstream` = `mode`/`channel`/`schedule`/
+   `sanitize`, asked at init, private repos default to a private channel). Skills + scripts read
+   it instead of hard-coding.
 2. **Harness adapter interface** — formalize `adapter.json` so the CLI loops over harnesses
    instead of the hard-coded `generateClaudeCode/Codex/Cursor` functions; port the Codex
    marker-splice and per-harness skills-symlink as adapter operations.
@@ -420,8 +441,9 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 - **The framework improves itself with a skill:** `improve-framework` handles the round-trip
   (edit source → subagent re-render + validate → sync back), so there's nothing to hand-port.
   Its one dependency: the renderer must emit deterministic output + provenance.
-- **The self-improving loop spans repos:** scope-tagged lessons keep project learnings local and
-  push generic ones through an outbox → `improve-framework` → framework triage → synced
-  `lessons.framework.md` back to all consumers. Opt-in, sanitized, git-only — no telemetry.
+- **The self-improving loop spans repos, semi-automatically:** scope-tagged lessons keep project
+  learnings local; generic ones are captured continuously (local, default-on) and **scheduled**
+  upstream as draft PRs (reusing `auto-create-pr`) → framework triage/dedup → synced back to all
+  consumers via `sync` PRs. Human-gated at merge; default-on but asked at init; git-only, no telemetry.
 - An opt-in `open-mercato` pack reselects the Mercato adapters to reconstruct today's behavior.
 ```
