@@ -28,6 +28,45 @@ export function pick<T extends Record<string, unknown>>(o: T, keys: string[]): R
   return r
 }
 
+/**
+ * Install the generic `core/ai` conventions into a consumer: the specs/qa/runs scaffolding,
+ * a starter lessons.md, a CLAUDE.md, and AGENTS.md rendered from the template with
+ * {{PROJECT_NAME}} substituted. Idempotent — safe to re-run. Returns the paths written.
+ */
+export function writeConventions(root: string, out: string, config: FrameworkConfig): string[] {
+  const projectName = config.projectName ?? 'your project'
+  const sub = (s: string): string => s.split('{{PROJECT_NAME}}').join(projectName)
+  const ai = join(out, '.ai')
+  mkdirSync(ai, { recursive: true })
+  const written: string[] = []
+
+  for (const dir of ['specs', 'qa', 'runs']) {
+    const src = join(root, 'core', 'ai', dir)
+    if (existsSync(src)) {
+      cpSync(src, join(ai, dir), { recursive: true })
+      written.push(`.ai/${dir}/`)
+    }
+  }
+  // Substitute {{PROJECT_NAME}} in the one convention file that carries it.
+  const specsReadme = join(ai, 'specs', 'README.md')
+  if (existsSync(specsReadme)) writeFileSync(specsReadme, sub(readFileSync(specsReadme, 'utf8')))
+
+  const lessonsSrc = join(root, 'core', 'ai', 'lessons.md')
+  if (existsSync(lessonsSrc)) {
+    writeFileSync(join(ai, 'lessons.md'), sub(readFileSync(lessonsSrc, 'utf8')))
+    written.push('.ai/lessons.md')
+  }
+
+  const tpl = join(root, 'core', 'AGENTS.md.template')
+  if (existsSync(tpl)) {
+    writeFileSync(join(out, 'AGENTS.md'), sub(readFileSync(tpl, 'utf8')))
+    written.push('AGENTS.md')
+  }
+  writeFileSync(join(out, 'CLAUDE.md'), '@AGENTS.md\n')
+  written.push('CLAUDE.md')
+  return written
+}
+
 export function writeSkill(out: string, skill: string, rendered: string, manifest: RenderManifest): void {
   const dest = join(out, '.ai', 'skills', skill)
   mkdirSync(dest, { recursive: true })
