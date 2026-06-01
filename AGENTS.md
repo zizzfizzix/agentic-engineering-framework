@@ -6,15 +6,15 @@ before changing skills, adapters, or the renderer. The full design rationale is 
 
 ## What lives where
 
-| Path                              | What                                                                            | Edit when                                                 |
-| --------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `core/ai/skills/<skill>/SKILL.md` | **Shipped** skills (the product) — generic bodies with `<!-- SLOT:axis.key -->` | Changing skill workflow that applies to all consumers     |
-| `adapters/<axis>/<name>/`         | Adapter fragments that fill slots (`orm`, `ui`, `harness`, …)                   | Adding/​changing stack-specific content                   |
-| `dev/skills/`                     | **Dev** skills (the toolchain) — installed into a maintainer's harness          | Improving how the framework itself is built               |
-| `src/core/`                       | Pure renderer, tier selection, 3-way merge, and the zod `contracts`             | Changing render/sync behaviour or a config/adapter shape  |
-| `src/cli/`                        | The `agentic` CLI (`init`/`sync`/`render`/`dev`) — commander + @clack/prompts   | Changing CLI surface or the init wizard                   |
-| `scripts/`                        | Dev-only scripts: the `gate`, schema generation, example regeneration           | Changing the validation gate or generated artifacts       |
-| `schemas/`, `docs/`               | **Generated** JSON Schemas (from zod) + conventions                             | Schemas are regenerated (`pnpm schemas`), not hand-edited |
+| Path                              | What                                                                                         | Edit when                                                 |
+| --------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `core/ai/skills/<skill>/SKILL.md` | **Shipped** skills (the product) — generic bodies with `<!-- SLOT:axis.key -->`              | Changing skill workflow that applies to all consumers     |
+| `adapters/<axis>/<name>/`         | Adapter fragments that fill slots (`orm`, `ui`, `harness`, …)                                | Adding/​changing stack-specific content                   |
+| `dev/skills/`                     | **Dev** skills (the toolchain) — installed into a maintainer's harness                       | Improving how the framework itself is built               |
+| `src/core/`                       | Pure renderer, tier selection, 3-way merge, and the zod `contracts`                          | Changing render/sync behaviour or a config/adapter shape  |
+| `src/cli/`                        | The `agentic` CLI (`init`/`sync`/`render`/`add`/`remove`/`dev`) — commander + @clack/prompts | Changing CLI surface or the init wizard                   |
+| `scripts/`                        | Dev-only scripts: the `gate`, schema generation, example regeneration                        | Changing the validation gate or generated artifacts       |
+| `schemas/`, `docs/`               | **Generated** JSON Schemas (from zod) + conventions                                          | Schemas are regenerated (`pnpm schemas`), not hand-edited |
 
 **Never** commit rendered output into the framework repo — rendering happens in consumers. The
 only rendered files here are the illustrative `examples/` and they are regenerated, never edited.
