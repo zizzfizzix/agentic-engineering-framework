@@ -2,120 +2,108 @@
 
 Apply every applicable section based on which files changed. Skip sections that don't apply to the diff.
 
-> **Note on examples**: The concrete API names, helper functions, package import paths
-> (`@open-mercato/...`), file/folder layouts (`packages/...`, `apps/mercato/...`), and convention
-> filenames in this checklist are examples drawn from one platform. Substitute your project's
-> equivalents. Wherever a build/test/generate/migration command appears, use the matching command
-> from `framework.config.json` → `validation`; wherever a structural path appears, use the paths in
-> `framework.config.json` → `paths` (`modulesRoot`, `specsRoot`, `testsRoot`); and for branch/label
-> references use `framework.config.json` → `git`.
+> **Note on examples**: This checklist is stack-agnostic. Substitute your project's own canonical
+> helpers, convention filenames, and structural layout. Wherever a build/test/generate/migration
+> command appears, use the matching command from `framework.config.json` → `validation`; wherever a
+> structural path appears, use the paths in `framework.config.json` → `paths` (`modulesRoot`,
+> `specsRoot`, `testsRoot`); and for branch/label references use `framework.config.json` → `git`.
+> Skip any section whose concept your stack does not have.
 
 ## 1. Architecture & Module Independence
 
-- [ ] No direct ORM relationships between modules (use FK IDs, fetch separately)
+- [ ] No tight coupling between modules (depend on stable IDs/contracts, fetch separately)
 - [ ] No direct module-to-module function calls for side effects (use events)
 - [ ] No direct imports from other modules' business logic
-- [ ] Cross-module data uses extension entities declared in `data/extensions.ts`
-- [ ] Entity access: optional chaining for cross-module IDs — `(E as any).catalog?.catalog_product`
-- [ ] Entity IDs resolved at runtime via `getEntityIds()`, not at import time
-- [ ] All queries on tenant-scoped entities filter by `organization_id` AND `tenant_id`
+- [ ] Cross-module data uses the project's extension mechanism rather than modifying another module's tables
+- [ ] Cross-module references resolved defensively at runtime, not assumed at import time
+- [ ] If the project is multi-tenant: every read/write on tenant-scoped entities is scoped by tenant; the scoping layer is never bypassed
 - [ ] No cross-tenant data leaks in API responses
-- [ ] Services resolved via DI (Awilix) — never `new` directly
-- [ ] No hardcoded module-specific logic in `setup-app.ts`
-- [ ] Code placed in correct location (core features in core packages, app-specific under the modules root — `framework.config.json` → `paths.modulesRoot`)
-- [ ] No code added directly in the app's `src/` root outside of the modules root
-- [ ] The shared package (e.g. `@open-mercato/shared`) has zero domain dependencies — no imports from the core domain package (e.g. `@open-mercato/core`)
+- [ ] Services resolved through the project's dependency-injection mechanism — never `new` directly where a registered service exists
+- [ ] No hardcoded module-specific logic in shared bootstrap/setup code
+- [ ] Code placed in the correct location per the project's structural paths (`framework.config.json` → `paths`); nothing dumped in an unstructured root
+- [ ] Package layering respected — a shared/low-level package has zero domain dependencies (no imports from higher-level domain packages)
 
 ## 2. Security & Authentication
 
-- [ ] All inputs validated with zod schemas in `data/validators.ts`
-- [ ] TypeScript types derived from zod via `z.infer<typeof schema>` (no manual interface duplication)
-- [ ] No `any` types — use zod + `z.infer`, narrow with runtime checks
-- [ ] Every API endpoint declares auth guards (`requireAuth`, `requireRoles`, `requireFeatures`)
-- [ ] Passwords hashed with bcryptjs (cost >= 10)
+- [ ] All inputs validated at boundaries with a schema, defined in a dedicated location (not scattered inline)
+- [ ] Types derived from the validation schema (no manual interface duplication)
+- [ ] No `any` types — derive types from the schema, narrow with runtime checks
+- [ ] Default-deny authorization: every endpoint declares its required auth/permissions explicitly; missing = denied
+- [ ] Passwords hashed with a strong adaptive algorithm; never stored or logged in plaintext
 - [ ] No credentials logged or included in error responses
-- [ ] Auth endpoints return minimal error messages (no "email not found" vs "wrong password" distinction)
-- [ ] `findWithDecryption`/`findOneWithDecryption` used instead of raw `em.find`/`em.findOne`
-- [ ] `tenantId` and `organizationId` supplied to decryption helpers
-- [ ] No hand-rolled AES/KMS — use `TenantDataEncryptionService`
-- [ ] GDPR-relevant fields update the project's encryption defaults (e.g. a module-level `encryption.ts` / `encryptionDefaults.ts`)
-- [ ] No sensitive fields (passwords, tokens, SSNs, bank accounts) exposed in search indexes
-- [ ] `fieldPolicy.excluded` defined for sensitive fields in search config
-- [ ] `fieldPolicy.hashOnly` used for PII needing exact-match but not fuzzy search
+- [ ] Auth endpoints return minimal error messages (no "account not found" vs "wrong password" distinction)
+- [ ] Sensitive/PII fields encrypted through the project's declarative, framework-provided field-encryption mechanism with per-tenant keys
+- [ ] Reads/writes of encrypted entities go through the encryption-aware data helpers rather than raw queries
+- [ ] No hand-rolled crypto (no bespoke AES/KMS); equality-lookup PII columns declare a hashed sibling for exact-match search
+- [ ] No sensitive fields (passwords, tokens, government IDs, bank accounts) exposed in search indexes
 - [ ] No sensitive data cached without encryption
 
-## 3. Data Integrity & ORM
+## 3. Data Integrity & Migrations
 
-- [ ] No hand-written migrations — entities updated, the project's migration-generation command used
-- [ ] When entities changed, corresponding generated migration file is included in the diff
-- [ ] UUID primary keys with `defaultRaw: 'gen_random_uuid()'`
-- [ ] Standard columns present: `id`, `created_at`, `updated_at`, `organization_id`, `tenant_id`
-- [ ] Soft delete via `deleted_at` (not hard delete for historical records)
-- [ ] Table names: plural snake_case
-- [ ] Column names: snake_case
+- [ ] No hand-written migrations where the project generates them — entities updated, the project's migration-generation command used
+- [ ] When entities changed, the corresponding generated migration file is included in the diff
+- [ ] Stable primary keys; standard columns present and consistent (id, created/updated timestamps, soft-delete marker, and any tenant-scoping columns the project uses)
+- [ ] Soft delete preferred over hard delete for historical records
+- [ ] Naming follows the project's conventions (tables, columns)
 - [ ] Junction tables for many-to-many relationships
-- [ ] Explicit foreign keys (no implicit ORM resolution across modules)
-- [ ] `withAtomicFlush` used when mutating entities across phases that include queries
-- [ ] Scalar changes flushed BEFORE relation syncs that query on same `EntityManager`
-- [ ] No `em.find`/`em.findOne` between scalar mutations and `em.flush()` without `withAtomicFlush`
+- [ ] Explicit foreign keys (no implicit cross-module resolution)
+- [ ] An atomic flush/transaction is used when mutating entities across phases that include queries
+- [ ] Scalar changes flushed BEFORE relation syncs that query on the same unit of work
 - [ ] Transactions are atomic — all-or-nothing semantics
 
 ## 4. API Routes
 
-- [ ] `openApi` exported for documentation generation
-- [ ] `metadata` exported with auth guard declarations
-- [ ] `makeCrudRoute` used with `indexer: { entityType }` for query index coverage
-- [ ] Zod validation on all request inputs
-- [ ] Tenant scoping applied in all queries
-- [ ] `apiCall`/`apiCallOrThrow` used — no raw `fetch`
-- [ ] `readJsonSafe(response, fallback)` for JSON parsing — no `.json().catch()`
-- [ ] CRUD operations use `createCrud`/`updateCrud`/`deleteCrud`
-- [ ] Local validation errors thrown via `createCrudFormError(message, fieldErrors?)`
-- [ ] `pageSize` <= 100 for list endpoints
-- [ ] Export handler functions (`GET`, `POST`, `PUT`, `DELETE`) matching HTTP method
+- [ ] API-doc metadata exported for documentation generation
+- [ ] Auth-guard metadata exported (default-deny: required auth/permissions declared explicitly)
+- [ ] CRUD/list endpoints built through the project's canonical data-layer helper rather than bespoke handlers
+- [ ] All request inputs validated against a schema
+- [ ] Tenant scoping applied in all queries (if multi-tenant)
+- [ ] The project's API-call helper used on the client — no raw `fetch`
+- [ ] Response parsing and validation/CRUD errors surfaced through the project's shared helpers (no `.json().catch()`, no raw throws)
+- [ ] List endpoints respect the project's page-size bound
+- [ ] Handler functions exported matching the HTTP method (`GET`, `POST`, `PUT`, `DELETE`)
 
 ## 5. Events
 
-- [ ] Events declared in the emitting module's `events.ts`
-- [ ] `createModuleEvents()` used with `as const` for type safety
-- [ ] Event fields include `id` (required), `label` (required), `category`
-- [ ] The code-generation/prepare command run after creating/modifying `events.ts`
+- [ ] Events declared through the project's event-declaration mechanism before being emitted
+- [ ] Event declarations are type-safe and carry required fields (id, label, category as applicable)
+- [ ] The code-generation/prepare command run after creating/modifying event declarations
 - [ ] No undeclared events emitted
-- [ ] Subscribers export `metadata` with `{ event, persistent?, id? }`
-- [ ] One side effect per subscriber file
-- [ ] Persistent subscribers are idempotent (may be retried)
+- [ ] Subscribers declare the required discovery metadata
+- [ ] One side effect per subscriber
+- [ ] Persistent/durable subscribers are idempotent (may be retried)
 - [ ] Ephemeral subscribers used only for real-time UI updates and cache invalidation
 
 ## 6. Commands & Undo/Redo
 
-- [ ] All write operations implemented as commands via `registerCommand`
+> Applies only where the project supports an undo/redo command model.
+
+- [ ] Write operations implemented as registered commands
 - [ ] Multi-step operations use compound commands
 - [ ] Every command is undoable with before/after snapshots
-- [ ] `extractUndoPayload()` used from `@open-mercato/shared/lib/commands/undo.ts`
-- [ ] Custom field snapshots captured in `snapshot.custom`
-- [ ] Undo restores via `buildCustomFieldResetMap(before.custom, after.custom)`
-- [ ] `buildLog()` loads snapshots via forked `EntityManager` or `refresh: true`
-- [ ] Side effects (`emitCrudSideEffects`) called OUTSIDE `withAtomicFlush`
-- [ ] Both `emitCrudSideEffects` and `emitCrudUndoSideEffects` include `indexer: { entityType, cacheAliases }`
+- [ ] Snapshot extraction centralized in one shared helper (not re-implemented per command)
+- [ ] Any auxiliary/custom-field state captured in the snapshot and restored on undo
+- [ ] Change-log/snapshot building loads fresh state from the data layer (not a possibly-stale in-memory copy)
+- [ ] Side effects emitted OUTSIDE the atomic flush
+- [ ] Side-effect emission carries the index/cache invalidation metadata it needs
 
 ## 7. Search Configuration
 
-- [ ] `search.ts` created for every module with searchable entities
-- [ ] Exports `searchConfig: SearchModuleConfig`
-- [ ] `checksumSource` included in every `buildSource` return
-- [ ] `fieldPolicy.excluded` defined for sensitive fields
-- [ ] `fieldPolicy.hashOnly` defined for PII fields (email, phone, tax_id)
-- [ ] `formatResult` defined for every entity using tokens strategy
-- [ ] No encrypted/sensitive fields in `buildSource` text output
-- [ ] Entity ID format matches `module:entity_name` exactly
-- [ ] `SearchService` used for direct search, `SearchIndexer` for config-aware indexing
+- [ ] Search config present for every module with searchable entities
+- [ ] A change-detection source is included for every indexed entity
+- [ ] Sensitive fields excluded from indexes
+- [ ] PII needing exact-match (not fuzzy) indexed via a hash-only strategy
+- [ ] Result formatting defined for every indexed entity
+- [ ] No encrypted/sensitive fields in indexed text output
+- [ ] Entity identifiers in the index follow the project's exact format
+- [ ] Direct search vs config-aware indexing use the appropriate project service
 
 ## 8. Cache
 
-- [ ] Resolved via DI: `container.resolve('cacheService')` — never raw Redis/SQLite
-- [ ] Scoped to tenant: `tenantId` in keys or `runWithCacheTenant()`
-- [ ] Tag-based invalidation for CRUD side effects
-- [ ] Every write operation lists which cache tags it invalidates
+- [ ] Resolved through the project's cache abstraction — never raw cache clients
+- [ ] Scoped by tenant (if multi-tenant) via keys or a scoping helper
+- [ ] Tag/key-based invalidation for write side effects
+- [ ] Every write operation lists which cache entries it invalidates
 - [ ] Nested data declares invalidation chains (child change invalidates parent cache)
 - [ ] No stale cross-tenant data possible
 - [ ] No sensitive data cached without encryption
@@ -123,77 +111,73 @@ Apply every applicable section based on which files changed. Skip sections that 
 ## 9. Queue & Workers
 
 - [ ] Workers are idempotent — duplicate execution MUST NOT corrupt data
-- [ ] `metadata` exported with `{ queue, id?, concurrency? }`
-- [ ] Concurrency <= 20
-- [ ] I/O-bound: concurrency 5-10; CPU-bound: 1-2; database-heavy: 3-5
-- [ ] Works with both `local` and `async` strategies
+- [ ] Required discovery metadata exported (queue, id, concurrency as applicable)
+- [ ] Concurrency bounded within the project's limit
+- [ ] Concurrency matched to workload (I/O-bound higher, CPU-bound lower, database-heavy moderate)
+- [ ] Works with whichever execution strategies the project supports (e.g. local and async)
 
 ## 10. Module Setup
 
-- [ ] `defaultRoleFeatures` in `setup.ts` mirrors features from `acl.ts`
-- [ ] Lifecycle hooks: `onTenantCreated`, `seedDefaults`, `seedExamples` as needed
+- [ ] Default role/permission assignments mirror the declared authorization features
+- [ ] Lifecycle hooks (tenant-created, seed defaults, seed examples) provided as needed
 - [ ] All hooks are idempotent — re-running MUST NOT create duplicates
-- [ ] No hardcoded module-specific logic in `setup-app.ts`
+- [ ] No hardcoded module-specific logic in shared bootstrap/setup code
 - [ ] No direct imports of another module's seed functions
-- [ ] `getEntityIds()` used at runtime for cross-module lookups
+- [ ] Cross-module lookups resolved at runtime, not at import time
 
-## 11. Custom Fields & Entities
+## 11. Custom Fields & Extension Entities
 
-- [ ] Custom entities declared in `ce.ts` under `entities[].fields`
-- [ ] Generated IDs referenced via `E.<module>.<entity>`
-- [ ] `collectCustomFieldValues()` used in form submission
-- [ ] `splitCustomFieldPayload`, `normalizeCustomFieldValues`, `normalizeCustomFieldResponse` from `@open-mercato/shared`
-- [ ] DSL helpers used: `defineLink`, `entityId`, `cf.*` from `@open-mercato/shared/modules/dsl`
+> Applies only where the project supports user-defined custom fields / extension entities.
+
+- [ ] Custom/extension entities declared through the project's declarative mechanism
+- [ ] Generated identifiers referenced rather than hardcoded strings
+- [ ] Custom-field values collected, split, and normalized through the project's shared helpers
+- [ ] Cross-entity links defined via the project's link/DSL helpers
 
 ## 12. UI & Backend Pages
 
 ### Forms
 
-- [ ] `CrudForm` used for all create/edit flows — never custom forms
-- [ ] Dialog forms use `embedded={true}`
-- [ ] Zod schema drives validation, field errors via `createCrudFormError`
-- [ ] `fields` and `groups` in memoized helpers
-- [ ] `entityIds` passed when custom fields involved
-- [ ] `FormHeader` and `FormFooter` from `@open-mercato/ui/backend/forms`
+- [ ] The project's canonical form abstraction used for all create/edit flows — never custom forms where one exists
+- [ ] Schema-driven validation; field errors surfaced through the project's helper
+- [ ] Field/group definitions memoized
+- [ ] Custom-field context passed when custom fields are involved
+- [ ] Shared form chrome (header/footer) reused
 
 ### Tables
 
-- [ ] `DataTable` used for all list views — never manual tables
-- [ ] Column truncation: `meta.truncate` and `meta.maxWidth` set where needed
-- [ ] `RowActions` with stable `id` values (`edit`, `open`, `delete`)
-- [ ] `rowClickActionIds` configured if needed
-- [ ] `pageSize` <= 100
-- [ ] Exports: `buildCrudExportUrl` + `exportOptions` on `DataTable`
+- [ ] The project's canonical table abstraction used for all list views — never manual tables
+- [ ] Column truncation/width set where needed
+- [ ] Row-action items have stable `id` values
+- [ ] Row-click actions configured if needed
+- [ ] List page sizes respect the project's bound
+- [ ] Export wired through the project's export helpers where applicable
 
 ### Feedback & States
 
-- [ ] `flash()` for all user feedback — never `alert()` or custom toast
-- [ ] `LoadingMessage` and `ErrorMessage` from `@open-mercato/ui/backend/detail`
-- [ ] `TabEmptyState` for empty but healthy sections
-- [ ] `Notice` (compact/variant) for inline hints and warnings
+- [ ] The project's feedback helper used for all user feedback — never `alert()` or ad-hoc toasts
+- [ ] Shared loading and error components reused
+- [ ] Shared empty-state component for empty but healthy sections
+- [ ] Shared inline-notice component for hints and warnings
 
 ### Keyboard & UX
 
 - [ ] Every dialog: `Cmd/Ctrl+Enter` submit, `Escape` cancel
-- [ ] `FormHeader mode="detail"` for view pages, `mode="edit"` for CrudForm pages
+- [ ] Detail vs edit page modes set correctly on shared chrome
 
 ## 13. i18n & Translations
 
 - [ ] No hardcoded user-facing strings
-- [ ] Client-side: `useT()` from `@open-mercato/shared/lib/i18n/context`
-- [ ] Server-side: `resolveTranslations()` from `@open-mercato/shared/lib/i18n/server`
-- [ ] Translation keys in module locale files
-- [ ] Notification strings use `<module>.notifications.*` keys
+- [ ] Client-side translations via the project's client translation helper
+- [ ] Server-side translations via the project's server translation helper
+- [ ] Translation keys live in the module's locale files
+- [ ] All configured locales kept in sync
 
 ## 14. Naming Conventions
 
-- [ ] Module folders: plural, snake_case (exceptions: `auth`, `example`)
-- [ ] Module `id`: matches folder name (plural, snake_case)
-- [ ] JS/TS identifiers: camelCase
-- [ ] Database tables: plural snake_case
-- [ ] Database columns: snake_case
-- [ ] ACL features: `<module>.<entity>.<action>`
-- [ ] Event IDs: `<module>.<entity>.<past_tense_verb>`
+- [ ] Identifiers, tables, and columns follow the project's established casing conventions
+- [ ] Module identifiers match their folder names
+- [ ] Authorization features and event IDs follow the project's naming pattern
 - [ ] No one-letter variable names
 
 ## 15. Code Quality
@@ -202,44 +186,48 @@ Apply every applicable section based on which files changed. Skip sections that 
 - [ ] No `unknown` or `any` exported from shared packages
 - [ ] Narrow, typed interfaces exported from shared packages
 - [ ] Functional, data-first utilities preferred over classes
-- [ ] Boolean parsing: `parseBooleanToken`/`parseBooleanWithDefault`
+- [ ] Shared utility helpers (e.g. boolean/string parsing) reused rather than re-implemented
 - [ ] No added docstrings/comments/annotations on unchanged code
 - [ ] Self-documenting code — no inline comments needed
-- [ ] Imports use correct package paths (see AGENTS.md import table)
+- [ ] Imports use the correct, documented package paths
 
 ## 16. Notifications
 
-- [ ] Types declared in `notifications.ts` with `notificationTypes: NotificationTypeDefinition[]`
+> Applies only where the project has a notification subsystem.
+
+- [ ] Notification types declared through the project's declarative mechanism
 - [ ] Event subscribers emit notifications on domain events
-- [ ] Client renderers in `notifications.client.ts`
-- [ ] Components in `widgets/notifications/`
-- [ ] Translation keys: `<module>.notifications.*`
-- [ ] `expiresAfterHours` set appropriately
+- [ ] Client renderers/components colocated per the project's convention
+- [ ] Translation keys used for notification strings
+- [ ] Expiry configured appropriately
 
-## 17. Widget Injection
+## 17. Extension / Injection Points
 
-- [ ] Widgets declared in `widgets/injection/`
-- [ ] Mapped via `widgets/injection-table.ts`
-- [ ] Metadata in colocated `*.meta.ts` files
-- [ ] Spot IDs follow convention: `crud-form:<entityId>`, `data-table:<tableId>`, `admin.page:<path>`
+> Applies only where the project supports injecting UI/behavior into host-defined extension points.
 
-## 18. AI Tools (MCP)
+- [ ] Extensions declared and registered through the project's convention
+- [ ] Metadata colocated per the project's convention
+- [ ] Injection-point identifiers follow the project's documented convention
 
-- [ ] `requiredFeatures` set for RBAC enforcement — never empty
-- [ ] Zod schemas for `inputSchema` — never raw JSON Schema
-- [ ] Handler returns serializable objects
-- [ ] `moduleId` matches module's `id` field
-- [ ] `_sessionToken` deleted from args before passing to handler
-- [ ] `null` return from token lookup handled — return SESSION_EXPIRED
+## 18. AI / Tool Integrations
+
+> Applies only where the project exposes programmatic tools (e.g. MCP).
+
+- [ ] Required permissions set for access control — never empty
+- [ ] Tool input declared with a validation schema — never raw/unchecked input
+- [ ] Handlers return serializable objects
+- [ ] Module/owner identifiers consistent with the owning module
+- [ ] Session/auth tokens stripped from args before reaching handlers
+- [ ] Expired/absent sessions handled explicitly
 
 ## 19. Generated Files & Build
 
-- [ ] Files in the app's generated directory (e.g. `apps/mercato/.mercato/generated/`) never edited manually
-- [ ] The code-generation/prepare command run after adding/modifying module files
-- [ ] No imports from generated files in packages (only app bootstrap imports)
+- [ ] Generated files never edited manually
+- [ ] The code-generation/prepare command run after adding/modifying convention files
+- [ ] No imports from generated files in libraries (only app bootstrap imports)
 - [ ] Project still builds after changes (the build command in `framework.config.json` → `validation`)
-- [ ] If the project ships a scaffolding template, its template-parity check passes (app `src/{app,modules}` vs template `src/{app,modules}`)
-- [ ] If template drift exists (especially app layout/routes), reviewer asked whether to sync and, if approved, applied the template-sync fix command
+- [ ] If the project ships a scaffolding template, its template-parity check passes
+- [ ] If template drift exists (especially layout/routes), reviewer asked whether to sync and, if approved, applied the template-sync fix command
 
 ## 20. Testing Coverage
 
@@ -255,25 +243,25 @@ Every item below refers to the project's backward-compatibility contract (e.g. a
 
 ### Convention Files & Auto-Discovery
 
-- [ ] No convention file renamed or removed (`index.ts`, `acl.ts`, `setup.ts`, `ce.ts`, `search.ts`, `events.ts`, `translations.ts`, `notifications.ts`, `di.ts`, `cli.ts`, etc.)
-- [ ] No convention file export name renamed (e.g., `features`, `setup`, `searchConfig`, `eventsConfig`, `translatableFields`)
-- [ ] No auto-discovery directory convention changed (routing algorithm for `frontend/`, `backend/`, `api/`, `subscribers/`, `workers/`)
+- [ ] No convention file renamed or removed
+- [ ] No convention file export name renamed
+- [ ] No auto-discovery directory convention changed (routing/discovery algorithm)
 
 ### Type Interfaces
 
-- [ ] No required fields removed from public types (`Module`, `ModuleSetupConfig`, `EventDefinition`, `EntityExtension`, `CustomFieldDefinition`, `InjectionWidgetMetadata`, `InjectionWidgetComponentProps`, `WidgetInjectionEventHandlers`, `SearchModuleConfig`, `NotificationTypeDefinition`, `DashboardWidgetMetadata`, `DashboardWidgetComponentProps`, `OpenApiRouteDoc`, `McpToolDefinition`, `WorkerMeta`, `PageMetadata`)
+- [ ] No required fields removed from public types
 - [ ] No required field types narrowed (e.g., `string | null` changed to `string`)
 - [ ] No existing optional fields removed from public types
 
 ### Function Signatures
 
-- [ ] No required parameters removed or reordered on public functions (`createModuleEvents`, `makeCrudRoute`, `findWithDecryption`, `findOneWithDecryption`, `entityId`, `defineLink`, `defineFields`, `cf.*`, `lazyDashboardWidget`, `registerMcpTool`, `apiCall`, `apiCallOrThrow`, `useT`, `resolveTranslations`, `collectCustomFieldValues`, `flash`, `parseBooleanToken`, `parseBooleanWithDefault`, `createCrudOpenApiFactory`)
+- [ ] No required parameters removed or reordered on public functions
 - [ ] No return type changed in a breaking way
 - [ ] New parameters added as optional only (no required params added to existing functions)
 
 ### Event IDs
 
-- [ ] No existing event ID renamed (IDs in any module's `events.ts`)
+- [ ] No existing event ID renamed
 - [ ] No existing event ID removed
 - [ ] No existing event payload fields removed (may add optional fields)
 - [ ] Deprecated events still emitted during bridge period alongside replacement
@@ -285,45 +273,45 @@ Every item below refers to the project's backward-compatibility contract (e.g. a
 - [ ] No two spec files under the specs root (`framework.config.json` → `paths.specsRoot`, including any `enterprise/` subfolder) resolve to the same normalized `{YYYY-MM-DD}-{slug}.md` target
 - [ ] Filename references/links updated after any normalization
 
-### Widget Injection Spot IDs
+### Extension / Injection-Point IDs
 
-- [ ] No existing spot ID renamed or removed
-- [ ] No spot ID context/data type changed in a breaking way (may add optional fields)
-- [ ] Wildcard spots (`crud-form:*`, `data-table:*`) still match as documented
+- [ ] No existing injection-point ID renamed or removed
+- [ ] No injection-point context/data type changed in a breaking way (may add optional fields)
+- [ ] Wildcard injection points still match as documented
 
 ### API Routes
 
 - [ ] No existing API route URL removed or renamed
 - [ ] No HTTP method changed for existing operations
 - [ ] No fields removed from existing response schemas (may add new fields)
-- [ ] Deprecated routes marked `deprecated: true` in `openApi` and kept functional
+- [ ] Deprecated routes marked deprecated in API docs and kept functional
 
 ### Database Schema
 
 - [ ] No existing table or column renamed
 - [ ] No existing column removed (soft-deprecate: stop writing, keep column)
 - [ ] No column type narrowed (e.g., `text` → `varchar(50)`)
-- [ ] Standard columns preserved (`id`, `created_at`, `updated_at`, `deleted_at`, `is_active`, `organization_id`, `tenant_id`)
+- [ ] Standard columns preserved (id, created/updated/deleted timestamps, active flag, and any tenant-scoping columns the project uses)
 - [ ] New columns have defaults (non-breaking addition)
 
-### DI Service Names
+### Service / Registration Names
 
-- [ ] No existing DI registration key renamed
+- [ ] No existing dependency-injection registration key renamed
 - [ ] No existing service interface changed in a breaking way
 
-### ACL Feature IDs
+### Authorization Feature IDs
 
-- [ ] No existing feature ID renamed (stored in DB role configs)
-- [ ] No feature ID removed without data migration for existing role configs
+- [ ] No existing feature/permission ID renamed (stored in persisted role configs)
+- [ ] No feature/permission ID removed without data migration for existing role configs
 
 ### Notification Type IDs
 
-- [ ] No existing `type` string renamed on `NotificationTypeDefinition`
+- [ ] No existing notification type identifier renamed
 - [ ] No existing notification type removed
 
 ### Import Paths
 
-- [ ] No documented public import path removed without re-export bridge + `@deprecated`
+- [ ] No documented public import path removed without re-export bridge + deprecation annotation
 - [ ] Moved modules re-exported from old path
 
 ### CLI Commands
@@ -333,11 +321,11 @@ Every item below refers to the project's backward-compatibility contract (e.g. a
 ### Generated Files
 
 - [ ] No generated file export names changed
-- [ ] No required fields removed from `BootstrapData`
+- [ ] No required fields removed from generated bootstrap data
 
 ### Deprecation Protocol (when changing any of the above)
 
-- [ ] `@deprecated` JSDoc added with migration guidance and target removal version
+- [ ] Deprecation annotation added with migration guidance and target removal version
 - [ ] Bridge provided (re-export, alias, or dual-emit) for at least one minor version
 - [ ] Documented in the project's release notes (e.g. `RELEASE_NOTES.md`)
 - [ ] Spec under the specs root (`framework.config.json` → `paths.specsRoot`) with "Migration & Backward Compatibility" section
@@ -349,25 +337,25 @@ Flag any of these patterns as violations:
 | Anti-Pattern                                             | Severity | Fix                                                                 |
 | -------------------------------------------------------- | -------- | ------------------------------------------------------------------- |
 | Removed/renamed event ID without deprecation bridge      | Critical | Keep old ID, emit both, deprecate after one minor version           |
-| Removed/renamed widget spot ID                           | Critical | Keep old spot ID, add new one additively                            |
+| Removed/renamed extension/injection-point ID             | Critical | Keep old ID, add new one additively                                 |
 | Removed field from API response schema                   | Critical | Keep field (set to null/default if no longer meaningful), deprecate |
 | Renamed/removed DB column or table                       | Critical | Keep old column, add new one, backfill, deprecate old               |
-| Removed/renamed public type field or function param      | Critical | Add `@deprecated` alias, keep old signature                         |
-| Removed public import path without re-export             | Critical | Re-export from old path with `@deprecated`                          |
+| Removed/renamed public type field or function param      | Critical | Add deprecated alias, keep old signature                            |
+| Removed public import path without re-export             | Critical | Re-export from old path with a deprecation annotation               |
 | Contract surface change without spec + migration section | Critical | Create spec with "Migration & Backward Compatibility" section       |
-| Direct ORM relationships between modules                 | Critical | Use FK IDs, fetch separately                                        |
-| Missing `organization_id` filter on tenant queries       | Critical | Add tenant scoping                                                  |
-| Raw `em.find`/`em.findOne` without decryption            | High     | Use `findWithDecryption`                                            |
-| Missing `openApi` export on API route                    | High     | Add OpenAPI spec export                                             |
-| Missing `metadata` export on subscriber/worker           | High     | Add metadata with required fields                                   |
-| Raw `fetch` in UI code                                   | High     | Use `apiCall`/`apiCallOrThrow`                                      |
-| Custom form instead of `CrudForm`                        | Medium   | Refactor to use `CrudForm`                                          |
-| Custom table instead of `DataTable`                      | Medium   | Refactor to use `DataTable`                                         |
-| `any` type                                               | Medium   | Use zod + `z.infer`                                                 |
-| Hardcoded user-facing string                             | Medium   | Use i18n translation key                                            |
-| Hand-written migration                                   | Medium   | Delete and run the project's migration-generation command           |
+| Tight cross-module coupling / shared mutable state       | Critical | Depend on stable IDs/contracts, fetch separately                    |
+| Missing tenant scoping on a multi-tenant query           | Critical | Add tenant scoping                                                  |
+| Raw query bypassing the encryption-aware data helpers    | High     | Route reads/writes through the encryption-aware helpers             |
+| Missing API-doc/auth metadata export on API route        | High     | Add the required convention exports                                 |
+| Missing discovery metadata on subscriber/worker          | High     | Add metadata with required fields                                   |
+| Raw `fetch` in client code                               | High     | Use the project's API-call helper                                   |
+| Custom form instead of the canonical form abstraction    | Medium   | Refactor to the project's form abstraction                          |
+| Custom table instead of the canonical table abstraction  | Medium   | Refactor to the project's table abstraction                         |
+| `any` type                                               | Medium   | Derive types from the validation schema                             |
+| Hardcoded user-facing string                             | Medium   | Use an i18n translation key                                         |
+| Hand-written migration where generation exists           | Medium   | Delete and run the project's migration-generation command           |
 | Behavior change without unit/integration test coverage   | High     | Add focused unit/integration tests for changed paths                |
-| `alert()` or custom toast                                | Medium   | Use `flash()`                                                       |
+| `alert()` or ad-hoc toast                                | Medium   | Use the project's feedback helper                                   |
 | One-letter variable name                                 | Low      | Use descriptive name                                                |
 | Inline comment on self-explanatory code                  | Low      | Remove comment                                                      |
 | Added docstring on unchanged function                    | Low      | Remove docstring                                                    |
