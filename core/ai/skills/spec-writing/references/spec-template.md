@@ -86,7 +86,7 @@ Every non-trivial spec must include these sections:
 ### [Entity Name] (Singular)
 
 - `id`: string (UUID)
-- `organization_id`: string (FK)
+- `<tenant_id>`: string (FK) — if the project is multi-tenant, include the tenant-scoping column
 - ...
 
 ## API Contracts
@@ -203,13 +203,13 @@ Use this exact structure:
 
 ### Compliance Matrix
 
-| Rule Source              | Rule                                        | Status        | Notes                          |
-| ------------------------ | ------------------------------------------- | ------------- | ------------------------------ |
-| root AGENTS.md           | No direct ORM relationships between modules | Compliant     | Uses FK IDs only               |
-| root AGENTS.md           | Filter by organization_id                   | Compliant     | All queries scoped             |
-| packages/core/AGENTS.md  | API routes MUST export openApi              | Non-compliant | Missing on GET /api/...        |
-| packages/cache/AGENTS.md | Tag-based invalidation                      | Compliant     | Tags declared in cache section |
-| ...                      | ...                                         | ...           | ...                            |
+| Rule Source           | Rule                                             | Status        | Notes                          |
+| --------------------- | ------------------------------------------------ | ------------- | ------------------------------ |
+| root AGENTS.md        | No direct ORM relationships between modules      | Compliant     | Uses FK IDs only               |
+| root AGENTS.md        | Multi-tenant: scope every read/write by tenant   | Compliant     | All queries scoped             |
+| API conventions guide | API routes declare their schema/OpenAPI contract | Non-compliant | Missing on GET /api/...        |
+| Cache guide           | Tag-based invalidation                           | Compliant     | Tags declared in cache section |
+| ...                   | ...                                              | ...           | ...                            |
 
 ### Internal Consistency Check
 

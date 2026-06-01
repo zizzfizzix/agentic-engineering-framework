@@ -55,7 +55,7 @@ When asked to review or audit a specification, produce the report using this str
 
 ### Critical
 
-{Violations of core laws: plural naming, cross-module ORM, tenant isolation leaks}
+{Violations of core laws: cross-module ORM coupling, tenant isolation leaks (if multi-tenant), hand-rolled crypto for sensitive data}
 
 ### High
 
@@ -76,32 +76,32 @@ Refer to [Spec Review Checklist](references/spec-checklist.md).
 
 ## Review Heuristics (The "Martin Fowler" Lens)
 
-1.  **Command Graph vs. Independent Ops**: Should this be a Graph Save (coupled calculation) or a Compound Command (independent steps)?
+1.  **Coupled vs. Independent Ops**: Should this be a single coupled operation (calculation depends on shared state) or a compound command of independent, individually-undoable steps?
 2.  **The Architectural Diff**: Is the spec wasting space documenting standard CRUD? Cut the noise, focus on the unique.
-3.  **Singularity Law**: Does the spec use `pos.carts` (FAIL) or `pos.cart` (PASS)?
+3.  **Consistent Naming**: Does the spec name entities, commands, and events consistently with existing conventions in the codebase?
 4.  **Undo Contract**: How is the state reversed? Is the "Undo" logic as detailed as the "Execute"?
-5.  **Module Isolation**: Are we using Event Bus for side effects or cheating with direct imports?
-6.  **Canonical Mechanisms**: Does the spec reach for the framework primitives (e.g. `makeCrudRoute`, `CrudForm`, `DataTable`, `apiCall` / `useGuardedMutation`, DI-resolved cache, `createModuleEvents` — these are example primitive names) or invent its own substitute? See the relevant package/module `AGENTS.md` files for API Routes / Module Setup, CrudForm / DataTable, cache, and events conventions.
-7.  **Sensitive Data**: For every PII / GDPR / address / contact / free-text-about-people / integration-credential column the spec proposes, does it declare an `encryption.ts` `defaultEncryptionMaps` entry and route reads through `findWithDecryption`? See the relevant module `AGENTS.md` → Encryption and the project's encryption docs. No hand-rolled AES, no `crypto.subtle`, no "TODO encrypt later".
-8.  **Design System**: Does every UI mock / className snippet in the spec match the DS canon — semantic status tokens (no `text-red-*` / `bg-green-*`), Tailwind text scale (no `text-[11px]` / `text-[13px]`), shared primitives (`StatusBadge`, `Alert`, `FormField`, `SectionHeader`, `CollapsibleSection`, `LoadingMessage` / `Spinner` / `DataLoader`, `EmptyState`), lucide-react icons in page body (never inline `<svg>`), dialog `Cmd/Ctrl+Enter` submit and `Escape` cancel, `aria-label` on every icon-only button? See the project's design-system rules (`.ai/ds-rules.md` foundations), component reference (`.ai/ui-components.md`), the UI package `AGENTS.md` (workflow), and the root `AGENTS.md` → Design System Rules. Specs that touch existing pages MUST honour the Boy Scout rule (migrate touched lines to semantic tokens).
+5.  **Module Isolation**: Are side effects routed through an event mechanism, or is the spec cheating with direct cross-module imports?
+6.  **Canonical Mechanisms**: Does the spec reuse the project's canonical data-layer, form, API, cache, and event helpers rather than bespoke fetch/forms/queries/crypto? Reach for existing primitives before inventing a substitute. See the relevant `AGENTS.md` files for the project's conventions.
+7.  **Sensitive Data**: For every PII / GDPR / address / contact / free-text-about-people / credential column the spec proposes, does it encrypt the field through a declarative, framework-provided field-encryption mechanism with per-tenant keys? Never hand-roll crypto — no bespoke AES, no `crypto.subtle`, no "TODO encrypt later".
+8.  **Authorization**: Does every endpoint the spec proposes declare its required auth/permissions explicitly? Default-deny — missing declaration means denied.
 9.  **Frontend Architecture Contract**: For Next.js/App Router UI specs, require a Frontend Architecture Contract. It must include a Server/Client boundary map, a `"use client"` ledger with justification for each client file, client blob guardrails, route/bundle/RAM budgets, hydration/interactivity tests, provider/bootstrap scope, and required performance evidence before merge. Read `references/frontend-architecture-contract.md` when the spec touches `app/**`, generated frontend, shared providers, backend shell UI, or heavy interactive widgets.
 
 ## Quick Rule Reference
 
-- **Singular naming** for everything (entities, commands, events, feature IDs).
-- **FK IDs only** for cross-module links.
-- **Organization ID** is mandatory for all scoped entities.
+- **Consistent naming** for everything (entities, commands, events, feature IDs) — follow existing conventions.
+- **FK IDs only** for cross-module links (no direct cross-module ORM relations).
+- **Tenant scoping** — if the project is multi-tenant, scope every read/write by tenant; never bypass the scoping layer.
 - **Undoability** is the default for state changes.
-- **Zod validation** for all API inputs.
-- **Encryption maps** for every sensitive / GDPR-relevant column (declare in `<module>/encryption.ts`, read via `findWithDecryption`) — see the relevant module `AGENTS.md` → Encryption.
-- **Canonical primitives** for CRUD APIs (`makeCrudRoute`), backend forms (`CrudForm`), tables (`DataTable`), HTTP (`apiCall` — never raw `fetch`), non-`CrudForm` writes (`useGuardedMutation`), cache (DI-resolved cache service), events (`createModuleEvents`) — primitive/import names here are examples; see the matching rows in root `AGENTS.md` Task Router.
-- **Design System** tokens and shared UI primitives — see `.ai/ds-rules.md` and `.ai/ui-components.md`. No hardcoded status colors, no arbitrary text sizes, no inline `<svg>` in page-body UI.
+- **Validate at boundaries** — validate all inputs with a schema and derive types from it.
+- **Encrypt sensitive data** — encrypt every PII / GDPR-relevant field through a declarative, framework-provided field-encryption mechanism with per-tenant keys; never hand-roll crypto.
+- **Canonical primitives** — reuse the project's canonical data-layer, form, and API helpers (and cache/event mechanisms) rather than bespoke fetch/forms/queries. See the matching rows in the project's `AGENTS.md` files.
+- **Default-deny authorization** — every endpoint declares its required auth/permissions explicitly; missing = denied.
+- **Backward compatibility** — treat shipped public surfaces (APIs, events, schemas) as contracts: add, don't break; deprecate with aliases.
 - **Frontend Architecture Contract** for Next.js/UI work: Server/Client boundary map, `"use client"` ledger, client blob guardrail, budgets, hydration/interactivity tests, provider/bootstrap scope, and performance evidence. See `references/frontend-architecture-contract.md`.
 
 ## Reference Materials
 
-- [Spec Review Checklist](references/spec-checklist.md) — § 3 Data & Security covers encryption maps; § 5 API/UI covers Mandatory Mechanisms + Design System
-- [Final Compliance Review](references/compliance-review.md) — sample matrix calls out encryption-maps, CRUD factory, and DS-rules MUSTs
+- [Spec Review Checklist](references/spec-checklist.md) — § 3 Data & Security covers field encryption; § 5 API/UI covers canonical mechanisms
+- [Final Compliance Review](references/compliance-review.md) — sample matrix calls out field encryption, canonical data-layer helpers, and authorization MUSTs
 - [Specification Template](references/spec-template.md)
-- [Root AGENTS.md](../../../AGENTS.md) — Task Router rows for every canonical primitive listed above
-- [`.ai/ds-rules.md`](../../ds-rules.md), [`.ai/ui-components.md`](../../ui-components.md) — Design System foundations and component reference
+- [Root AGENTS.md](../../../AGENTS.md) — Task Router rows for the project's canonical primitives
