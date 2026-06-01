@@ -19,6 +19,9 @@ class RenamePlan:
 
 
 def find_specs_roots(repo_root: Path) -> list[Path]:
+    # Default scan roots mirror the generic specsRoot default in
+    # framework.config.json -> paths.specsRoot (`.ai/specs`, with `ai/specs` tolerated).
+    # Point these at the project's configured specsRoot if it differs.
     candidates = [
         repo_root / ".ai/specs",
         repo_root / "ai/specs",
