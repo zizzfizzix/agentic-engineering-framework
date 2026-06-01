@@ -17,31 +17,31 @@ Implements a specification (or selected phases) end-to-end using a team of coord
 
 ## Extension Mode Decision (Mandatory First Step)
 
-Before writing any code, ask the user:
+Before writing any code, ask the user where the feature should live:
 
 > **Where should this feature live?**
 >
-> 1. **External extension** (npm package / standalone repo) — uses the platform's extension points (widgets, events, enrichers, API interceptors) to add functionality without modifying core. Best for: custom business logic, vertical features, third-party integrations. Preserves upgrade path.
-> 2. **Core modification** (inside core platform packages/app) — directly modifies the platform. Best for: foundational platform capabilities that all users need.
+> 1. **Extension / add-on** (separate package or app-level module) — adds functionality through the project's documented extension points without modifying shared/foundational code. Best for: custom business logic, vertical features, third-party integrations. Preserves the upgrade path.
+> 2. **Core modification** (inside shared/foundational packages) — directly modifies code that other parts of the project depend on. Best for: foundational capabilities that all consumers need.
 
-### If user chooses External Extension
+### If user chooses Extension / add-on
 
-- Determine if the user is working inside a scaffolded app repo or wants a standalone npm package.
-- **Standalone npm package**: Create the package with proper scoped naming and `package.json`.
+- Determine whether the user is working inside an existing app repo or wants a standalone package.
+- **Standalone package**: Create the package with appropriate naming and a manifest (`package.json` or equivalent).
 - **App-level module**: Place code under the modules root (`framework.config.json` → `paths.modulesRoot`, e.g. `<modulesRoot>/<module>/`), or the user's app repo.
-- **Maximize platform extension features**: Use widget injection, event subscribers, response enrichers, API interceptors, custom fields/entities, and menu injection to achieve the goal without touching core code.
-- **Never modify core platform packages** (e.g. the core/ui/shared packages) unless absolutely necessary for a missing extension point — and if so, the missing extension point itself becomes a prerequisite spec.
+- **Prefer documented extension points** over editing shared code, so the feature stays decoupled and upgrade-safe.
+- **Avoid modifying shared/foundational packages** unless an extension point is genuinely missing — and if so, adding that extension point becomes a prerequisite spec.
 
 ### If user chooses Core Modification
 
 Ask a confirmation:
 
-> **Are you sure?** Modifying core means:
+> **Are you sure?** Modifying shared/foundational code means:
 >
-> - Third-party modules depending on changed surfaces may break
-> - Backward compatibility contract applies (13 frozen/stable categories)
-> - Users who forked or extended these files will have merge conflicts on upgrade
-> - Changes require deprecation protocol if touching any contract surface
+> - Other code depending on the changed surfaces may break
+> - The backward-compatibility contract applies: treat shipped public surfaces as contracts — add, don't break
+> - Anyone who forked or extended these files will hit merge conflicts on upgrade
+> - Changes to a public surface require following the project's deprecation protocol
 >
 > Proceed with core modification?
 
@@ -59,7 +59,7 @@ Read the phase from the spec. For each step within the phase:
 - Identify which AGENTS.md guides apply (use Task Router)
 - Identify backward compatibility concerns (check the project's backward-compatibility contract surfaces, e.g. a `BACKWARD_COMPATIBILITY.md`)
 - List required exports, conventions, and patterns from the relevant AGENTS.md
-- Note any cross-module impacts (events, extensions, widgets, enrichers)
+- Note any cross-module impacts (events, extension points, shared data)
 
 Present a brief plan to the user before coding.
 
@@ -70,27 +70,27 @@ Use subagents liberally to parallelize independent work:
 - **One subagent per independent file/component** when files don't depend on each other
 - **Sequential execution** when there are dependencies (e.g., entity before API route before backend page)
 
-For every piece of code, enforce these code-review rules inline. The package import paths below (`@open-mercato/...`) are examples drawn from one platform — substitute your project's equivalents:
+For every piece of code, enforce these code-review rules inline:
 
-| Area                                | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Types                               | No `any` — use zod + `z.infer`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| API routes                          | Export `openApi` and per-method `metadata` with `requireAuth` / `requireFeatures` (no top-level `export const requireAuth`)                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| **CRUD APIs**                       | **Use `makeCrudRoute({ entity, entityId, operations, schema, indexer: { entityType } })` from the shared CRUD factory (e.g. `@open-mercato/shared/lib/crud/factory`). Custom (non-`makeCrudRoute`) write routes MUST call `validateCrudMutationGuard` before the mutation and `runCrudMutationGuardAfterSuccess` after success. See the core package's AGENTS.md → API Routes / CRUD Factory.**                                                                                                                                               |
-| Entities                            | Standard columns, snake_case, UUID PKs, indexed `organization_id` + `tenant_id`                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Security                            | `findWithDecryption`, tenant scoping, zod validation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **Encryption maps**                 | **For every PII / GDPR-relevant column the phase touches, declare in `<module>/encryption.ts` exporting `defaultEncryptionMaps` (type from the shared encryption module, e.g. `@open-mercato/shared/modules/encryption`). Reads via `findWithDecryption` / `findOneWithDecryption` (5-arg `(em, entity, where, options?, scope?)`). Equality-lookup columns declare a sibling `hashField`. NEVER hand-rolled AES/KMS, `crypto.subtle`, or "encrypt later" stubs. See the core package's AGENTS.md → Encryption + the encryption user guide.** |
-| UI                                  | `CrudForm`/`DataTable` (with stable `entityId` + `extensionTableId`), `apiCall` (never raw `fetch`), `flash()`, `LoadingMessage`/`ErrorMessage`                                                                                                                                                                                                                                                                                                                                                                                               |
-| **Frontend performance boundaries** | **Implement the spec's Frontend Architecture Contract. Generated framework `page.tsx`/`layout.tsx` roots default to server components. Every `"use client"` needs a ledger justification. Split large client blobs into local leaves, lazy-scope provider/bootstrap registries, dynamically/local-import heavy browser libraries, and capture hydration/interactivity + performance evidence before merge. Run any client-boundary check listed in `framework.config.json` → `validation` for generated frontend/app shell changes.**         |
-| **Design System**                   | **Semantic status tokens (no `text-red-*` / `bg-green-*`); Tailwind text scale (no `text-[13px]` / `text-[11px]`); shared primitives `StatusBadge` / `Alert` / `FormField` / `SectionHeader` / `CollapsibleSection` / `LoadingMessage` / `Spinner` / `DataLoader` / `EmptyState`; lucide-react icons in PAGE BODY (never inline `<svg>`); `aria-label` on every icon-only button; Boy Scout rule on touched lines. See root `AGENTS.md` → Design System Rules + the project's design-system / UI-components references.**                     |
-| **Cache**                           | **Resolve via DI (`container.resolve('cache')`); tag with `tenant:<id>` / `org:<id>`; declare invalidation per write path. NEVER `new Redis(...)` or raw SQLite. See the cache package's AGENTS.md.**                                                                                                                                                                                                                                                                                                                                         |
-| Commands                            | `registerCommand`, undoable, `extractUndoPayload()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Events                              | `createModuleEvents()` with `as const`; subscribers export `metadata`; cross-module side effects via subscribers, never direct imports                                                                                                                                                                                                                                                                                                                                                                                                        |
-| i18n                                | `useT()` client, `resolveTranslations()` server, no hardcoded strings                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Imports                             | Package-level scoped imports (e.g. `@open-mercato/<pkg>/...`) for cross-module                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Mutations                           | `useGuardedMutation` when not using CrudForm; pass `retryLastMutation` in injection context                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Keyboard                            | `Cmd/Ctrl+Enter` submit, `Escape` cancel on dialogs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Naming                              | Modules plural snake_case, events `module.entity.past_tense`, features `module.action`                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Area                                | Rule                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Types                               | No untyped `any` — validate at boundaries with a schema and derive types from it (e.g. zod + `z.infer`)                                                                                                                                                                                                                                                                                                                   |
+| API routes                          | Default-deny authorization: every endpoint declares its auth/permissions explicitly per method; no implicit "anyone can call this"                                                                                                                                                                                                                                                                                        |
+| **CRUD APIs**                       | **Reuse the project's canonical CRUD/data-access helpers rather than bespoke queries; apply the same input validation and authorization guards on custom write paths that the canonical helper would apply (validate before the mutation, run side effects after success).**                                                                                                                                              |
+| Entities                            | Consistent column conventions, stable primary keys, and indexed scoping columns (e.g. tenant/owner identifiers) on every multi-tenant table                                                                                                                                                                                                                                                                               |
+| Security                            | Scope every query to the current tenant/owner; validate inputs with a schema; read sensitive fields through the project's field-decryption path                                                                                                                                                                                                                                                                           |
+| **Encryption maps**                 | **Encrypt sensitive/PII fields through a declarative field-encryption mechanism; never hand-roll crypto. Declare which columns are sensitive in one place and read/write them through that mechanism. Equality-lookup columns need a deterministic hash sibling. NEVER hand-rolled AES/KMS, `crypto.subtle`, or "encrypt later" stubs.**                                                                                  |
+| UI                                  | Reuse the project's canonical UI helpers (forms, tables, data-fetch wrappers, feedback, loading/error states) rather than bespoke fetch/forms                                                                                                                                                                                                                                                                             |
+| **Frontend performance boundaries** | **Implement the spec's Frontend Architecture Contract. Keep page/layout roots server-first where the framework supports it; every client-side boundary needs a justification. Split large client blobs into smaller leaves, lazy-load heavy browser libraries, and capture hydration/interactivity + performance evidence before merge. Run any client-boundary check listed in `framework.config.json` → `validation`.** |
+| **Design System**                   | **Use semantic status tokens (no ad-hoc color classes) and the type scale (no arbitrary pixel sizes); reuse shared UI primitives instead of one-off markup; icon-only controls carry an accessible label; apply the Boy Scout rule on touched lines. See the project's design-system / UI-components references.**                                                                                                        |
+| **Cache**                           | **Resolve cache/infra clients through the project's dependency-injection container; tag entries by tenant/owner; declare invalidation per write path. NEVER instantiate infra clients ad hoc.**                                                                                                                                                                                                                           |
+| Commands                            | If the project has an undoable-command pattern, register commands through it and make them reversible with captured undo state                                                                                                                                                                                                                                                                                            |
+| Events                              | Define events in one place as constants; emit cross-module side effects through subscribers, never direct imports between modules                                                                                                                                                                                                                                                                                         |
+| i18n                                | Resolve user-facing strings through the project's i18n mechanism (client and server); no hardcoded strings                                                                                                                                                                                                                                                                                                                |
+| Imports                             | Use the project's public/scoped import paths for cross-module references; do not reach into another module's internals                                                                                                                                                                                                                                                                                                    |
+| Mutations                           | Use the project's guarded-mutation pattern (with retry context) when not going through the canonical form helper                                                                                                                                                                                                                                                                                                          |
+| Keyboard                            | `Cmd/Ctrl+Enter` submit, `Escape` cancel on dialogs                                                                                                                                                                                                                                                                                                                                                                       |
+| Naming                              | Follow the project's naming conventions for modules, events (e.g. `module.entity.past_tense`), and permissions/features                                                                                                                                                                                                                                                                                                   |
 
 ### Step 3 — Unit Tests
 
@@ -144,7 +144,7 @@ Before marking a phase complete, run a self-review against the full checklist:
 14. **Naming** (section 14)
 15. **Code Quality** (section 15)
 16. **Notifications** (section 16) — if applicable
-17. **Widget Injection** (section 17) — if applicable
+17. **Extension / Injection Points** (section 17) — if applicable
 18. **Testing Coverage** (section 20)
 19. **Backward Compatibility** (section 21) — always
 
@@ -203,12 +203,11 @@ Report results to the user. If any check fails, fix and re-verify.
 
 ## Component Replaceability
 
-When implementing component replacement features (as in SPEC-041h pattern):
+When implementing component-replacement / override features (if the project supports them):
 
-- Every page-level component gets a unique replacement handle (auto-generated from module + path)
-- Every `DataTable` instance gets a replacement handle: `data-table:<module>.<entity>`
-- Every `CrudForm` instance gets a replacement handle: `crud-form:<module>.<entity>`
-- Every named section (e.g., `NotesSection`, `ActivitySection`) gets a replacement handle: `section:<module>.<sectionName>`
+- Give every overridable surface a unique, stable replacement handle derived from its module + path
+- Use predictable handle naming so consumers can target a specific table, form, or named section without guessing
+- Keep handles additive and stable across versions — renaming a handle breaks any consumer that overrode it
 - Document all handles in the module's AGENTS.md or a dedicated reference
 
 ## Rules
@@ -216,7 +215,7 @@ When implementing component replacement features (as in SPEC-041h pattern):
 - MUST read the full spec before starting implementation
 - MUST read all relevant AGENTS.md files before coding
 - MUST ask the Extension Mode Decision question before writing any code
-- MUST prefer UMES extension points over core modifications when extension mode is chosen
+- MUST prefer documented extension points over core modifications when extension mode is chosen
 - MUST pass every applicable code-review checklist item before marking a phase done
 - MUST update the spec with implementation progress after each phase
 - MUST run the verification gate (`framework.config.json` → `validation`) after the final phase to verify no build/lint/type/test breaks

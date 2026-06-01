@@ -5,19 +5,23 @@ find_affected_integration_tests.py
 Maps changed files (from git diff or stdin) to affected Playwright integration test spec files
 by reading module-level dependency declarations in __integration__/meta.ts files.
 
+Repo-layout assumptions (wide-scope prefixes, auto base branches) are generic defaults and are
+configurable via env vars (see Constants below) or the --base flag — nothing is hard-coded to a
+particular project.
+
 Usage:
   # Pipe git diff output
-  git diff --name-only origin/develop...HEAD | python3 find_affected_integration_tests.py --project-root . --layer api-logic
+  git diff --name-only origin/main...HEAD | python3 find_affected_integration_tests.py --project-root . --layer api-logic
 
   # Let the script call git diff internally, including local and untracked files
   python3 find_affected_integration_tests.py --project-root . --base auto --layer ui-component
 
   # Explicit base and head
-  python3 find_affected_integration_tests.py --project-root . --base origin/develop --head HEAD --layer data
+  python3 find_affected_integration_tests.py --project-root . --base origin/main --head HEAD --layer data
 
 Output:
   One relative spec file path per line, e.g.:
-    packages/core/src/modules/customers/__integration__/customers.spec.ts
+    src/modules/customers/__integration__/customers.spec.ts
 
   Outputs "--all" (single line) when a wide-scope change is detected
   (shared utilities, build config, etc.) — caller should run the full suite.
@@ -26,6 +30,7 @@ Output:
 """
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -33,32 +38,56 @@ from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Constants
+#
+# These are generic defaults. All repo-layout assumptions below are configurable:
+# override the wide-scope prefixes via SMART_TEST_WIDE_SCOPE_PREFIXES (comma- or
+# os.pathsep-separated) and the auto base candidates via SMART_TEST_BASE_CANDIDATES.
 # ---------------------------------------------------------------------------
 
-WIDE_SCOPE_PREFIXES = (
+# Changes under these path prefixes are treated as cross-cutting: they can affect
+# any test, so the caller should run the full suite. Defaults cover common monorepo
+# shared/build locations and root test/TS config; override per-project via env.
+DEFAULT_WIDE_SCOPE_PREFIXES = (
     "packages/shared/",
     "packages/events/",
     "packages/queue/",
     "packages/cache/",
-    # Shared backend UI components (DataTable, CrudForm, etc.) are rendered on every
-    # backend page — a broken render can fail any Playwright test, so run the full suite.
-    "packages/ui/src/backend/",
     "jest.config.",
     "jest.setup.",
+    "vitest.config.",
     "tsconfig",
     "package.json",
-    "turbo.json",
 )
 
+
+def _env_list(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+    """Read a configurable list from the environment.
+
+    Accepts comma- or os.pathsep-separated values; falls back to the default.
+    """
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    separator = "," if "," in raw else os.pathsep
+    items = tuple(item.strip() for item in raw.split(separator) if item.strip())
+    return items or default
+
+
+WIDE_SCOPE_PREFIXES = _env_list("SMART_TEST_WIDE_SCOPE_PREFIXES", DEFAULT_WIDE_SCOPE_PREFIXES)
+
 IGNORED_DIRS = frozenset({
-    "node_modules", ".git", ".next", "dist", ".turbo",
+    "node_modules", ".git", ".next", "dist", "build", ".turbo",
     "coverage", "test-results", ".yarn", ".cache", "tmp", "temp",
     ".claude", ".codex",
 })
 
 META_FILE_NAMES = ("meta.ts", "index.ts")
 DEPENDENCY_KEYS = ("dependsOnModules", "requiredModules", "requiresModules")
-AUTO_BASE_CANDIDATES = ("origin/develop", "develop", "origin/main", "main")
+# Generic default branches to diff against in --base auto mode (override via env).
+AUTO_BASE_CANDIDATES = _env_list(
+    "SMART_TEST_BASE_CANDIDATES",
+    ("origin/main", "main", "origin/master", "master"),
+)
 
 
 def run_git_names(args: list[str]) -> list[str]:
@@ -149,8 +178,12 @@ def extract_module_identity_from_path(file_path: str) -> tuple[str, str] | None:
     """
     Extract a workspace-aware module identity from a path.
 
-    The same module name can exist in multiple runtime roots, e.g.
-    apps/mercato/src/modules/example and packages/create-app/template/src/modules/example.
+    The same module name can exist in multiple runtime roots (e.g. an app module and a
+    scaffolding-template module of the same name), so identity is (module_name, root) where
+    root is everything before the `/modules/<name>/` segment. The root is derived generically
+    from the path — no project-specific layout is hard-coded. If a path has a
+    `<root>/src/modules/<name>` shape, the trailing `src` is stripped from the root so that
+    `pkg/src/modules/foo` and `pkg/modules/foo` resolve to the same package root.
     """
     parts = Path(file_path).parts
     for index, part in enumerate(parts):
@@ -160,14 +193,9 @@ def extract_module_identity_from_path(file_path: str) -> tuple[str, str] | None:
         module_name = parts[index + 1].lower()
         prefix = parts[:index]
 
-        if len(prefix) >= 3 and prefix[:3] == ("apps", "mercato", "src"):
-            return module_name, "apps/mercato"
-
-        if len(prefix) >= 4 and prefix[:4] == ("packages", "create-app", "template", "src"):
-            return module_name, "packages/create-app/template"
-
-        if len(prefix) >= 3 and prefix[0] == "packages" and prefix[2] == "src":
-            return module_name, f"packages/{prefix[1]}"
+        # Treat a trailing "src" before "modules" as a layout detail, not part of identity.
+        if prefix and prefix[-1] == "src":
+            prefix = prefix[:-1]
 
         return module_name, "/".join(prefix)
 
@@ -180,7 +208,7 @@ def extract_module_name_from_path(file_path: str) -> str | None:
 
     Examples:
       packages/core/src/modules/customers/lib/foo.ts  → "customers"
-      apps/mercato/src/modules/pos/page.tsx            → "pos"
+      app/src/modules/pos/page.tsx                     → "pos"
     """
     identity = extract_module_identity_from_path(file_path)
     return identity[0] if identity else None
@@ -328,6 +356,8 @@ def find_affected_specs(project_root: Path, changed_files: list[str], layer: str
 
     # When no module-scoped changes (e.g., only root package lib files), check by
     # changed packages. Do not mark module-scoped package files as package-wide.
+    # The top-level workspace directory is a generic monorepo heuristic ("packages/<pkg>/...");
+    # adjust here if the project uses a different workspace root.
     changed_packages: set[str] = set()
     for f in changed_files:
         if extract_module_identity_from_path(f):
@@ -357,11 +387,10 @@ def find_affected_specs(project_root: Path, changed_files: list[str], layer: str
         entry_deps = entry["deps"]
 
         module_hit = (entry_module, entry_scope) in changed_module_identities
+        # A declared cross-module dependency triggers this test when the depended-on module
+        # changed. (Module identity is still root-aware for the direct `module_hit` above, so
+        # same-named modules in different roots stay isolated; no specific root is hard-coded.)
         dep_hit = dep_hit_enabled and bool(entry_deps & changed_modules)
-        if entry_scope == "packages/create-app/template":
-            dep_hit = dep_hit and any(
-                scope == "packages/create-app/template" for _module, scope in changed_module_identities
-            )
 
         # Package hit: check if any spec lives in a changed package
         package_hit = False
@@ -392,8 +421,8 @@ def find_affected_specs(project_root: Path, changed_files: list[str], layer: str
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Find Playwright integration tests affected by changed files.")
-    parser.add_argument("--project-root", default=".", help="Absolute or relative path to the monorepo root")
-    parser.add_argument("--base", default=None, help="Base git ref (e.g. origin/develop)")
+    parser.add_argument("--project-root", default=".", help="Absolute or relative path to the repo root")
+    parser.add_argument("--base", default=None, help="Base git ref (e.g. origin/main), or 'auto' to detect")
     parser.add_argument("--head", default=None, help="Head git ref (default: HEAD)")
     parser.add_argument(
         "--layer",

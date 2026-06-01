@@ -12,11 +12,13 @@ test runners, the paths in `framework.config.json` → `paths`, and the test com
 | Jest + ts-jest | Unit and component tests | `jest.config.cjs` (root + per-package + per-app)                                                                                  |
 | Playwright     | Integration / E2E tests  | the Playwright config under the tests root (`framework.config.json` → `paths.testsRoot`, e.g. `<testsRoot>/playwright.config.ts`) |
 
-## File Counts (approximate — record this project's actual counts here)
+## File Counts (record this project's actual counts here)
 
-- Unit/component tests: ~485 files (`*.test.ts`, `*.test.tsx`)
-- Integration tests: ~323 files (`*.spec.ts` inside `__integration__/`)
-- Total: ~808 test files
+Fill in this project's own totals — they feed the coverage percentages reported by `smart-test`:
+
+- Unit/component tests: _N_ files (`*.test.ts`, `*.test.tsx`)
+- Integration tests: _N_ files (`*.spec.ts` inside `__integration__/`)
+- Total: _N_ test files
 
 ## Test File Conventions
 
@@ -43,7 +45,7 @@ Extract module name from file path by finding `/modules/<name>/` (under `framewo
 | -------------------------------------------------------- | -------------------- |
 | `packages/core/src/modules/customers/lib/foo.ts`         | `customers`          |
 | `packages/core/src/modules/sales/api/...`                | `sales`              |
-| `apps/mercato/src/modules/pos/page.tsx`                  | `pos`                |
+| `apps/<app>/src/modules/pos/page.tsx`                    | `pos`                |
 | `packages/enterprise/src/modules/enterprise_pricing/...` | `enterprise_pricing` |
 
 ## Wide-Scope Triggers (→ run full suite)
@@ -58,7 +60,7 @@ These path prefixes indicate cross-cutting changes that affect all tests:
 - `jest.setup.` — test environment setup
 - `tsconfig` — TypeScript configuration
 - `package.json` (root) — deps/scripts
-- `turbo.json` — monorepo build config
+- monorepo build config (e.g. `turbo.json`, `nx.json`, or your build orchestrator's root config)
 
 ## Layer Classification (→ controls whether Playwright runs)
 
@@ -80,11 +82,11 @@ React components (`.tsx`) that render into pages visited by Playwright. A broken
 
 | Pattern                            | Examples                                                  |
 | ---------------------------------- | --------------------------------------------------------- |
-| `packages/ui/src/backend/**/*.tsx` | `TruncatedCell.tsx`, `DataTable.tsx`, `FlashMessages.tsx` |
+| `packages/ui/src/backend/**/*.tsx` | shared table/cell/feedback components rendered into pages |
 | `**/frontend/**`                   | Next.js frontend pages                                    |
 | `**/backend/**/*.tsx`              | Next.js backoffice pages                                  |
 | `**/components/**`                 | React component files                                     |
-| `**/widgets/**`                    | Widget injection files                                    |
+| `**/widgets/**`                    | Reusable widget / embeddable component files              |
 
 > **Important**: `backend/page.tsx` is a Next.js page (ui-component). `api/GET/route.ts` is an API route (api-logic). Don't confuse them.
 
@@ -149,18 +151,13 @@ lives in the project's CLI/testing library (one platform's example:
 ## Known Cross-Module Integration Dependencies
 
 All `__integration__` directories should have `meta.ts` files with explicit dependency declarations.
-The table below documents cross-module dependencies (modules with only self-references are omitted).
-The module names below are examples from one platform — replace with this project's actual modules.
+Document this project's cross-module dependencies here (modules with only self-references can be
+omitted). The project should fill in its own dependency map — one row per test module that declares
+extra `dependsOnModules`:
 
-| Test module | Also requires                                         |
-| ----------- | ----------------------------------------------------- |
-| `catalog`   | `shipping_carriers`, `payment_gateways`, `currencies` |
-| `customers` | `feature_toggles`, `directory`, `dictionaries`        |
-| `sales`     | `notifications`, `catalog`, `customers`               |
-| `auth`      | `staff`                                               |
-| `checkout`  | `payment_gateways`                                    |
-| `data_sync` | `integrations`                                        |
-| `inbox_ops` | `messages`                                            |
+| Test module     | Also requires           |
+| --------------- | ----------------------- |
+| _<your module>_ | _<modules it requires>_ |
 
 ## Unit Test Run Commands
 
@@ -170,7 +167,7 @@ Use the unit test command from `framework.config.json` → `validation`. The com
 yarn test                              # All unit tests (turbo)
 yarn jest --findRelatedTests <files>   # Related tests for specific files
 yarn jest <file>                       # Single test file
-yarn workspace @open-mercato/core test # Single package (example scope)
+yarn workspace <pkg> test              # Single package (example)
 ```
 
 ## Integration Test Run Commands
