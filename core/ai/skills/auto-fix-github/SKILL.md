@@ -217,7 +217,7 @@ Per iteration:
 3. If i18n files or user-facing strings changed, run any i18n/locale checks defined in `framework.config.json` → `validation`.
 4. If module structure, generated files, entities, or routes changed, run the required code-generation / build steps and any follow-up sync step (e.g. a template-sync command) the change requires.
 5. Re-read the diff and remove any accidental scope creep.
-6. Grep changed non-test files for any data-access patterns the project requires you to route through a safe wrapper (e.g. raw `em.findOne(`/`em.find(` → a decryption-aware query helper). This is a hard rule from AGENTS.md.
+6. Grep changed non-test files for any raw data-access patterns the project requires you to route through its canonical query helper (which enforces scoping and decryption) instead of bespoke queries. This is a hard rule from AGENTS.md.
 
 Before publishing, run the full CI/CD verification gate from the `code-review` skill: all of the commands listed in `framework.config.json` → `validation` (typecheck, tests, build, plus any lint/i18n/codegen checks the project defines), running any code-generation steps before the build that consumes them.
 
@@ -233,8 +233,8 @@ You must explicitly verify:
 
 - no frozen or stable contract surface was broken without the deprecation protocol
 - no API response fields were removed
-- no event IDs, widget spot IDs, ACL IDs, import paths, or DI names were broken
-- no tenant isolation or encryption rules were violated — grep changed files for any raw data-access patterns the project bans in production code (e.g. raw `em.findOne(`/`em.find(`); every hit must use the project's safe wrapper (e.g. a decryption-aware query helper) instead
+- no frozen/stable contract surface (published identifiers, extension-point ids, permission ids, public import paths, dependency-injection names) was broken
+- no tenant isolation or encryption rules were violated — grep changed files for any raw data-access patterns the project bans in production code; every hit must use the project's canonical query helper (which enforces scoping and decryption) instead
 - the fix remains minimal and does not introduce unrelated churn
 
 If your self-review finds new issues, fix them and repeat the validation loop.
@@ -263,10 +263,10 @@ Suggested commit style:
 - `refactor(<area>): <short summary> (#issueId)` — for refactors
 - `security(<area>): <short summary> (#issueId)` — for security fixes
 
-Where `<area>` is the primary affected module or package (e.g., `auth`, `feature_toggles`, `catalog`, `ui`, `shared`). Examples:
+Where `<area>` is the primary affected module or package (e.g., `auth`, `api`, `ui`, `shared`). Examples:
 
 - `fix(auth): prevent privilege escalation via role name spoofing (#1427)`
-- `feat(catalog): add bulk product import endpoint (#1500)`
+- `feat(api): add bulk import endpoint (#1500)`
 
 Push with tracking:
 

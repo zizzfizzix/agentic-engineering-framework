@@ -51,8 +51,8 @@ cover — invoke or quote them:
 - `.ai/skills/code-review/SKILL.md` and its checklist at
   `.ai/skills/code-review/references/review-checklist.md` are the
   authoritative source for the project's security baseline
-  (e.g. tenant scoping, decryption-aware query helpers, zod validation,
-  RBAC via the project's ACL layer, password hashing, no raw `fetch`).
+  (e.g. multi-tenant scoping, canonical query helpers, input validation,
+  default-deny authorization, password hashing, no bespoke `fetch`).
   Apply them first; only add OWASP/paranoid checks on top.
 - `.ai/skills/auto-review-pr/SKILL.md` defines the claim/lock/worktree
   pattern used here verbatim (see step 1 below).
@@ -61,8 +61,9 @@ cover — invoke or quote them:
   sources when the target is a spec (section 3 "Data Integrity &
   Security", compliance matrix fields).
 - `.ai/skills/pre-implement-spec/SKILL.md` is the authoritative source
-  for backward-compatibility risk (13 contract surfaces). Use it as a
-  cross-check when reviewing a spec that is about to be implemented.
+  for backward-compatibility risk (the project's contract surfaces). Use
+  it as a cross-check when reviewing a spec that is about to be
+  implemented.
 - `.ai/skills/auto-sec-report-pr/references/deep-attack-vectors.md` is
   the bundled paranoid checklist loaded during every run.
 
@@ -156,11 +157,12 @@ Load `.ai/skills/auto-sec-report-pr/references/deep-attack-vectors.md`
 and walk every applicable category against the unit. Focus on
 non-obvious vectors that conventional code review often misses:
 
-- Time-of-check-time-of-use (TOCTOU) races around stock, payment,
-  shipment, quote acceptance.
-- Cross-tenant leakage via shared cache keys, SSE channels, event bus
-  broadcasts, or in-memory registries that do not include
-  `organization_id` / `tenant_id` in the key.
+- Time-of-check-time-of-use (TOCTOU) races around any state-mutating
+  or value-moving operation (capped-resource consumption, balance
+  changes, status transitions, acceptance/approval flows).
+- Cross-tenant leakage via shared cache keys, server-sent-event/push
+  channels, event-bus broadcasts, or in-memory registries that do not
+  include the tenant/account identifier in the key.
 - JWT algorithm confusion (`alg: none`, HS↔RS swap), missing `iss`/
   `aud` checks, loose expiry, token replay after password reset.
 - Signed-URL / magic-link expiry, reuse, and scope creep.
@@ -171,13 +173,15 @@ non-obvious vectors that conventional code review often misses:
 - Deserialization: `JSON.parse` on attacker-controlled with prototype
   pollution (`__proto__`, `constructor`, `prototype`), `yaml.load`
   without safe schema, `eval`/`Function`/`vm` sinks.
-- Path traversal in attachment and spec preview paths, symlink escape
-  in worker sandboxes, archive slip (`zip-slip`).
-- ReDoS in zod `regex`, email/URL/phone validators, search tokenizers.
+- Path traversal in attachment and document preview paths, symlink
+  escape in worker sandboxes, archive slip (`zip-slip`).
+- ReDoS in validator `regex`, email/URL/phone validators, search
+  tokenizers.
 - Log forging / log injection via unescaped user input in structured
   logs; PII leakage into logs; stack traces leaking to clients.
-- Mass assignment via `z.object({...}).passthrough()` or spreading
-  request bodies into entities; missing `.strict()` on zod schemas.
+- Mass assignment via non-strict schemas or spreading request bodies
+  into persisted records; missing `.strict()` (or equivalent) on input
+  schemas.
 - Rate-limit identifier weaknesses (IP-only when IP is spoofable
   behind proxy; compound identifier missing user id; bucket collision).
 - CSRF on state-changing routes that do not check `SameSite`/origin;
@@ -190,22 +194,26 @@ non-obvious vectors that conventional code review often misses:
 - Webhook integrity: signature verification, replay protection
   (monotonic timestamps, nonce cache), timing-safe compare,
   signature-scheme downgrade (v2→v1).
-- Idempotency on money-moving flows: payments, refunds, shipments,
-  returns, credit memos. Double-submission windows. Missing unique
-  constraints on (tenant, idempotency_key).
-- Access control edge cases: wildcard `__all__` ACL handling for
-  non-superadmins, role rename spoofing, feature flag bypass,
-  portal/customer auth leaking staff features.
-- Encryption defaults: PII fields that should be encrypted but are
-  stored plain, `findOne` bypassing `findWithDecryption`, export paths
-  that re-emit decrypted data without policy.
-- Multi-currency: rounding direction, float use for money,
-  cross-currency totals without FX.
+- Idempotency on value-moving or side-effecting flows (any
+  non-idempotent write that charges, grants, reverses, or commits a
+  resource). Double-submission windows. Missing unique constraints on
+  (tenant, idempotency_key).
+- Access control edge cases: wildcard / "all permissions" grants for
+  non-privileged roles, role rename spoofing, feature flag bypass,
+  lower-privilege session leaking into higher-privilege features.
+- Encryption defaults: sensitive/PII fields that should be encrypted
+  but are stored plain, a query path bypassing the declarative
+  field-encryption mechanism, export paths that re-emit decrypted data
+  without policy.
+- Monetary/quantity handling (when applicable): rounding direction,
+  floating-point use for monetary values, cross-currency totals without
+  an explicit conversion.
 - Background jobs: job payload trust, retry amplification of
   side-effects, cancellation-token bypass, worker reading
   cross-tenant data.
 - AI tool surfaces: tool injection via chat, tool authorization not
-  honoring `acl.ts`, session token reuse after privilege change.
+  honoring the project's authorization layer, session token reuse after
+  privilege change.
 - Supply chain: pinned vs floating dependency, post-install scripts,
   lockfile integrity, Renovate/Dependabot drift, unused but still
   resolvable packages.
@@ -299,12 +307,12 @@ A checklist of non-obvious vectors exercised against this unit, with
 a short outcome per vector: `covered`, `risk surfaced`, `not
 applicable`, or `inconclusive (next step)`.
 
-| Vector                         | Outcome        | Location or note        |
-| ------------------------------ | -------------- | ----------------------- |
-| TOCTOU on money-moving flows   | risk surfaced  | path/to/file.ts:200     |
-| Cache-key cross-tenant leakage | covered        | organization_id present |
-| JWT algorithm confusion        | not applicable | no JWT surface changed  |
-| ...                            | ...            | ...                     |
+| Vector                         | Outcome        | Location or note       |
+| ------------------------------ | -------------- | ---------------------- |
+| TOCTOU on value-moving flows   | risk surfaced  | path/to/file.ts:200    |
+| Cache-key cross-tenant leakage | covered        | tenant id in cache key |
+| JWT algorithm confusion        | not applicable | no JWT surface changed |
+| ...                            | ...            | ...                    |
 
 ## Next Steps — Go Deeper
 

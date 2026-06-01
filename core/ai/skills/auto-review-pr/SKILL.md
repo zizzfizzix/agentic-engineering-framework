@@ -252,37 +252,38 @@ Record findings from the patterns below. These are mandatory findings, not optio
 
 #### Critical auto-detections
 
-| Pattern in diff                                                          | Finding                                             |
-| ------------------------------------------------------------------------ | --------------------------------------------------- |
-| Removed or renamed event ID in any `events.ts`                           | Critical: event ID is a frozen contract surface     |
-| Removed or renamed widget spot ID in `injection-table.ts`                | Critical: spot ID is a frozen contract surface      |
-| Removed field from an API response schema or zod response type           | Critical: response fields are additive-only         |
-| Renamed or removed a database column or table in a migration             | Critical: DB schema is additive-only                |
-| Removed a public import path without re-export bridge                    | Critical: import paths require deprecation protocol |
-| Missing `organization_id` or `tenant_id` filter on a tenant-scoped query | Critical: tenant isolation breach                   |
+| Pattern in diff                                                | Finding                                                         |
+| -------------------------------------------------------------- | --------------------------------------------------------------- |
+| Removed or renamed a published event / message identifier      | Critical: published identifiers are a frozen contract surface   |
+| Removed or renamed a public extension/integration point id     | Critical: public extension points are a frozen contract surface |
+| Removed field from an API response schema or response type     | Critical: response fields are additive-only                     |
+| Renamed or removed a database column or table in a migration   | Critical: DB schema is additive-only                            |
+| Removed a public import/export path without a re-export bridge | Critical: import paths require the deprecation protocol         |
+| Missing the multi-tenant scope filter on a scoped query        | Critical: tenant/account isolation breach                       |
+| Endpoint added without an explicit authorization declaration   | Critical: default-deny — every endpoint must declare its auth   |
 
 #### High auto-detections
 
-| Pattern in diff                                                                                                                                                                     | Finding                                                                                                                                          |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `findWithDecryption` or `findOneWithDecryption` replaced with raw `em.find` or `em.findOne`                                                                                         | High: encryption helpers must not be downgraded                                                                                                  |
-| New API route file missing `export const openApi` or `export const metadata`                                                                                                        | High: required exports for auto-discovery                                                                                                        |
-| New subscriber or worker file missing `export const metadata`                                                                                                                       | High: required exports for auto-discovery                                                                                                        |
-| Raw `fetch(` call in UI or backend page code, outside tests                                                                                                                         | High: must use `apiCall` or `apiCallOrThrow`                                                                                                     |
-| New raw `em.findOne(` or `em.find(` in non-test production code (grep the diff: `gh pr diff {prNumber} \| grep "^+" \| grep -v "test\." \| grep -v "__tests__" \| grep "em\.find"`) | High: must use the project's decryption-aware query helpers (e.g. `findOneWithDecryption`/`findWithDecryption`) instead of raw data-access calls |
-| Behavior change with no corresponding test file in the diff                                                                                                                         | High: behavior changes must include tests                                                                                                        |
+| Pattern in diff                                                                                                                                           | Finding                                                                                                               |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| A sensitive/PII field stored or queried without the project's declarative field-encryption mechanism (hand-rolled or skipped crypto)                      | High: sensitive/PII fields must use the declarative field-encryption mechanism, never bypass it                       |
+| New API route, subscriber, or worker file missing the exports the project requires for auto-discovery (e.g. an OpenAPI/metadata export)                   | High: required exports for auto-discovery                                                                             |
+| Raw `fetch(` call in UI or backend code, outside tests, instead of the project's canonical API client                                                     | High: reuse the project's canonical API client, not bespoke fetch                                                     |
+| New raw data-access call in non-test production code bypassing the project's canonical query helper (grep the diff: `gh pr diff {prNumber} \| grep "^+"`) | High: reuse the project's canonical query helpers (which enforce scoping/decryption) instead of raw data-access calls |
+| Behavior change with no corresponding test file in the diff                                                                                               | High: behavior changes must include tests                                                                             |
 
 #### Medium auto-detections
 
-| Pattern in diff                                                            | Finding                                                                                                          |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Hardcoded user-facing string in API errors or UI labels                    | Medium: must use i18n                                                                                            |
-| New `any` type annotation outside tests                                    | Medium: use zod plus `z.infer`                                                                                   |
-| `alert(` or custom toast instead of `flash()`                              | Medium: use `flash()`                                                                                            |
-| Hand-written migration SQL file without snapshot update or scope rationale | Medium: prefer generated migrations; manual SQL must be scoped and update the project's ORM schema snapshot file |
-| Entity schema changed but no migration file or no-op rationale in the diff | Medium: create a scoped migration and update the snapshot                                                        |
-| Missing explicit tenant scoping in sub-entity queries                      | Medium: defense in depth                                                                                         |
-| New or modified i18n locale JSON keys not in alphabetical order            | Medium: if the project's i18n check requires sorted keys, run its fix command or sort manually                   |
+| Pattern in diff                                                                         | Finding                                                                                                          |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Hardcoded user-facing string in API errors or UI labels                                 | Medium: must use i18n                                                                                            |
+| New `any` type annotation outside tests                                                 | Medium: prefer a validated/inferred type (e.g. schema validation plus type inference)                            |
+| Bespoke form, table, or data-fetch widget instead of the project's canonical UI helpers | Medium: reuse the project's canonical UI helpers                                                                 |
+| Ad-hoc toast/alert instead of the project's canonical notification helper               | Medium: use the project's canonical notification mechanism                                                       |
+| Hand-written migration SQL file without snapshot update or scope rationale              | Medium: prefer generated migrations; manual SQL must be scoped and update the project's ORM schema snapshot file |
+| Entity schema changed but no migration file or no-op rationale in the diff              | Medium: create a scoped migration and update the snapshot                                                        |
+| Missing explicit tenant/account scoping in sub-entity queries                           | Medium: defense in depth                                                                                         |
+| New or modified i18n locale JSON keys not in alphabetical order                         | Medium: if the project's i18n check requires sorted keys, run its fix command or sort manually                   |
 
 #### Low auto-detections
 
@@ -471,7 +472,7 @@ Validation requirements for autofix mode:
 
 Replacement PR requirements:
 
-- Use conventional-commit-style PR title scoped to the affected module or area: `fix(<area>): <summary>`, `feat(<area>): <summary>`, `refactor(<area>): <summary>`, etc. Where `<area>` is the primary affected module or package (e.g., `auth`, `catalog`, `ui`, `shared`)
+- Use conventional-commit-style PR title scoped to the affected module or area: `fix(<area>): <summary>`, `feat(<area>): <summary>`, `refactor(<area>): <summary>`, etc. Where `<area>` is the primary affected module or package (e.g., `auth`, `api`, `ui`, `shared`)
 - Include the original PR link
 - Credit the original PR author explicitly
 - State that the new PR carries forward the original work plus the requested fixes
