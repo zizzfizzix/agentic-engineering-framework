@@ -7,7 +7,14 @@ import { FrameworkConfigSchema } from '../../core/contracts.js'
 import { renderSkill } from '../../core/render.js'
 import { selectSkills } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
-import { writeSkill, writeBase, writeManifest, wireHarnesses, type ManifestSkills } from '../consumer-io.js'
+import {
+  writeSkill,
+  writeBase,
+  writeManifest,
+  wireHarnesses,
+  writeConventions,
+  type ManifestSkills,
+} from '../consumer-io.js'
 import { runWizard } from '../wizard.js'
 
 export interface InitOptions {
@@ -42,10 +49,12 @@ export async function runInit(opts: InitOptions): Promise<void> {
   writeManifest(out, config, manifestSkills)
   writeFileSync(join(out, 'framework.config.json'), JSON.stringify(raw, null, 2) + '\n')
 
+  const conventions = writeConventions(root, out, config)
   const wired = wireHarnesses(root, out, config, skills, useCopy)
 
   console.log(`Initialised agentic framework into ${relative(process.cwd(), out) || '.'}`)
   console.log(`  skills installed: ${skills.join(', ') || '(none)'}`)
+  console.log(`  conventions: ${conventions.join(', ')}`)
   if (skipped.length) console.log(`  skipped (axis not configured): ${skipped.join(', ')}`)
   console.log(`  harnesses wired: ${wired.join(' | ') || '(none)'}`)
 }
