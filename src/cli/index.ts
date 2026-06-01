@@ -3,6 +3,8 @@
 //
 //   agentic init [--config <cfg>] [--out <dir>] [--copy] [--interactive]
 //   agentic sync [--out <dir>]
+//   agentic add <adapter> [--out <dir>] [--copy]
+//   agentic remove <adapter> [--out <dir>] [--copy]
 //   agentic dev
 import { Command } from 'commander'
 import { ZodError } from 'zod'
@@ -10,6 +12,7 @@ import { runInit } from './commands/init.js'
 import { runSync } from './commands/sync.js'
 import { runDev } from './commands/dev.js'
 import { runRender } from './commands/render.js'
+import { runAdd, runRemove } from './commands/adapter.js'
 
 const program = new Command()
 
@@ -40,6 +43,22 @@ program
   .description('Re-render from framework source and reconcile with local edits (3-way merge).')
   .option('--out <dir>', 'consumer directory to sync')
   .action((opts) => runSync(opts))
+
+program
+  .command('add')
+  .argument('<adapter>', 'adapter name to select (axis inferred from its adapter.json)')
+  .description('Select an adapter and reconcile the installed skill set (merges local edits).')
+  .option('--out <dir>', 'consumer directory to update')
+  .option('--copy', 'copy rendered skills into harness dirs instead of symlinking')
+  .action((adapter, opts) => runAdd(adapter, opts))
+
+program
+  .command('remove')
+  .argument('<adapter>', 'adapter name to deselect (axis inferred from its adapter.json)')
+  .description('Deselect an adapter; uninstalls skills that required its axis.')
+  .option('--out <dir>', 'consumer directory to update')
+  .option('--copy', 'copy rendered skills into harness dirs instead of symlinking')
+  .action((adapter, opts) => runRemove(adapter, opts))
 
 program
   .command('dev')
