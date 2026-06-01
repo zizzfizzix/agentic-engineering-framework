@@ -37,26 +37,26 @@ Append to changelog:
 ## 2. Architecture & Module Isolation
 
 - [ ] Cross-module links use FK IDs only (no direct ORM relations).
-- [ ] Tenant isolation and `organization_id` scoping are explicit.
-- [ ] Module/package placement is correct for monorepo conventions.
-- [ ] DI usage is specified for service wiring (Awilix).
+- [ ] If the project is multi-tenant, tenant scoping is explicit on every read/write.
+- [ ] Module/package placement is correct for the project's conventions.
+- [ ] Service wiring uses the project's dependency-injection mechanism.
 - [ ] Event/subscriber/worker boundaries are clear and non-circular.
 
 ## 3. Data Integrity & Security
 
 - [ ] Entities/records include required tenancy/lifecycle columns where applicable.
 - [ ] Write operations define atomicity/transaction boundaries.
-- [ ] Input validation is defined using zod schemas.
+- [ ] Input validation is defined with a schema, and types are derived from it.
 - [ ] PII/sensitive fields and decryption behavior are documented.
-- [ ] **Encryption maps mechanism is used (no hand-rolled crypto).** For every PII / GDPR-relevant column the spec proposes — names, addresses, contacts, free-text notes about people, integration credentials, secrets, document numbers — the spec MUST declare them in a module-level `<module>/encryption.ts` exporting `defaultEncryptionMaps: ModuleEncryptionMap[]` (e.g. a `ModuleEncryptionMap[]` type, here imported as `@open-mercato/shared/modules/encryption` — an example import path). Reads MUST go through `findWithDecryption` / `findOneWithDecryption` (5-arg `(em, entity, where, options?, scope?)`) from the project's encryption helpers (example: `@open-mercato/shared/lib/encryption/find`). Equality-lookup columns (e.g. login email) declare a sibling `hashField`. No `crypto.subtle`, no custom KMS calls, no "TODO encrypt later". See the relevant module `AGENTS.md` → Encryption, the project's encryption docs, and reference modules' `encryption.ts` files.
+- [ ] **Field encryption is used for sensitive data (no hand-rolled crypto).** For every PII / GDPR-relevant column the spec proposes — names, addresses, contacts, free-text notes about people, credentials, secrets, document numbers — the spec MUST encrypt the field through a declarative, framework-provided field-encryption mechanism with per-tenant keys. Equality-lookup columns (e.g. login email) declare a sibling searchable hash. No `crypto.subtle`, no custom KMS calls, no "TODO encrypt later". See the relevant `AGENTS.md` → Encryption and the project's encryption docs.
 - [ ] Security criteria covered:
-- [ ] All user input is validated with zod before business logic/persistence.
+- [ ] All user input is validated at the boundary with a schema before business logic/persistence.
 - [ ] SQL/NoSQL injection vectors are mitigated with parameterized queries (no string interpolation).
 - [ ] XSS protections are documented for user-rendered content (no unsafe raw HTML rendering).
 - [ ] Proper encoding is defined for URLs, HTML entities, JSON payloads, and file paths.
 - [ ] Secrets/credentials are excluded from logs, error messages, and API responses.
-- [ ] Authentication/authorization guards are declared (`requireAuth`, `requireRoles`, `requireFeatures`).
-- [ ] Tenant isolation rule is explicit: every scoped query filters by `organization_id`.
+- [ ] Default-deny authorization: every endpoint declares its required auth/permissions explicitly; missing = denied.
+- [ ] If the project is multi-tenant, every scoped query filters by tenant; the scoping layer is never bypassed.
 
 ## 4. Commands, Events & Naming
 
@@ -71,27 +71,27 @@ Append to changelog:
 ## 5. API, UI & Compatibility
 
 - [ ] API contracts are complete (request/response/errors) and consistent with models.
-- [ ] Routes include `openApi` expectations.
-- [ ] **Canonical mechanisms — no DIY substitutes.** The spec MUST reach for the framework primitives, not invent its own. (The `@open-mercato/...` import paths, `packages/.../AGENTS.md` references, and primitive names below are illustrative examples — substitute your project's equivalents and the conventions in its `AGENTS.md` files.)
-  - [ ] **CRUD APIs** use `makeCrudRoute({ entity, entityId, operations, schema, indexer: { entityType } })` from `@open-mercato/shared/lib/crud/factory`. Custom (non-`makeCrudRoute`) write routes MUST call `validateCrudMutationGuard` before the mutation and `runCrudMutationGuardAfterSuccess` after success. See `packages/core/AGENTS.md` → API Routes / CRUD Factory.
-  - [ ] **API route files export `metadata`** with per-method `requireAuth` / `requireFeatures` (no top-level `export const requireAuth`).
-  - [ ] **Backend forms** use `<CrudForm>` from `@open-mercato/ui/backend/CrudForm` with helpers `createCrud` / `updateCrud` / `deleteCrud` from `@open-mercato/ui/backend/utils/crud`, throwing `createCrudFormError` from `@open-mercato/ui/backend/utils/serverErrors` for field-level errors. No raw `<form>`, no raw `fetch`. See `packages/ui/AGENTS.md` → CrudForm.
-  - [ ] **Lists** use `<DataTable entityId apiPath columns />` from `@open-mercato/ui/backend/DataTable` with stable `entityId` / `extensionTableId` so widget injection (columns / row actions / bulk actions / filters / toolbar) keeps working. See `packages/ui/AGENTS.md` → DataTable.
-  - [ ] **HTTP clients** use `apiCall` / `apiCallOrThrow` / `readApiResultOrThrow` from `@open-mercato/ui/backend/utils/apiCall` — never raw `fetch`.
-  - [ ] **Non-`CrudForm` writes** are wrapped in `useGuardedMutation(...).runMutation(...)` and pass `retryLastMutation` in the injection context.
-  - [ ] **Cache** is resolved via DI (`container.resolve('cache')`) — never `new Redis(...)` or raw SQLite. Tags include `tenant:<id>` / `org:<id>`. See `packages/cache/AGENTS.md`.
-  - [ ] **Events** between modules go through `<module>/events.ts` `createModuleEvents({ moduleId, events } as const)` and `subscribers/*.ts`, never direct cross-module imports. See `packages/events/AGENTS.md`.
-- [ ] **Design System compliance for every UI mock and className snippet in the spec.** See `.ai/ds-rules.md` (foundations) and `.ai/ui-components.md` (component reference). The spec MUST:
-  - [ ] Use semantic status tokens (`text-status-error-text`, `bg-status-success-bg`, `border-status-warning-border`, `text-status-info-icon`, `text-destructive`, `bg-destructive`) — NEVER hardcoded Tailwind shades like `text-red-500`, `bg-green-100`, `text-amber-*`, `text-emerald-*`, `bg-blue-*`. Status tokens already cover dark mode; no `dark:` overrides.
-  - [ ] Use the Tailwind text scale (`text-xs` 12, `text-sm` 14, `text-base` 16, `text-lg` 18, `text-xl` 20, `text-2xl` 24) or the `text-overline` token for 11px uppercase labels — NEVER arbitrary sizes (`text-[11px]`, `text-[13px]`, `text-[15px]`, `p-[13px]`, `rounded-[24px]`, `z-[9999]`).
-  - [ ] Use shared primitives instead of raw HTML: `<Alert variant=...>` for inline status, `flash('msg', 'success|error|warning|info')` for toasts, `useConfirmDialog()` for destructive confirmations, `<StatusBadge>` for entity status, `<FormField label error>` to wrap form inputs, `<SectionHeader title count action>` for section headers, `<CollapsibleSection>` for collapsible regions, `<LoadingMessage>` / `<Spinner>` / `<DataLoader>` for async states, `<EmptyState>` (or DataTable `emptyState` prop) for empty lists.
-  - [ ] Use lucide-react icons in PAGE BODY UI (`Page`, `DataTable`, `CrudForm`, cards, buttons) — never inline `<svg>`. Sizes from the `size-{3|4|5|6}` scale; `strokeWidth` is not overridden per-instance. `page.meta.ts` icons follow the `React.createElement('svg', …)` pattern instead of importing from `lucide-react`.
-  - [ ] Every dialog supports `Cmd/Ctrl+Enter` to submit and `Escape` to cancel.
-  - [ ] Every icon-only button has an `aria-label`.
-  - [ ] When the spec edits an existing page, it honours the **Boy Scout rule**: any line touched gets migrated to semantic tokens / DS scale.
-- [ ] i18n keys are planned for all user-facing strings (`useT()` client-side, `resolveTranslations()` server-side; never hard-coded labels in components).
-- [ ] Pagination limits are defined (`pageSize <= 100`) where applicable.
-- [ ] Migration/backward compatibility strategy is explicit.
+- [ ] Routes document their OpenAPI/schema expectations.
+- [ ] **Canonical mechanisms — no DIY substitutes.** The spec MUST reuse the project's canonical helpers, not invent its own. (Substitute the project's actual equivalents and the conventions in its `AGENTS.md` files.)
+  - [ ] **CRUD APIs** reuse the project's canonical data-layer / CRUD route helper rather than bespoke handlers and queries.
+  - [ ] **Endpoints declare auth/permissions explicitly** — default-deny; an endpoint with no declaration is denied.
+  - [ ] **Forms** reuse the project's canonical form helper rather than raw `<form>` markup with hand-rolled submission.
+  - [ ] **Lists** reuse the project's canonical data-table/list helper with stable identifiers so extension points (columns / row actions / bulk actions / filters) keep working.
+  - [ ] **HTTP clients** use the project's canonical API helper — never raw `fetch`.
+  - [ ] **Writes outside the canonical form** go through the project's guarded-mutation mechanism (with retry support) rather than direct calls.
+  - [ ] **Cache** is resolved through the project's cache service (never a raw client). Cache keys/tags are tenant-scoped where the project is multi-tenant.
+  - [ ] **Events** between modules go through the project's event/subscriber mechanism, never direct cross-module imports.
+- [ ] **Design System compliance for every UI mock and className snippet in the spec.** Follow the project's design-system rules and component reference. The spec MUST:
+  - [ ] Use the design system's semantic status/color tokens — never hardcoded color shades, and no manual dark-mode overrides where tokens already handle them.
+  - [ ] Use the design system's typography/spacing scale — never arbitrary one-off sizes.
+  - [ ] Use shared UI primitives (status alerts, toasts, confirmation dialogs, status badges, form-field wrappers, section headers, collapsible regions, loading/spinner/empty states) instead of raw HTML equivalents.
+  - [ ] Use the project's icon library in page-body UI — never inline raw `<svg>` — at sizes from the shared scale.
+  - [ ] Every dialog supports submit (e.g. `Cmd/Ctrl+Enter`) and cancel (`Escape`) shortcuts.
+  - [ ] Every icon-only button has an accessible label.
+  - [ ] When the spec edits an existing page, it honours the **Boy Scout rule**: any line touched gets migrated to the design-system tokens/scale.
+- [ ] i18n keys are planned for all user-facing strings using the project's translation helpers; never hard-code labels in components.
+- [ ] Pagination limits are defined where applicable.
+- [ ] Migration/backward compatibility strategy is explicit: shipped public surfaces (APIs, events, schemas) are treated as contracts — add, don't break; deprecate with aliases.
 
 ## 6. Performance, Cache & Scale
 
