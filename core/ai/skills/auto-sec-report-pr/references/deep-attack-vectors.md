@@ -7,18 +7,21 @@ surfaced`, `not applicable`, or `inconclusive (next step)`.
 
 ## Access control & identity
 
-- Wildcard ACL (`__all__`) for non-superadmins in menu items, nav
+- Default-deny authorization — every guarded surface (menu items, nav
   sections, notification handlers, mutation guards, command
-  interceptors, AI tools. Cross-check shared/UI packages and the
-  auth-related modules under the modules root (`framework.config.json`
-  → `paths.modulesRoot`).
-- Role-name spoofing — verify `requireFeatures` is used instead of
-  `requireRoles` on guarded routes. `role` rename without
-  ACL-feature-id mapping.
+  interceptors, AI tools) declares its authorization explicitly; no
+  surface is reachable without an explicit grant. Watch for wildcard /
+  "all permissions" grants applied to non-privileged roles. Cross-check
+  shared/UI packages and the auth-related modules under the modules
+  root (`framework.config.json` → `paths.modulesRoot`).
+- Role-name spoofing — verify guarded routes authorize against stable
+  permission/feature identifiers, not against mutable role names. A
+  `role` rename must not change the effective permission set.
 - Feature-flag bypass — expose an ungated code path when the flag is
   off. Confirm the flag gates both the UI and the API.
-- Portal / customer auth leaking staff features — customer session
-  that can invoke staff-only ACL features via shared endpoints.
+- Lower-privilege auth leaking higher-privilege features — a
+  customer/end-user session that can invoke staff/admin-only
+  capabilities via shared endpoints.
 - Session fixation and session rotation — was the session id rotated
   after login, password change, MFA enable, privilege escalation?
 - JWT algorithm confusion (`alg: none`, HS↔RS key swap), missing
@@ -27,35 +30,38 @@ surfaced`, `not applicable`, or `inconclusive (next step)`.
   attacker-controlled input.
 - Sudo / step-up challenges — rate-limit identifier scope, replayable
   challenge, challenge state tied to tenant.
-- Customer auth compound rate-limit identifiers — correct identifier
+- Authentication compound rate-limit identifiers — correct identifier
   tuple (tenant + email + ip) so bucket collisions cannot mask brute
   force.
 
 ## Tenant isolation
 
-- `organization_id` and `tenant_id` present on every read and write
-  path. Confirm the project's decryption-aware query helpers (e.g.
-  `findWithDecryption`/`findOneWithDecryption`) are used, not raw
-  data-access calls (e.g. `em.find`/`em.findOne`).
+- The tenant/account scope identifier present on every read and write
+  path. Confirm the project's canonical query helpers (which enforce
+  scoping and decryption) are used, not raw data-access calls that
+  bypass them.
 - Cache keys include tenant scope — memory / SQLite / Redis. Stale
   cache entries after tenant rename/delete.
 - Shared in-memory registries (services, maps, singletons) keyed
   without tenant.
-- SSE channels and broadcast events — confirm event ids are
-  tenant-scoped. Confirm `clientBroadcast`/`portalBroadcast` do not
-  bridge events across tenants.
-- Background worker jobs — the payload carries tenant id, the worker
-  refuses mismatched tenants, and retries do not replay cross-tenant.
-- Public endpoints (quote acceptance, magic link, webhook ingress)
-  MUST validate the tenant from the signed token/URL, not from a
-  query parameter.
+- Push / server-sent-event channels and broadcast events — confirm
+  event ids are tenant-scoped and that broadcast helpers do not bridge
+  events across tenants.
+- Background worker jobs — the payload carries the tenant id, the
+  worker refuses mismatched tenants, and retries do not replay
+  cross-tenant.
+- Public endpoints (token-gated acceptance flows, magic link, webhook
+  ingress) MUST validate the tenant from the signed token/URL, not from
+  a query parameter.
 
 ## Cryptography and secrets
 
-- PII fields encrypted at rest by default — check module-registered
-  encryption maps and `data/validators.ts` for GDPR-marked fields.
-- Password hashing — bcryptjs cost ≥ 10, never logged, constant-time
-  compare on login.
+- Sensitive/PII fields encrypted at rest by default via the project's
+  declarative field-encryption mechanism — never hand-rolled crypto and
+  never silently stored plain. Cross-check the declared sensitive/PII
+  field set against what is actually persisted.
+- Password hashing — strong adaptive hash with adequate cost, never
+  logged, constant-time compare on login.
 - Signing keys rotated, key-id (`kid`) recorded in JWTs, keys not in
   code or `.env` committed to git.
 - Timing-safe compare used for signatures, tokens, magic links. No
@@ -66,7 +72,7 @@ surfaced`, `not applicable`, or `inconclusive (next step)`.
 ## Injection and deserialization
 
 - SQL / ORM — parameterized queries; no string concatenation into
-  `em.raw`, `em.execute`, migrations.
+  raw SQL execution, query builders, or migrations.
 - Command injection — no `execSync(userInput)`, no `shell: true` with
   attacker-controlled args. Prefer `execa` with args array.
 - Template injection — MJML/handlebars/jsx-email rendered from
@@ -139,18 +145,25 @@ surfaced`, `not applicable`, or `inconclusive (next step)`.
 - Outbound webhooks — Standard Webhooks signing, secret rotation,
   delivery attempt dedup, targeted retries, dead-letter queue audit.
 
-## Money, orders, and workflows
+## Value-moving operations and workflows
 
-- TOCTOU on quote acceptance → order creation, public quote endpoints.
-- Overshipment on concurrent shipment creation.
-- Double-credit on concurrent return → credit memo.
-- Double-charge on repeated payment submit / refund.
+- TOCTOU on any state transition that moves value or grants access
+  (acceptance/approval flows, public token-gated endpoints, status
+  changes that unlock a side-effect).
+- Over-commit on concurrent creation of a capped resource (the same
+  unit consumed twice because two requests read the same pre-state).
+- Double-apply on concurrent reversal/refund-style flows (the inverse
+  operation applied twice).
+- Double-charge / double-submit on repeated submission of a
+  non-idempotent write.
 - Workflow failure visibility — failures halt the workflow by default;
-  failed activities surface in the list and detail views.
-- Compensation saga correctness on partial failures.
-- Currency rounding direction (half-even) used consistently; no
-  `number` for money (use `Decimal`/`bigint`/string); cross-currency
-  totals require FX.
+  failed activities surface in the relevant list and detail views
+  instead of failing silently.
+- Compensation / rollback correctness on partial failures of a
+  multi-step operation.
+- Monetary or quantity handling — consistent rounding direction; no
+  floating-point type for money (use a decimal/integer/string
+  representation); cross-currency totals require an explicit conversion.
 
 ## Rate limiting and abuse
 
@@ -177,9 +190,11 @@ frame-ancestors 'none'` to defeat clickjacking on sensitive views.
 
 ## API hygiene
 
-- `openApi` exported on every route (required for docs/discovery).
-- zod schemas use `.strict()` by default — no mass assignment via
-  `.passthrough()` on write operations.
+- Whatever metadata/schema export the project requires for route
+  docs/discovery is present on every route.
+- Input schemas reject unknown keys by default (e.g. zod `.strict()`) —
+  no mass assignment via a permissive/passthrough mode on write
+  operations.
 - Error shape is minimal — no stack traces, no internal module
   paths, no tenant ids to unauthenticated callers.
 - Pagination caps (`pageSize` ≤ 100) to prevent data exfiltration
@@ -194,7 +209,7 @@ frame-ancestors 'none'` to defeat clickjacking on sensitive views.
 - Transitive `vm2` / deprecated sandbox packages — removed.
 - Internal package paths (the project's own package scope) cannot be
   shadowed by public packages.
-- Dependency-audit output (e.g. `yarn audit` / `npm audit`) surface triaged.
+- Dependency-audit output (the project's audit command) surface triaged.
 
 ## Observability and forensics
 
@@ -218,15 +233,15 @@ frame-ancestors 'none'` to defeat clickjacking on sensitive views.
 
 When the unit under analysis is a spec file, also verify:
 
-- Every new route has an explicit `requireFeatures`/`requireAuth`
-  guard, with the ACL feature id declared in the spec.
-- Every new entity lists which fields are PII/encrypted and which
-  are indexed, so that `fieldPolicy.excluded` covers sensitive
-  columns.
-- Every new event id is tenant-scoped by default; `clientBroadcast`/
-  `portalBroadcast` calls out tenant boundary.
+- Every new route declares its authorization explicitly (default-deny),
+  with the required permission/feature identifier named in the spec.
+- Every new entity lists which fields are PII/encrypted and which are
+  indexed, so the declarative field-encryption mechanism covers the
+  sensitive columns.
+- Every new broadcast/event identifier is tenant-scoped by default; any
+  push/broadcast helper calls out the tenant boundary explicitly.
 - Every new worker declares idempotency (unique key, retry strategy).
-- Every new external integration declares allowlist and signature
+- Every new external integration declares an allowlist and signature
   verification.
-- Migration & Backward Compatibility section exists for any changes
-  to the 13 contract surfaces (`BACKWARD_COMPATIBILITY.md`).
+- A Migration & Backward Compatibility section exists for any change to
+  a frozen/stable contract surface (`BACKWARD_COMPATIBILITY.md`).

@@ -91,7 +91,7 @@ Classification heuristic — evaluate in order, first match wins:
 
 1. Is there a linked spec (under the specs root, `framework.config.json` → `paths.specsRoot`) or an existing `.ai/runs/<date>-<slug>/` folder referenced from the PR body? → **Spec-implementation run**.
 2. Did the user describe the task in terms of phases / steps / deliverables? → **Spec-implementation run**.
-3. Does the task clearly span >5 files or >1 package AND introduce new contract surface (new route, new entity, new event ID, new DI name, new ACL feature)? → **Spec-implementation run**.
+3. Does the task clearly span >5 files or >1 package AND introduce new contract surface (new route, new entity, new published identifier, new dependency-injection name, new permission/feature)? → **Spec-implementation run**.
 4. Otherwise → **Simple run**.
 
 When in doubt: **default to Simple run**. It is cheaper to promote a Simple run to a Spec-implementation run mid-flight (by drafting a plan then) than to over-engineer a typo fix.
@@ -424,7 +424,7 @@ Use `.ai/skills/code-review/SKILL.md` and `BACKWARD_COMPATIBILITY.md`. Verify:
 
 - No frozen or stable contract surface was broken without the deprecation protocol.
 - No API response fields were removed.
-- No event IDs, widget spot IDs, ACL IDs, import paths, or DI names were broken.
+- No frozen/stable contract surface (published identifiers, extension-point ids, permission ids, public import paths, dependency-injection names) was broken.
 - No tenant isolation or encryption rules were violated.
 - Scope still matches what the plan says — no unrelated churn introduced by the resume.
 
@@ -502,7 +502,7 @@ Minimum comment structure:
 
 - **Most likely regression:** {area + symptom + mitigation/test that catches it}
 - **Second-order effects:** {downstream modules / events / subscribers that could be impacted}
-- **Tenant/isolation risks:** {any organization_id, encryption, or RBAC surfaces touched — or "N/A"}
+- **Tenant/isolation risks:** {any tenant/account-scope, encryption, or RBAC surfaces touched — or "N/A"}
 - **BC impact:** {any contract surface affected — or "No contract surface changes"}
 - **Residual risk accepted:** {what was not mitigated and why that is acceptable}
 ```
