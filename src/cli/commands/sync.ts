@@ -1,7 +1,7 @@
 // `agentic sync` — re-render from the (updated) framework source and reconcile with
 // local edits via a git-native 3-way merge (BASE = last render, LOCAL = on-disk,
 // NEW = fresh render). Exit code 2 signals unresolved conflicts written to the tree.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { FrameworkConfigSchema } from '../../core/contracts.js'
 import { renderSkill } from '../../core/render.js'
@@ -59,6 +59,17 @@ export function runSync(opts: SyncOptions): void {
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 
   console.log(`Synced ${relative(process.cwd(), out) || '.'} from framework source`)
+  // Refresh synced read-only framework lessons (loop closure, decision #8).
+  const fwLessonsSrc = join(root, 'core', 'ai', 'lessons.framework.md')
+  if (existsSync(fwLessonsSrc)) {
+    const dest = join(out, '.ai', 'lessons.framework.md')
+    const next = readFileSync(fwLessonsSrc, 'utf8')
+    if (!existsSync(dest) || readFileSync(dest, 'utf8') !== next) {
+      writeFileSync(dest, next)
+      report.push('  ↑ lessons.framework.md: refreshed (synced, read-only)')
+    }
+  }
+
   report.forEach((l) => console.log(l))
   if (conflicts) {
     console.log(
