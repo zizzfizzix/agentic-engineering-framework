@@ -279,3 +279,6 @@ Check known pitfalls from the project's lessons file (e.g. `.ai/lessons.md`). Co
 1. **Stale snapshots when building change logs**: load fresh state from the data layer rather than reusing a possibly-stale in-memory copy.
 2. **Lost updates on flush**: flush scalar changes BEFORE relation syncs that query on the same unit of work.
 3. **Duplicated undo logic**: centralize before/after snapshot extraction in one shared helper rather than re-implementing it per command.
+
+<!-- SLOT:stack.project-rules -->
+<!-- /SLOT:stack.project-rules -->

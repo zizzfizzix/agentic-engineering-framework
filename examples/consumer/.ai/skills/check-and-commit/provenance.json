@@ -5,12 +5,16 @@
     "ui": "shadcn",
     "stack": "generic-node"
   },
-  "digest": "16c73f46dc75",
+  "digest": "9d15ba3fe865",
   "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
   "inputs": [
     {
+      "path": "adapters/stack/generic-node/references/validation.md",
+      "sha": "7001c56b49cb"
+    },
+    {
       "path": "core/ai/skills/check-and-commit/SKILL.md",
-      "sha": "eaebd90cb636"
+      "sha": "e3e4c3fb2290"
     }
   ],
   "regions": [
@@ -20,6 +24,20 @@
       "slot": null,
       "startLine": 1,
       "endLine": 93
+    },
+    {
+      "source": "adapters/stack/generic-node/references/validation.md",
+      "adapter": "generic-node",
+      "slot": "stack.validation",
+      "startLine": 94,
+      "endLine": 105
+    },
+    {
+      "source": "core/ai/skills/check-and-commit/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 106,
+      "endLine": 106
     }
   ]
 }

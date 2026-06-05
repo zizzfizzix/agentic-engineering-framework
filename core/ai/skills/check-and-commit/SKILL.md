@@ -90,3 +90,6 @@ Report:
 - the commit SHA and branch name if a push happened
 
 If any required gate still fails, stop and report the exact blocker instead of committing.
+
+<!-- SLOT:stack.validation -->
+<!-- /SLOT:stack.validation -->

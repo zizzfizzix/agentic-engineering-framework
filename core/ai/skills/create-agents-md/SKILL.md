@@ -352,3 +352,6 @@ When refactoring an older AGENTS.md that predates the boundary convention:
 4. Preserve any high-risk operational details (hard tool-call limits, `AskUserQuestion` confirmation boundaries, encryption defaults, etc.) — content reclassification is fine, content loss is not.
 5. Verify with `grep -nE '^## (Always|Ask First|Never|Validation Commands)$' <file>` that all four headings exist.
 6. Update any other docs that referenced the legacy section anchors (`#must-rules`, `#critical-rules`, etc.).
+
+<!-- SLOT:stack.layout -->
+<!-- /SLOT:stack.layout -->
