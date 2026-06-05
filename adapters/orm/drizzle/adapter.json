@@ -3,7 +3,7 @@
   "name": "drizzle",
   "axis": "orm",
   "description": "Drizzle ORM adapter — schema-as-code, drizzle-kit migrations.",
-  "augments": ["migrate-orm", "data-model-design"],
+  "augments": ["migrate-orm"],
   "slots": {
     "orm.cheatsheet": "references/cheatsheet.md",
     "orm.migration": "references/migration.md"
