@@ -5,6 +5,12 @@
 > into a standalone, reusable, **harness-agnostic** framework that any project can
 > adopt — built around one generic core plus pluggable adapters.
 
+> **Status: implemented.** This document is the original design rationale and is kept for the
+> "why" behind decisions #1–#9. For the framework as it actually shipped, see
+> [`README.md`](README.md) and the docs under [`docs/`](docs/). The one deliberate deviation:
+> the `open-mercato` meta-pack (§6.8) was dropped — the framework was generalized and the
+> Mercato-specific content discarded rather than preserved in a pack.
+
 ---
 
 ## 0. Locked decisions

@@ -1,8 +1,9 @@
-# Render PoC — the executable contract
+# Render model — the executable contract
 
-`agentic render` (the pure renderer in `src/core/render.ts`, exposed as a CLI subcommand) proves
-the §5/§3.3a render model. The same renderer backs `agentic init`/`sync`; the interface it exercises
-(`framework.config.json` + `adapter.json` + the slot convention) is what everything else builds on.
+`agentic render` (the pure renderer in `src/core/render.ts`, exposed as a CLI subcommand) is the
+executable form of the §5/§3.3a render model. The same renderer backs `agentic init`/`sync`; the
+interface it exercises (`framework.config.json` + `adapter.json` + the slot convention) is what
+everything else builds on.
 
 ## Run it
 
