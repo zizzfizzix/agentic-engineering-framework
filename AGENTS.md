@@ -57,6 +57,23 @@ must be `<type>(<optional-scope>): <description>`, where `type` is one of `feat`
 (`scripts/check-commit-msg.sh`, zero-dependency) enforces it; merge/revert/fixup auto-subjects are
 exempt. Examples: `feat(cli): add remove command`, `fix(render): prune empty slots`.
 
+## Releasing (automated)
+
+Releases are driven by **[release-please](https://github.com/googleapis/release-please)** off the
+Conventional Commit history — no manual version bumps or tags.
+
+- `.github/workflows/release-please.yml` runs on every push to `main`. It keeps a **release PR**
+  open that rolls up unreleased commits into the next version + `CHANGELOG.md` (config in
+  `release-please-config.json`, current versions in `.release-please-manifest.json`).
+- Merging that PR bumps `package.json`, updates the changelog, tags the commit, and cuts a GitHub
+  release. That flips the workflow's `release_created` output, which triggers the **publish** job:
+  `pnpm build` then `pnpm publish --access public --provenance` to npm.
+- Requires an `NPM_TOKEN` repo secret (an npm automation/granular token with publish rights to the
+  `@agentic` scope). Provenance uses the workflow's OIDC `id-token` — no extra secret needed.
+
+`feat:` → minor, `fix:` → patch, `feat!:`/`BREAKING CHANGE:` → major. While pre-1.0, release-please
+keeps breaking changes in the `0.x` range.
+
 ## Authoring rules (see `docs/slot-convention.md`)
 
 - Slot names are `<axis>.<key>`; mandatory-section headings stay in the generic body, optional-
