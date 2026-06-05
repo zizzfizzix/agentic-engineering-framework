@@ -206,7 +206,7 @@ Port `agentic-setup.ts` into a standalone, dependency-light CLI (Node, no `creat
   the consumer file is LOCAL, the fresh render is NEW. Uses `git merge-file` so the result
   - standard `<<<<<<<`/`>>>>>>>` markers land in the working tree; you review with `git diff` and
     commit — local edits preserved, no custom merge engine, no silent clobber. _(PoC landed: BASE
-    snapshot + all four reconcile cases proven; see `docs/render-poc.md`.)_
+    snapshot + all four reconcile cases proven; see `docs/render-model.md`.)_
 - `agentic add <adapter>` / `agentic remove <adapter>` — re-render the affected skills with the
   new adapter selection (drops/adds slot content, harness files, tier additions; re-runs the
   installer). Removing the last adapter on an axis uninstalls that axis's skills.
@@ -440,7 +440,7 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 - **Phase 2 — Config + harness adapters:** add `framework.config.json`, define `adapter.json`,
   port claude-code/codex/cursor as harness adapters, build `bin/agentic init`. _(PoC landed:
   schemas, harness adapters, `agentic init` renders the full set with tier ∧ axis selection and
-  symlink/copy harness wiring + a render-manifest sync base; see `docs/render-poc.md`.)_
+  symlink/copy harness wiring + a render-manifest sync base; see `docs/render-model.md`.)_
 - **Phase 3 — Generic skills:** move Bucket-generic skills into core; templatize `AGENTS.md`;
   split `code-review`; parameterize paths/commands.
 - **Phase 4 — Domain adapters:** `migrate-orm` (+mikro-orm/prisma), `ui-consistency`
