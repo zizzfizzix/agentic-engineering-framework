@@ -9,7 +9,7 @@ before changing skills, adapters, or the renderer. The full design rationale is 
 | Path                              | What                                                                                         | Edit when                                                 |
 | --------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | `core/ai/skills/<skill>/SKILL.md` | **Shipped** skills (the product) — generic bodies with `<!-- SLOT:axis.key -->`              | Changing skill workflow that applies to all consumers     |
-| `adapters/<axis>/<name>/`         | Adapter fragments that fill slots (`orm`, `ui`, `harness`, …)                                | Adding/​changing stack-specific content                   |
+| `adapters/<axis>/<name>/`         | Adapter fragments that fill slots (`orm`, `ui`, `stack`, `harness`)                          | Adding/​changing stack-specific content                   |
 | `dev/skills/`                     | **Dev** skills (the toolchain) — installed into a maintainer's harness                       | Improving how the framework itself is built               |
 | `src/core/`                       | Pure renderer, tier selection, 3-way merge, and the zod `contracts`                          | Changing render/sync behaviour or a config/adapter shape  |
 | `src/cli/`                        | The `agentic` CLI (`init`/`sync`/`render`/`add`/`remove`/`dev`) — commander + @clack/prompts | Changing CLI surface or the init wizard                   |
