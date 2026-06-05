@@ -3,7 +3,7 @@
 // + a type-only contract import) because it runs in consumer repos, in CI, and inside
 // the improve-framework skill.
 //
-// Properties (proven in docs/render-poc.md and asserted by the gate): convergence,
+// Properties (proven in docs/render-model.md and asserted by the gate): convergence,
 // determinism, provenance, per-skill digest scoping.
 import { readFileSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
