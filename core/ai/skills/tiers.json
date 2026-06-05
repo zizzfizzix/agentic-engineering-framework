@@ -5,6 +5,7 @@
       "description": "Daily-driver skills installed by default.",
       "skills": [
         "migrate-orm",
+        "data-model-design",
         "ui-consistency",
         "code-review",
         "check-and-commit",
@@ -49,6 +50,7 @@
   },
   "requires": {
     "migrate-orm": "orm",
+    "data-model-design": "orm",
     "ui-consistency": "ui"
   }
 }
