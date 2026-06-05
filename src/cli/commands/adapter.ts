@@ -8,11 +8,10 @@
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { FrameworkConfigSchema, AdapterSchema, type FrameworkConfig } from '../../core/contracts.js'
-import { renderSkill } from '../../core/render.js'
-import { mergeFile } from '../../core/merge.js'
 import { selectSkills } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
-import { writeSkill, writeBase, writeManifest, wireHarnesses, type ManifestSkills } from '../consumer-io.js'
+import { writeManifest, wireHarnesses, type ManifestSkills } from '../consumer-io.js'
+import { reconcileSkill } from '../reconcile.js'
 
 const AXES = ['orm', 'ui', 'stack', 'harness'] as const
 
@@ -61,8 +60,13 @@ function mutate(name: string, op: 'add' | 'remove', opts: AdapterCmdOptions): vo
 
   if (axis === 'harness') {
     const list = new Set(prevHarnesses)
-    if (op === 'add') list.add(name)
-    else list.delete(name)
+    if (op === 'add') {
+      list.add(name)
+    } else {
+      if (!list.has(name)) throw new Error(`harness '${name}' is not installed; nothing to remove`)
+      if (list.size === 1) throw new Error('cannot remove the last harness — at least one is required')
+      list.delete(name)
+    }
     raw.harnesses = [...list]
   } else if (op === 'add') {
     raw[axis] = name
@@ -100,7 +104,11 @@ function reconcile(
   const { skills: selected } = selectSkills(root, config)
   const selectedSet = new Set(selected)
   const installed = Object.keys(manifest.skills)
-  const allHarnesses = new Set([...prevHarnesses, ...(config.harnesses ?? [])])
+
+  // Resolve each harness's skills dir once (used when removing skills and harnesses).
+  const dirByHarness = new Map<string, string | null>()
+  for (const h of new Set([...prevHarnesses, ...(config.harnesses ?? [])]))
+    dirByHarness.set(h, harnessSkillsDir(root, h))
 
   // 1. Uninstall skills no longer selected.
   for (const s of installed) {
@@ -108,45 +116,22 @@ function reconcile(
     rmSync(join(out, '.ai', 'skills', s), { recursive: true, force: true })
     rmSync(join(out, '.ai', '.base', s), { recursive: true, force: true })
     delete manifest.skills[s]
-    for (const h of allHarnesses) {
-      const dir = harnessSkillsDir(root, h)
+    for (const dir of dirByHarness.values())
       if (dir) rmSync(join(out, dir, s), { recursive: true, force: true })
-    }
   }
 
-  // 2. Add new + merge surviving skills.
+  // 2. Install new + 3-way-merge surviving skills (shared with `sync`).
   let conflicts = 0
   for (const s of selected) {
-    const { rendered: NEW, manifest: m, digest } = renderSkill(root, config, s)
-    const skillMd = join(out, '.ai', 'skills', s, 'SKILL.md')
-    const baseMd = join(out, '.ai', '.base', s, 'SKILL.md')
-
-    if (!manifest.skills[s] || !existsSync(skillMd)) {
-      writeSkill(out, s, NEW, m)
-      writeBase(out, s, NEW)
-      manifest.skills[s] = { digest, inputs: m.inputs }
-      continue
-    }
-    const BASE = existsSync(baseMd) ? readFileSync(baseMd, 'utf8') : NEW
-    const LOCAL = readFileSync(skillMd, 'utf8')
-    if (NEW !== BASE) {
-      if (LOCAL === BASE) {
-        writeFileSync(skillMd, NEW)
-      } else {
-        const { merged, conflicts: n } = mergeFile(LOCAL, BASE, NEW)
-        writeFileSync(skillMd, merged)
-        conflicts += n
-      }
-      writeBase(out, s, NEW)
-    }
-    writeFileSync(join(out, '.ai', 'skills', s, 'provenance.json'), JSON.stringify(m, null, 2) + '\n')
-    manifest.skills[s] = { digest, inputs: m.inputs }
+    const r = reconcileSkill(root, out, config, s)
+    manifest.skills[s] = { digest: r.digest, inputs: r.inputs }
+    conflicts += r.conflicts
   }
 
-  // 3. Drop skills dirs for harnesses that were removed entirely, then re-wire.
+  // 3. Drop skills dirs for harnesses removed entirely, then re-wire the surviving set.
   for (const h of prevHarnesses) {
     if ((config.harnesses ?? []).includes(h)) continue
-    const dir = harnessSkillsDir(root, h)
+    const dir = dirByHarness.get(h)
     if (dir && existsSync(join(out, dir))) rmSync(join(out, dir), { recursive: true, force: true })
   }
   wireHarnesses(root, out, config, selected, useCopy)

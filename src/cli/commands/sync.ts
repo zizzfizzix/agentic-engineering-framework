@@ -4,13 +4,21 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { FrameworkConfigSchema } from '../../core/contracts.js'
-import { renderSkill } from '../../core/render.js'
-import { mergeFile } from '../../core/merge.js'
 import { FRAMEWORK_ROOT } from '../root.js'
+import { reconcileSkill, type ReconcileStatus } from '../reconcile.js'
+import type { ManifestSkills } from '../consumer-io.js'
 
 interface RenderManifestFile {
   selection: unknown
-  skills: Record<string, { digest: string; inputs: unknown }>
+  skills: ManifestSkills
+}
+
+const REPORT: Record<ReconcileStatus, (s: string) => string> = {
+  installed: (s) => `  + ${s}: installed`,
+  unchanged: (s) => `  = ${s}: framework unchanged`,
+  forwarded: (s) => `  ↑ ${s}: updated (no local edits)`,
+  merged: (s) => `  ⇄ ${s}: merged local edits + framework update (clean)`,
+  conflict: (s) => `  ⇄ ${s}: merged — CONFLICT(S), resolve in working tree`,
 }
 
 export interface SyncOptions {
@@ -29,32 +37,10 @@ export function runSync(opts: SyncOptions): void {
   const report: string[] = []
   let conflicts = 0
   for (const skill of Object.keys(manifest.skills)) {
-    const { rendered: NEW, digest: newDigest } = renderSkill(root, config, skill)
-    const basePath = join(out, '.ai', '.base', skill, 'SKILL.md')
-    const localPath = join(out, '.ai', 'skills', skill, 'SKILL.md')
-    const BASE = readFileSync(basePath, 'utf8')
-    const LOCAL = readFileSync(localPath, 'utf8')
-
-    if (NEW === BASE) {
-      report.push(`  = ${skill}: framework unchanged${LOCAL === BASE ? '' : ' (local edits kept)'}`)
-      continue
-    }
-    if (LOCAL === BASE) {
-      writeFileSync(localPath, NEW)
-      writeFileSync(basePath, NEW)
-      manifest.skills[skill]!.digest = newDigest
-      report.push(`  ↑ ${skill}: updated (no local edits)`)
-      continue
-    }
-    // both changed -> git-native 3-way merge
-    const { merged, conflicts: n } = mergeFile(LOCAL, BASE, NEW)
-    writeFileSync(localPath, merged)
-    writeFileSync(basePath, NEW) // base advances to the framework's NEW
-    manifest.skills[skill]!.digest = newDigest
-    conflicts += n
-    report.push(
-      `  ⇄ ${skill}: merged local edits + framework update${n ? ` — ${n} CONFLICT(S), resolve in working tree` : ' (clean)'}`,
-    )
+    const r = reconcileSkill(root, out, config, skill)
+    manifest.skills[skill] = { digest: r.digest, inputs: r.inputs }
+    conflicts += r.conflicts
+    report.push(REPORT[r.status](skill))
   }
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 

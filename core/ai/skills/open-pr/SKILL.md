@@ -198,3 +198,6 @@ Status: blocked
 - Conventional-commit-style PR title scoped to the affected area: `fix(<area>): … (#{issueId})`.
 - Apply the `review` pipeline label; add `skip-qa` only for clearly low-risk changes; never both `needs-qa` and `skip-qa`.
 - Always emit `PR_URL=` / `PR_NUMBER=` on the success path so the next step has what it needs.
+
+<!-- SLOT:stack.pr-workflow -->
+<!-- /SLOT:stack.pr-workflow -->

@@ -10,29 +10,41 @@
   },
   "skills": {
     "check-and-commit": {
-      "digest": "16c73f46dc75",
+      "digest": "9d15ba3fe865",
       "inputs": [
         {
+          "path": "adapters/stack/generic-node/references/validation.md",
+          "sha": "7001c56b49cb"
+        },
+        {
           "path": "core/ai/skills/check-and-commit/SKILL.md",
-          "sha": "eaebd90cb636"
+          "sha": "e3e4c3fb2290"
         }
       ]
     },
     "code-review": {
-      "digest": "11f1419b1a9e",
+      "digest": "734019601e50",
       "inputs": [
         {
+          "path": "adapters/stack/generic-node/references/project-rules.md",
+          "sha": "d40f82813e91"
+        },
+        {
           "path": "core/ai/skills/code-review/SKILL.md",
-          "sha": "10bae13a03ef"
+          "sha": "b5c4ce9d410e"
         }
       ]
     },
     "create-agents-md": {
-      "digest": "135259ce8c5b",
+      "digest": "e0e933e8902c",
       "inputs": [
         {
+          "path": "adapters/stack/generic-node/references/layout.md",
+          "sha": "42205040faa0"
+        },
+        {
           "path": "core/ai/skills/create-agents-md/SKILL.md",
-          "sha": "2c07c8442bbb"
+          "sha": "15d09e0ddbd2"
         }
       ]
     },

@@ -5,12 +5,16 @@
     "ui": "shadcn",
     "stack": "generic-node"
   },
-  "digest": "11f1419b1a9e",
+  "digest": "734019601e50",
   "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
   "inputs": [
     {
+      "path": "adapters/stack/generic-node/references/project-rules.md",
+      "sha": "d40f82813e91"
+    },
+    {
       "path": "core/ai/skills/code-review/SKILL.md",
-      "sha": "10bae13a03ef"
+      "sha": "b5c4ce9d410e"
     }
   ],
   "regions": [
@@ -20,6 +24,20 @@
       "slot": null,
       "startLine": 1,
       "endLine": 282
+    },
+    {
+      "source": "adapters/stack/generic-node/references/project-rules.md",
+      "adapter": "generic-node",
+      "slot": "stack.project-rules",
+      "startLine": 283,
+      "endLine": 290
+    },
+    {
+      "source": "core/ai/skills/code-review/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 291,
+      "endLine": 291
     }
   ]
 }
