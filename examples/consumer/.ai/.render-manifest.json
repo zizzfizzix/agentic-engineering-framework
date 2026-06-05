@@ -48,6 +48,19 @@
         }
       ]
     },
+    "data-model-design": {
+      "digest": "aa2ea0711815",
+      "inputs": [
+        {
+          "path": "adapters/orm/drizzle/references/cheatsheet.md",
+          "sha": "9c6f14b98b68"
+        },
+        {
+          "path": "core/ai/skills/data-model-design/SKILL.md",
+          "sha": "de8ea16421ce"
+        }
+      ]
+    },
     "fix-specs": {
       "digest": "7eb0392e292e",
       "inputs": [
