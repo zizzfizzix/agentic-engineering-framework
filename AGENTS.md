@@ -23,8 +23,8 @@ only rendered files here are the illustrative `examples/` and they are regenerat
 
 TypeScript (ESM), **pnpm**, commander + @clack/prompts (CLI), **zod** (typed contracts → generated
 JSON Schema), **vitest** (tests), ESLint + Prettier, **tsup** (build), **tsx** (dev run), and
-**Lefthook** (git hooks: pre-commit format/lint, pre-push gate/test/typecheck — installed on
-`pnpm install`).
+**Lefthook** (git hooks: commit-msg conventional-commits, pre-commit format/lint, pre-push
+gate/test/typecheck — installed on `pnpm install`).
 
 ```bash
 pnpm install                    # deps + git hooks
@@ -48,6 +48,14 @@ pruned), and every slot a skill declares is fillable by some adapter on its axis
 tests assert byte-stable rendered output — an intentional change means regenerating fixtures with
 `pnpm goldens:update` and reviewing the diff in the same PR. `improve-framework` runs `pnpm gate`
 before opening a PR, so direct development and consumer-driven contributions converge.
+
+## Commit messages
+
+This repo uses **[Conventional Commits](https://www.conventionalcommits.org)**. The subject line
+must be `<type>(<optional-scope>): <description>`, where `type` is one of `feat`, `fix`, `docs`,
+`style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. A `commit-msg` hook
+(`scripts/check-commit-msg.sh`, zero-dependency) enforces it; merge/revert/fixup auto-subjects are
+exempt. Examples: `feat(cli): add remove command`, `fix(render): prune empty slots`.
 
 ## Authoring rules (see `docs/slot-convention.md`)
 

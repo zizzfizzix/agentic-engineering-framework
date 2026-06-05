@@ -1,6 +1,11 @@
 # Git hooks (Lefthook). Installed by the package.json `prepare` script on
 # `pnpm install`. Keep pre-commit fast (staged files only); save the full
 # correctness gates for pre-push.
+commit-msg:
+  jobs:
+    - name: conventional-commits
+      run: sh scripts/check-commit-msg.sh {1}
+
 pre-commit:
   parallel: true
   jobs:
