@@ -100,6 +100,27 @@ of any branch — handy for trying a PR's `aef` on a real install without cuttin
 - Same OIDC trusted publisher as the stable publish (it's the same workflow file), so no extra
   config or secret. `package.json` is bumped only in the runner, never committed.
 
+**Who can publish.** `workflow_dispatch` already requires repo **write** access — randoms and
+read-only forks can't trigger it. Both publish jobs additionally run in the protected `release`
+**environment**: in repo **Settings → Environments → `release`**, add **required reviewers** so a
+maintainer must approve before anything reaches npm, and (optionally) set the npm trusted publisher's
+_Environment_ field to `release` to bind it. Allow all branches there (snapshots run off feature
+branches) and rely on the reviewer gate. Note this gates the **stable** publish too — every npm
+publish needs one approving click; if you'd rather only gate snapshots, move `environment: release`
+off the `publish` job.
+
+**Publishing a snapshot locally** (no CI — uses your own `npm login`, e.g. for the first-publish
+bootstrap):
+
+```bash
+npm login                 # once, as a @zizzfizzix member with publish rights
+pnpm snapshot             # builds, derives <base>-snapshot.<branch>.<sha>, publishes under @<branch>
+pnpm snapshot mytag       # …or override the dist-tag
+```
+
+It mirrors the CI job's version/tag scheme exactly and restores `package.json` on exit (local
+publishes carry no provenance — that's CI/OIDC-only).
+
 ## Authoring rules (see `docs/slot-convention.md`)
 
 - Slot names are `<axis>.<key>`; mandatory-section headings stay in the generic body, optional-

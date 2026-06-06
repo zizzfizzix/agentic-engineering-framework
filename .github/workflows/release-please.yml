@@ -54,6 +54,9 @@ jobs:
     needs: release-please
     if: ${{ github.event_name == 'push' && needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
+    # Gate every npm publish behind the protected `release` environment (required
+    # reviewers, branch limits — configured in repo Settings → Environments).
+    environment: release
     permissions:
       contents: read
       id-token: write # OIDC: exchange for short-lived npm credentials + provenance
@@ -89,6 +92,9 @@ jobs:
   snapshot:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    # Same protected environment as the stable publish: workflow_dispatch already
+    # requires write access, and required reviewers on `release` add an approval.
+    environment: release
     permissions:
       contents: read
       id-token: write # OIDC: short-lived npm credentials + provenance
