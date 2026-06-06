@@ -34,10 +34,12 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
   # release-please's CHANGELOG uses `*` bullets / double blank lines that Prettier
-  # rewrites. Rather than ignore it or add a second commit, reformat CHANGELOG.md
-  # with the repo's own Prettier and fold it into release-please's own commit (via
-  # --amend), so the release PR stays a single, already-formatted commit. CI is
-  # skipped on release-please-- branches, so the amend's force-push costs no run.
+  # rewrites. Reformat it with the repo's own Prettier as a separate commit on the
+  # release PR branch. NEVER amend/force-push: --amend replaces release-please's
+  # own commit, so on any re-run it no longer recognises its branch and
+  # closes+recreates the PR. A commit on top keeps release-please's commit intact;
+  # CI is skipped on release-please-- branches so this extra push costs no run, and
+  # a squash-merge collapses both commits into one on main anyway.
   format-changelog:
     needs: release-please
     if: ${{ needs.release-please.outputs.prs_created == 'true' }}
@@ -54,7 +56,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.pr.outputs.branch }}
-          # PAT so the force-push is allowed on the protected/default-token setup.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - uses: pnpm/action-setup@v4
@@ -68,21 +69,17 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Use the repo's own Prettier + config so the result matches CI exactly.
-      - name: Format CHANGELOG.md into the release commit
+      - name: Format CHANGELOG.md
         run: |
           set -euo pipefail
           pnpm exec prettier --write CHANGELOG.md
           if git diff --quiet -- CHANGELOG.md; then
             echo "CHANGELOG already Prettier-clean."
           else
-            # Fold the formatting into release-please's own commit so the PR stays a
-            # single commit. Preserve the original author AND committer so it remains
-            # attributed to release-please's commit (not the bot).
-            export GIT_AUTHOR_NAME="$(git log -1 --format='%an')"
-            export GIT_AUTHOR_EMAIL="$(git log -1 --format='%ae')"
-            export GIT_COMMITTER_NAME="$(git log -1 --format='%cn')"
-            export GIT_COMMITTER_EMAIL="$(git log -1 --format='%ce')"
-            git add CHANGELOG.md
-            git commit --amend --no-edit
-            git push --force-with-lease
+            # A commit on top (not --amend) so release-please keeps tracking its own
+            # commit. The bot authors this formatting commit.
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style: format CHANGELOG.md with prettier" -- CHANGELOG.md
+            git push
           fi
