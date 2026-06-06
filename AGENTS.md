@@ -67,13 +67,23 @@ Conventional Commit history — no manual version bumps or tags.
   `release-please-config.json`, current versions in `.release-please-manifest.json`).
 - Merging that PR bumps `package.json`, updates the changelog, tags the commit, and cuts a GitHub
   release. That flips the workflow's `release_created` output, which triggers the **publish** job:
-  `pnpm build` then `pnpm publish --access public --provenance` to npm.
-- Requires two repo secrets:
-  - `RELEASE_PLEASE_TOKEN` — a GitHub PAT used by the release-please action. The built-in
-    `GITHUB_TOKEN` is deliberately blocked from triggering further workflow runs, so the release PR
-    it opens would get no CI; a PAT lifts that restriction (and matches the `scrape-similar` setup).
-  - `NPM_TOKEN` — an npm automation/granular token with publish rights to the `@zizzfizzix` scope.
-    Provenance uses the workflow's OIDC `id-token`, so no extra secret is needed for it.
+  `pnpm build` then `npm publish --access public` to npm.
+- **Auth is via [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) — there
+  is no `NPM_TOKEN`.** The publish job's `id-token: write` lets the npm CLI (≥ 11.5.1) exchange the
+  GitHub OIDC token for short-lived credentials and attach provenance automatically (no
+  `--provenance` flag). Configure it once on npmjs.com → the package's **Settings → Trusted
+  Publisher**: GitHub Actions, organization `zizzfizzix`, repository `agentic-engineering-framework`,
+  workflow `release-please.yml` (leave _Environment_ blank).
+  - **First publish is a chicken-and-egg**: the trusted publisher is configured on the package's
+    page, which doesn't exist until the package does. Bootstrap once by publishing manually from a
+    machine logged in as an org member (`pnpm build && npm publish --access public`), then add the
+    trusted publisher. Keep `.release-please-manifest.json` at the published version so the first
+    automated release lands on the _next_ bump and doesn't collide.
+- The one remaining secret is `RELEASE_PLEASE_TOKEN` — a GitHub PAT used by the release-please
+  action. The built-in `GITHUB_TOKEN` is deliberately blocked from triggering further workflow runs,
+  so the release PR it opens would get no CI; a PAT lifts that restriction (matches the
+  `scrape-similar` setup). A fine-grained token with **Contents: read/write** + **Pull requests:
+  read/write** on this repo is enough.
 
 `feat:` → minor, `fix:` → patch, `feat!:`/`BREAKING CHANGE:` → major. While pre-1.0, release-please
 keeps breaking changes in the `0.x` range.

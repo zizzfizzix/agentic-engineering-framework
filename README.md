@@ -114,11 +114,14 @@ pnpm test           # vitest: render, sync, adapters, add/remove, byte-equal gol
 
 Releases are automated via [release-please](https://github.com/googleapis/release-please): pushes to
 `main` keep a release PR open; merging it tags a release and publishes `@zizzfizzix/aef` to npm with
-provenance. Two repo secrets are required (see [`AGENTS.md`](AGENTS.md) for the full flow):
+provenance. npm auth uses [Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC), so
+there is **no npm token** — configure the trusted publisher on npmjs.com pointing at this repo's
+`release-please.yml` workflow. The only repo secret is:
 
 - `RELEASE_PLEASE_TOKEN` — a GitHub PAT (Contents + Pull requests: write) so the release PR gets CI;
   the built-in `GITHUB_TOKEN` can't trigger downstream workflow runs.
-- `NPM_TOKEN` — an npm automation/granular token with publish rights to the `@zizzfizzix` scope.
+
+See [`AGENTS.md`](AGENTS.md) for the full flow, including the one-time first-publish bootstrap.
 
 ## License
 
