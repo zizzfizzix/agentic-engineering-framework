@@ -110,6 +110,16 @@ pnpm gate           # render every skill across an adapter matrix (invariant gat
 pnpm test           # vitest: render, sync, adapters, add/remove, byte-equal goldens
 ```
 
+## Releasing
+
+Releases are automated via [release-please](https://github.com/googleapis/release-please): pushes to
+`main` keep a release PR open; merging it tags a release and publishes `@zizzfizzix/aef` to npm with
+provenance. Two repo secrets are required (see [`AGENTS.md`](AGENTS.md) for the full flow):
+
+- `RELEASE_PLEASE_TOKEN` — a GitHub PAT (Contents + Pull requests: write) so the release PR gets CI;
+  the built-in `GITHUB_TOKEN` can't trigger downstream workflow runs.
+- `NPM_TOKEN` — an npm automation/granular token with publish rights to the `@zizzfizzix` scope.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Attribution to open-mercato preserved.
