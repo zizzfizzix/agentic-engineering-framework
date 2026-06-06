@@ -113,15 +113,17 @@ pnpm test           # vitest: render, sync, adapters, add/remove, byte-equal gol
 ## Releasing
 
 Releases are automated via [release-please](https://github.com/googleapis/release-please): pushes to
-`main` keep a release PR open; merging it tags a release and publishes `@zizzfizzix/aef` to npm with
-provenance. npm auth uses [Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC), so
-there is **no npm token** — configure the trusted publisher on npmjs.com pointing at this repo's
-`release-please.yml` workflow. The only repo secret is:
+`main` keep a release PR open; merging it cuts a GitHub Release, which triggers a separate
+`publish.yml` workflow that publishes `@zizzfizzix/aef` to npm with provenance. npm auth uses
+[Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC), so there is **no npm token** —
+configure the trusted publisher on npmjs.com pointing at this repo's `publish.yml` workflow. The only
+repo secret is:
 
-- `RELEASE_PLEASE_TOKEN` — a GitHub PAT (Contents + Pull requests: write) so the release PR gets CI;
-  the built-in `GITHUB_TOKEN` can't trigger downstream workflow runs.
+- `RELEASE_PLEASE_TOKEN` — a GitHub PAT (Contents + Pull requests: write) so the release PR gets CI
+  and the GitHub Release triggers `publish.yml`; the built-in `GITHUB_TOKEN` can't trigger downstream
+  workflow runs.
 
-The same workflow has a manual **snapshot** button (Actions → Release → Run workflow) that publishes
+`publish.yml` also has a manual **snapshot** button (Actions → Publish → Run workflow) that publishes
 a throwaway prerelease of any branch under a branch-named dist-tag — `npm i @zizzfizzix/aef@<branch>`
 — without touching `latest`. See [`AGENTS.md`](AGENTS.md) for the full flow, including the one-time
 first-publish bootstrap.

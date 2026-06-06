@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Publish a snapshot prerelease to npm from your machine. Mirrors the
-# workflow_dispatch "snapshot" job in .github/workflows/release-please.yml, for
+# workflow_dispatch "snapshot" job in .github/workflows/publish.yml, for
 # when you can't/won't go through CI — notably the one-time trusted-publishing
 # bootstrap (the first publish that creates the package, before OIDC can work).
 #

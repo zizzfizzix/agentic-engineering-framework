@@ -60,54 +60,59 @@ exempt. Examples: `feat(cli): add remove command`, `fix(render): prune empty slo
 ## Releasing (automated)
 
 Releases are driven by **[release-please](https://github.com/googleapis/release-please)** off the
-Conventional Commit history — no manual version bumps or tags.
+Conventional Commit history — no manual version bumps or tags. Two workflows, separated on purpose:
+`release-please.yml` only manages the release; `publish.yml` is the only file that touches npm (so the
+npm trusted publisher pins exactly one workflow).
 
 - `.github/workflows/release-please.yml` runs on every push to `main`. It keeps a **release PR**
   open that rolls up unreleased commits into the next version + `CHANGELOG.md` (config in
   `release-please-config.json`, current versions in `.release-please-manifest.json`).
-- Merging that PR bumps `package.json`, updates the changelog, tags the commit, and cuts a GitHub
-  release. That flips the workflow's `release_created` output, which triggers the **publish** job:
-  `pnpm build` then `npm publish --access public` to npm.
+- Merging that PR bumps `package.json`, updates the changelog, tags the commit, and publishes a
+  **GitHub Release**. Because that release is created by the `RELEASE_PLEASE_TOKEN` PAT, it triggers
+  `.github/workflows/publish.yml` (`on: release: published`) — which runs `pnpm build` then
+  `npm publish --access public` (dist-tag `latest`). (A release created by the built-in
+  `GITHUB_TOKEN` would _not_ trigger it.)
 - **Auth is via [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) — there
   is no `NPM_TOKEN`.** The publish job's `id-token: write` lets the npm CLI (≥ 11.5.1) exchange the
   GitHub OIDC token for short-lived credentials and attach provenance automatically (no
   `--provenance` flag). Configure it once on npmjs.com → the package's **Settings → Trusted
   Publisher**: GitHub Actions, organization `zizzfizzix`, repository `agentic-engineering-framework`,
-  workflow `release-please.yml` (leave _Environment_ blank).
+  workflow **`publish.yml`** (leave _Environment_ blank, or set it to `release` to match the gate
+  below).
   - **First publish is a chicken-and-egg**: the trusted publisher is configured on the package's
     page, which doesn't exist until the package does. Bootstrap once by publishing manually from a
-    machine logged in as an org member (`pnpm build && npm publish --access public`), then add the
-    trusted publisher. Keep `.release-please-manifest.json` at the published version so the first
-    automated release lands on the _next_ bump and doesn't collide.
+    machine logged in as an org member (`pnpm snapshot` — see below), then add the trusted publisher.
+    Keep `.release-please-manifest.json` at the published version so the first automated release lands
+    on the _next_ bump and doesn't collide.
 - The one remaining secret is `RELEASE_PLEASE_TOKEN` — a GitHub PAT used by the release-please
   action. The built-in `GITHUB_TOKEN` is deliberately blocked from triggering further workflow runs,
-  so the release PR it opens would get no CI; a PAT lifts that restriction (matches the
-  `scrape-similar` setup). A fine-grained token with **Contents: read/write** + **Pull requests:
-  read/write** on this repo is enough.
+  so with it the release PR would get no CI **and** the GitHub Release wouldn't trigger `publish.yml`;
+  a PAT lifts both restrictions (matches the `scrape-similar` setup). A fine-grained token with
+  **Contents: read/write** + **Pull requests: read/write** on this repo is enough.
 
 `feat:` → minor, `fix:` → patch, `feat!:`/`BREAKING CHANGE:` → major. While pre-1.0, release-please
 keeps breaking changes in the `0.x` range.
 
 ### Snapshots (on-demand prereleases)
 
-The same workflow has a **manual `workflow_dispatch`** snapshot job for publishing a throwaway build
+`publish.yml` also has a **manual `workflow_dispatch`** snapshot job for publishing a throwaway build
 of any branch — handy for trying a PR's `aef` on a real install without cutting a release.
 
-- **Actions → Release → Run workflow**, pick the branch (optionally override the dist-tag). It
+- **Actions → Publish → Run workflow**, pick the branch (optionally override the dist-tag). It
   publishes `<base>-snapshot.<branch>.<sha>` (the commit rev keeps every snapshot unique) under a
   **branch-named dist-tag**, so `npm i @zizzfizzix/aef@<branch>` resolves to that branch's latest
   snapshot. Snapshots **never** move `latest`.
-- Same OIDC trusted publisher as the stable publish (it's the same workflow file), so no extra
-  config or secret. `package.json` is bumped only in the runner, never committed.
+- Same OIDC trusted publisher as the stable publish (it's the same `publish.yml`), so no extra config
+  or secret. `package.json` is bumped only in the runner, never committed.
 
 **Who can publish.** `workflow_dispatch` already requires repo **write** access — randoms and
-read-only forks can't trigger it. Both publish jobs additionally run in the protected `release`
+read-only forks can't trigger it. Both `publish.yml` jobs additionally run in the protected `release`
 **environment**: in repo **Settings → Environments → `release`**, add **required reviewers** so a
 maintainer must approve before anything reaches npm, and (optionally) set the npm trusted publisher's
 _Environment_ field to `release` to bind it. Allow all branches there (snapshots run off feature
 branches) and rely on the reviewer gate. Note this gates the **stable** publish too — every npm
 publish needs one approving click; if you'd rather only gate snapshots, move `environment: release`
-off the `publish` job.
+off the `release` job in `publish.yml`.
 
 **Publishing a snapshot locally** (no CI — uses your own `npm login`, e.g. for the first-publish
 bootstrap):
