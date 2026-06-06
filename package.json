@@ -1,0 +1,67 @@
+{
+  "name": "@zizzfizzix/aef",
+  "version": "0.1.0",
+  "description": "Slot-based, adapter-driven engineering skills for AI coding harnesses.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zizzfizzix/agentic-engineering-framework.git"
+  },
+  "homepage": "https://github.com/zizzfizzix/agentic-engineering-framework#readme",
+  "bugs": "https://github.com/zizzfizzix/agentic-engineering-framework/issues",
+  "packageManager": "pnpm@11.5.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "aef": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "core",
+    "adapters",
+    "schemas",
+    "docs"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "cli": "tsx src/cli/index.ts",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "gate": "tsx scripts/check-render.ts",
+    "schemas": "tsx scripts/gen-schemas.ts",
+    "goldens:update": "tsx scripts/update-examples.ts",
+    "snapshot": "bash scripts/snapshot.sh",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "lefthook install || true"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.8.2",
+    "commander": "^12.1.0",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.5",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "lefthook": "^1.10.1",
+    "prettier": "^3.4.2",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.19.1",
+    "vitest": "^2.1.8"
+  }
+}

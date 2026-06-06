@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../schemas/adapter.schema.json",
+  "name": "codex",
+  "axis": "harness",
+  "description": "Codex wiring — per-skill symlinks under .codex/skills.",
+  "skillsDir": ".codex/skills",
+  "linkBase": "../../.ai/skills"
+}

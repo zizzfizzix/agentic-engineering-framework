@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../schemas/adapter.schema.json",
+  "name": "cursor",
+  "axis": "harness",
+  "description": "Cursor wiring — per-skill symlinks under .cursor/skills.",
+  "skillsDir": ".cursor/skills",
+  "linkBase": "../../.ai/skills"
+}

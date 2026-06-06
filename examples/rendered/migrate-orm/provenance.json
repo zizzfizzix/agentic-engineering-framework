@@ -1,0 +1,61 @@
+{
+  "skill": "migrate-orm",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "c259362a982a",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "adapters/orm/drizzle/references/cheatsheet.md",
+      "sha": "9c6f14b98b68"
+    },
+    {
+      "path": "adapters/orm/drizzle/references/migration.md",
+      "sha": "64b35816fa30"
+    },
+    {
+      "path": "core/ai/skills/migrate-orm/SKILL.md",
+      "sha": "309b17f24b9d"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/migrate-orm/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 19
+    },
+    {
+      "source": "adapters/orm/drizzle/references/cheatsheet.md",
+      "adapter": "drizzle",
+      "slot": "orm.cheatsheet",
+      "startLine": 20,
+      "endLine": 35
+    },
+    {
+      "source": "core/ai/skills/migrate-orm/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 36,
+      "endLine": 38
+    },
+    {
+      "source": "adapters/orm/drizzle/references/migration.md",
+      "adapter": "drizzle",
+      "slot": "orm.migration",
+      "startLine": 39,
+      "endLine": 48
+    },
+    {
+      "source": "core/ai/skills/migrate-orm/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 49,
+      "endLine": 56
+    }
+  ]
+}

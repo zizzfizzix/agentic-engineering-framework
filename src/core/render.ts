@@ -1,0 +1,152 @@
+// Pure skill renderer — the heart of the framework. No I/O beyond reading source
+// files; returns { rendered, manifest, digest }. Kept dependency-light (node builtins
+// + a type-only contract import) because it runs in consumer repos, in CI, and inside
+// the improve-framework skill.
+//
+// Properties (proven in docs/render-model.md and asserted by the gate): convergence,
+// determinism, provenance, per-skill digest scoping.
+import { readFileSync, existsSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { createHash } from 'node:crypto'
+import type { FrameworkConfig } from './contracts.js'
+
+const AXES = ['orm', 'ui', 'stack'] as const
+type Axis = (typeof AXES)[number]
+
+const sha = (s: string): string => createHash('sha256').update(s).digest('hex').slice(0, 12)
+const norm = (s: string): string => s.replace(/\r\n/g, '\n')
+
+const OPEN = /^<!--\s*SLOT:([\w.-]+)\s*-->$/
+const CLOSE = /^<!--\s*\/SLOT:([\w.-]+)\s*-->$/
+
+// Shared, single source of truth for what a slot marker is — imported by the gate so
+// the gate and the renderer can never disagree (a slot is a marker ALONE ON ITS OWN
+// LINE; `SLOT:` mentioned in prose/backticks is not a slot and is never touched).
+export const SLOT_OPEN = OPEN
+export const SLOT_ANY = /^<!--\s*\/?SLOT:[\w.-]+\s*-->$/
+
+export interface InputRef {
+  path: string
+  sha: string
+}
+
+export interface Region {
+  source: string
+  adapter: string | null
+  slot: string | null
+  startLine: number
+  endLine: number
+}
+
+export interface RenderManifest {
+  skill: string
+  selection: Partial<Record<Axis, string>>
+  digest: string
+  note: string
+  inputs: InputRef[]
+  regions: Region[]
+}
+
+export interface RenderResult {
+  rendered: string
+  manifest: RenderManifest
+  digest: string
+}
+
+interface SlotProvider {
+  adapter: string
+  axis: Axis
+  source: string
+  content: string
+}
+
+export function renderSkill(root: string, config: FrameworkConfig, skill: string): RenderResult {
+  const rel = (p: string): string => relative(root, p)
+
+  // Active adapter per axis -> slot lookup (no inputs counted here).
+  const selected: Partial<Record<Axis, string>> = {}
+  for (const axis of AXES) {
+    const value = config[axis]
+    if (value) selected[axis] = value
+  }
+
+  const slotProviders: Record<string, SlotProvider> = {}
+  for (const [axis, adapter] of Object.entries(selected) as [Axis, string][]) {
+    const adDir = join(root, 'adapters', axis, adapter)
+    const adPath = join(adDir, 'adapter.json')
+    if (!existsSync(adPath)) continue
+    const ad = JSON.parse(readFileSync(adPath, 'utf8')) as { slots?: Record<string, string> }
+    for (const [slot, file] of Object.entries(ad.slots ?? {})) {
+      const fp = join(adDir, file)
+      const content = norm(readFileSync(fp, 'utf8')).replace(/\s+$/, '') + '\n'
+      slotProviders[slot] = { adapter, axis, source: rel(fp), content }
+    }
+  }
+
+  const genPath = join(root, 'core/ai/skills', skill, 'SKILL.md')
+  const generic = norm(readFileSync(genPath, 'utf8'))
+
+  // Inputs = only files that actually compose THIS skill (generic + filled fragments).
+  const inputs: InputRef[] = [{ path: rel(genPath), sha: sha(generic) }]
+  const seenInput = new Set<string>([rel(genPath)])
+
+  const lines = generic.split('\n')
+  const out: string[] = []
+  const regions: Region[] = []
+  let bodyLine = 0
+  const push = (line: string, source: string, meta?: { adapter: string; slot: string }): void => {
+    out.push(line)
+    bodyLine++
+    const last = regions[regions.length - 1]
+    const slot = meta?.slot ?? null
+    if (last && last.source === source && last.slot === slot && last.endLine === bodyLine - 1) {
+      last.endLine = bodyLine
+    } else {
+      regions.push({ source, adapter: meta?.adapter ?? null, slot, startLine: bodyLine, endLine: bodyLine })
+    }
+  }
+
+  let i = 0
+  while (i < lines.length) {
+    const current = lines[i] as string
+    const open = current.match(OPEN)
+    if (open) {
+      const slot = open[1] as string
+      let j = i + 1
+      while (
+        j < lines.length &&
+        !(CLOSE.test(lines[j] as string) && (lines[j] as string).match(CLOSE)![1] === slot)
+      )
+        j++
+      const provider = slotProviders[slot]
+      if (provider) {
+        if (!seenInput.has(provider.source)) {
+          seenInput.add(provider.source)
+          inputs.push({ path: provider.source, sha: sha(provider.content) })
+        }
+        for (const cl of provider.content.replace(/\n$/, '').split('\n')) {
+          push(cl, provider.source, { adapter: provider.adapter, slot })
+        }
+      } // no provider (axis unselected, or active adapter omits this slot) -> prune
+      i = j + 1
+      continue
+    }
+    push(current, rel(genPath))
+    i++
+  }
+
+  const sortedInputs = [...inputs].sort((a, b) => a.path.localeCompare(b.path))
+  const digest = sha(JSON.stringify(sortedInputs))
+  const header = `<!-- generated by aef render — do not hand-edit; use the improve-framework skill or edit the framework source. digest:${digest} -->`
+  const rendered = header + '\n\n' + out.join('\n') + '\n'
+
+  const manifest: RenderManifest = {
+    skill,
+    selection: selected,
+    digest,
+    note: 'region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only',
+    inputs: sortedInputs,
+    regions,
+  }
+  return { rendered, manifest, digest }
+}

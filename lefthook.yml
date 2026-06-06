@@ -1,0 +1,26 @@
+# Git hooks (Lefthook). Installed by the package.json `prepare` script on
+# `pnpm install`. Keep pre-commit fast (staged files only); save the full
+# correctness gates for pre-push.
+commit-msg:
+  jobs:
+    - name: conventional-commits
+      run: sh scripts/check-commit-msg.sh {1}
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: prettier
+      glob: '*.{ts,mjs,js,json,md,yml,yaml}'
+      run: pnpm exec prettier --check {staged_files}
+    - name: eslint
+      glob: '*.{ts,mjs,js}'
+      run: pnpm exec eslint {staged_files}
+
+pre-push:
+  jobs:
+    - name: typecheck
+      run: pnpm typecheck
+    - name: gate
+      run: pnpm gate
+    - name: test
+      run: pnpm test

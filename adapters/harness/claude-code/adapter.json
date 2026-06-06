@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../schemas/adapter.schema.json",
+  "name": "claude-code",
+  "axis": "harness",
+  "description": "Claude Code wiring — per-skill symlinks under .claude/skills.",
+  "skillsDir": ".claude/skills",
+  "linkBase": "../../.ai/skills"
+}

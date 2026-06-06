@@ -1,0 +1,43 @@
+{
+  "skill": "create-agents-md",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "e0e933e8902c",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "adapters/stack/generic-node/references/layout.md",
+      "sha": "42205040faa0"
+    },
+    {
+      "path": "core/ai/skills/create-agents-md/SKILL.md",
+      "sha": "15d09e0ddbd2"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/create-agents-md/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 355
+    },
+    {
+      "source": "adapters/stack/generic-node/references/layout.md",
+      "adapter": "generic-node",
+      "slot": "stack.layout",
+      "startLine": 356,
+      "endLine": 365
+    },
+    {
+      "source": "core/ai/skills/create-agents-md/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 366,
+      "endLine": 366
+    }
+  ]
+}

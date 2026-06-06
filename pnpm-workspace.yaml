@@ -1,0 +1,10 @@
+# Single package today (not a monorepo). This file exists only to carry pnpm
+# settings, which pnpm 11+ reads from here rather than package.json. Promote to
+# a real workspace (with `packages:`) + Turbo if we ever publish >1 package.
+#
+# pnpm gates dependency build/postinstall scripts; these two are trusted and
+# need theirs to run (esbuild installs its platform binary; lefthook syncs git
+# hooks). Maintained via `pnpm approve-builds`.
+allowBuilds:
+  esbuild: true
+  lefthook: true

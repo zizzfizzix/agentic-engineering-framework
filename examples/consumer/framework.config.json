@@ -1,0 +1,38 @@
+{
+  "$schema": "./schemas/framework.config.schema.json",
+  "projectName": "my-app",
+  "harnesses": [
+    "claude-code",
+    "codex"
+  ],
+  "orm": "drizzle",
+  "ui": "shadcn",
+  "stack": "generic-node",
+  "paths": {
+    "modulesRoot": "src/modules",
+    "specsRoot": ".ai/specs",
+    "testsRoot": ".ai/qa/tests"
+  },
+  "validation": [
+    "npm run typecheck",
+    "npm test"
+  ],
+  "git": {
+    "defaultBranch": "main",
+    "labels": []
+  },
+  "source": {
+    "path": null,
+    "repo": "git@github.com:zizzfizzix/agentic-engineering-framework.git"
+  },
+  "feedback": {
+    "capture": true,
+    "upstream": {
+      "mode": "scheduled-pr",
+      "channel": "pr",
+      "schedule": "weekly",
+      "sanitize": true,
+      "requireHumanApproval": true
+    }
+  }
+}

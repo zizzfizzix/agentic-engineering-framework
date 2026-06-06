@@ -1,0 +1,88 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Maintains a release PR from conventional-commit history. Merging it bumps the
+  # version + CHANGELOG, tags the commit, and publishes a GitHub Release — which
+  # triggers publish.yml (`on: release`) to push the package to npm.
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      pr: ${{ steps.release.outputs.pr }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # A PAT (not the built-in GITHUB_TOKEN) for two reasons: GITHUB_TOKEN is
+          # blocked from triggering further workflow runs, so with it (a) the
+          # release PR would get no CI and (b) the GitHub Release would NOT trigger
+          # publish.yml. The PAT lifts both restrictions (matches scrape-similar).
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+  # release-please's CHANGELOG uses `*` bullets / double blank lines that Prettier
+  # rewrites. Rather than ignore it or add a second commit, reformat CHANGELOG.md
+  # with the repo's own Prettier and fold it into release-please's own commit (via
+  # --amend), so the release PR stays a single, already-formatted commit. CI is
+  # skipped on release-please-- branches, so the amend's force-push costs no run.
+  format-changelog:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.prs_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Resolve release PR branch
+        id: pr
+        env:
+          PR_JSON: ${{ needs.release-please.outputs.pr }}
+        run: echo "branch=$(jq -r .headBranchName <<<"$PR_JSON")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.branch }}
+          # PAT so the force-push is allowed on the protected/default-token setup.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Use the repo's own Prettier + config so the result matches CI exactly.
+      - name: Format CHANGELOG.md into the release commit
+        run: |
+          set -euo pipefail
+          pnpm exec prettier --write CHANGELOG.md
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG already Prettier-clean."
+          else
+            # Fold the formatting into release-please's own commit so the PR stays a
+            # single commit. Preserve the original author AND committer so it remains
+            # attributed to release-please's commit (not the bot).
+            export GIT_AUTHOR_NAME="$(git log -1 --format='%an')"
+            export GIT_AUTHOR_EMAIL="$(git log -1 --format='%ae')"
+            export GIT_COMMITTER_NAME="$(git log -1 --format='%cn')"
+            export GIT_COMMITTER_EMAIL="$(git log -1 --format='%ce')"
+            git add CHANGELOG.md
+            git commit --amend --no-edit
+            git push --force-with-lease
+          fi
