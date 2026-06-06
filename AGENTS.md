@@ -66,7 +66,10 @@ npm trusted publisher pins exactly one workflow).
 
 - `.github/workflows/release-please.yml` runs on every push to `main`. It keeps a **release PR**
   open that rolls up unreleased commits into the next version + `CHANGELOG.md` (config in
-  `release-please-config.json`, current versions in `.release-please-manifest.json`).
+  `release-please-config.json`, current versions in `.release-please-manifest.json`). A follow-up job
+  reformats the generated `CHANGELOG.md` with the repo's Prettier on the release PR branch —
+  release-please's `*`-bullet style isn't Prettier-clean, and it regenerates the file each run, so the
+  fix is reapplied automatically rather than ignoring the file.
 - Merging that PR bumps `package.json`, updates the changelog, tags the commit, and publishes a
   **GitHub Release**. Because that release is created by the `RELEASE_PLEASE_TOKEN` PAT, it triggers
   `.github/workflows/publish.yml` (`on: release: published`) — which runs `pnpm build` then
@@ -81,10 +84,13 @@ npm trusted publisher pins exactly one workflow).
   workflow **`publish.yml`** (leave _Environment_ blank, or set it to `release` to match the gate
   below).
   - **First publish is a chicken-and-egg**: the trusted publisher is configured on the package's
-    page, which doesn't exist until the package does. Bootstrap once by publishing manually from a
-    machine logged in as an org member (`pnpm snapshot` — see below), then add the trusted publisher.
-    Keep `.release-please-manifest.json` at the published version so the first automated release lands
-    on the _next_ bump and doesn't collide.
+    page, which doesn't exist until the package does. Bootstrap once by publishing the **stable**
+    `0.0.1` in `package.json` manually from a machine logged in as an org member
+    (`npm publish --access public`), then add the trusted publisher. Bootstrap with a **stable**
+    version, **not a snapshot** — npm forces the very first publish onto the `latest` dist-tag
+    regardless of `--tag`, so a snapshot bootstrap leaves `latest` pointing at a prerelease. Once a
+    real version owns `latest`, snapshots (always `--tag <branch>`) never move it. Keep
+    `.release-please-manifest.json` at `0.0.1` so the first automated release bumps to `0.1.0`.
 - The one remaining secret is `RELEASE_PLEASE_TOKEN` — a GitHub PAT used by the release-please
   action. The built-in `GITHUB_TOKEN` is deliberately blocked from triggering further workflow runs,
   so with it the release PR would get no CI **and** the GitHub Release wouldn't trigger `publish.yml`;

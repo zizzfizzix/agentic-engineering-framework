@@ -6,6 +6,7 @@
 //   aef add <adapter> [--out <dir>] [--copy]
 //   aef remove <adapter> [--out <dir>] [--copy]
 //   aef dev
+import { readFileSync } from 'node:fs'
 import { Command } from 'commander'
 import { ZodError } from 'zod'
 import { runInit } from './commands/init.js'
@@ -14,12 +15,19 @@ import { runDev } from './commands/dev.js'
 import { runRender } from './commands/render.js'
 import { runAdd, runRemove } from './commands/adapter.js'
 
+// Single source of truth for the version: read the package's own package.json at
+// runtime so it never drifts from release-please's bump (dev: src/cli/, built:
+// dist/cli/ — both resolve to the package root).
+const { version } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
+  version: string
+}
+
 const program = new Command()
 
 program
   .name('aef')
   .description('Render slot-based engineering skills into a consumer repo and keep them in sync.')
-  .version('0.1.0')
+  .version(version)
 
 program
   .command('init')

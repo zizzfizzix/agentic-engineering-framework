@@ -1,0 +1,37 @@
+name: PR Title
+
+# With squash merges, the squashed commit message defaults to the PR title, and
+# that's what release-please parses for the next version bump. The commit-msg hook
+# can't see PR titles, so lint them here to keep the same Conventional Commits
+# contract (types mirror scripts/check-commit-msg.sh).
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
