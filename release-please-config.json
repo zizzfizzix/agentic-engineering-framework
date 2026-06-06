@@ -3,7 +3,7 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "@agentic/engineering-framework",
+      "package-name": "@zizzfizzix/engineering-framework",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false
     }
