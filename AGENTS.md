@@ -75,7 +75,8 @@ npm trusted publisher pins exactly one workflow).
 - **Auth is via [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) — there
   is no `NPM_TOKEN`.** The publish job's `id-token: write` lets the npm CLI (≥ 11.5.1) exchange the
   GitHub OIDC token for short-lived credentials and attach provenance automatically (no
-  `--provenance` flag). Configure it once on npmjs.com → the package's **Settings → Trusted
+  `--provenance` flag). Provenance also needs `package.json`'s `repository.url` set (it is) — npm
+  refuses to generate provenance without it, so don't drop that field. Configure it once on npmjs.com → the package's **Settings → Trusted
   Publisher**: GitHub Actions, organization `zizzfizzix`, repository `agentic-engineering-framework`,
   workflow **`publish.yml`** (leave _Environment_ blank, or set it to `release` to match the gate
   below).

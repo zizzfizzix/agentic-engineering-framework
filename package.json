@@ -4,6 +4,12 @@
   "description": "Slot-based, adapter-driven engineering skills for AI coding harnesses.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zizzfizzix/agentic-engineering-framework.git"
+  },
+  "homepage": "https://github.com/zizzfizzix/agentic-engineering-framework#readme",
+  "bugs": "https://github.com/zizzfizzix/agentic-engineering-framework/issues",
   "packageManager": "pnpm@11.5.0",
   "engines": {
     "node": ">=20"
