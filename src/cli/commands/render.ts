@@ -1,4 +1,4 @@
-// `agentic render` — render a single skill to stdout (or --out dir) for inspection.
+// `aef render` — render a single skill to stdout (or --out dir) for inspection.
 // The lightweight counterpart to `init`; handy while authoring skills/adapters and
 // the render step the improve-framework skill points at.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'

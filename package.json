@@ -1,5 +1,5 @@
 {
-  "name": "@zizzfizzix/engineering-framework",
+  "name": "@zizzfizzix/aef",
   "version": "0.1.0",
   "description": "Slot-based, adapter-driven engineering skills for AI coding harnesses.",
   "type": "module",
@@ -9,7 +9,7 @@
     "node": ">=20"
   },
   "bin": {
-    "agentic": "dist/cli/index.js"
+    "aef": "dist/cli/index.js"
   },
   "files": [
     "dist",

@@ -3,7 +3,7 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "@zizzfizzix/engineering-framework",
+      "package-name": "@zizzfizzix/aef",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false
     }

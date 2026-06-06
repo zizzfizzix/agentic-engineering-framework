@@ -1,4 +1,4 @@
-// Integration tests for `agentic add` / `agentic remove`, driven through runInit then
+// Integration tests for `aef add` / `aef remove`, driven through runInit then
 // runAdd/runRemove against a temp consumer initialised from the bundled example config
 // (orm: drizzle, ui: shadcn). Verifies axis re-selection, skill install/uninstall, and
 // that local edits to surviving skills are preserved across a re-selection.

@@ -39,7 +39,7 @@ Each inbound lesson (see `core/ai/framework-feedback/README.md` for the shape) c
    (`pnpm goldens:update`) if rendered output changed, and review the diff.
 5. **Open one consolidation PR** with the routed changes. Reference the inbound lessons it
    resolves. Human review gates the merge.
-6. On merge, accepted framework lessons flow back to every consumer via their next `agentic sync`
+6. On merge, accepted framework lessons flow back to every consumer via their next `aef sync`
    (which renders `lessons.framework.md` into each repo). The originating outbox entries retire
    once their content is detected in synced output.
 
