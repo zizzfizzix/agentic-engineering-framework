@@ -20,11 +20,63 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      pr: ${{ steps.release.outputs.pr }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           # A PAT (not the built-in GITHUB_TOKEN) for two reasons: GITHUB_TOKEN is
           # blocked from triggering further workflow runs, so with it (a) the
           # release PR would get no CI and (b) the GitHub Release would NOT trigger
           # publish.yml. The PAT lifts both restrictions (matches scrape-similar).
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+  # release-please's CHANGELOG uses `*` bullets / double blank lines that Prettier
+  # rewrites, so the release PR would fail `format:check`. It regenerates the
+  # changelog on every run, so a one-off fix won't stick — instead, whenever a
+  # release PR is open, reformat CHANGELOG.md on its branch with the repo's own
+  # Prettier and amend. Pushing with the PAT lets the update re-trigger CI.
+  format-changelog:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.prs_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Resolve release PR branch
+        id: pr
+        env:
+          PR_JSON: ${{ needs.release-please.outputs.pr }}
+        run: echo "branch=$(jq -r .headBranchName <<<"$PR_JSON")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.branch }}
+          # PAT so the resulting push re-triggers CI on the release PR.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Use the repo's own Prettier + config so the result matches CI exactly.
+      - name: Format CHANGELOG.md
+        run: |
+          set -euo pipefail
+          pnpm exec prettier --write CHANGELOG.md
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG already Prettier-clean."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style: format CHANGELOG.md with prettier" -- CHANGELOG.md
+            git push
+          fi
