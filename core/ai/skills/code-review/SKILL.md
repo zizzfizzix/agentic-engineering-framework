@@ -1,0 +1,284 @@
+---
+name: code-review
+description: Review code changes for compliance with the project's architecture, security, conventions, and quality rules. Covers module structure, naming, data security, UI patterns, event/cache/queue rules, and anti-patterns. Use for reviewing PRs, diffs, or commits.
+---
+
+# Code Review
+
+Review code changes against the project's architecture rules, security requirements, naming conventions, and quality standards. Produce actionable, categorized findings.
+
+## Review Workflow
+
+1. **Scope**: Identify changed files. Classify each file by layer (API route, data model/entity, validator, page/view, background job/subscriber, worker, command, config, authorization rules, events, test).
+2. **Gather context**: Read relevant AGENTS.md for each touched module/package. Check the specs root (`framework.config.json` → `paths.specsRoot`) for active specs on the module. Read the project's lessons file (e.g. `.ai/lessons.md`) for known pitfalls.
+3. **CI/CD verification gate (MANDATORY)**: Run the same checks that CI runs (the commands listed in `framework.config.json` → `validation`), in order. Every gate MUST pass before the review can conclude. If any gate fails, fix the issue first — do NOT mark the review as passing. See **CI/CD Verification Gate** section below.
+4. **Template parity gate**: If the project ships a scaffolding template, run its template-sync check. If drift is reported, ask the user whether to sync now; if approved, run the template-sync fix command and include synced files in the change.
+5. **Backward compatibility gate**: Check every change against the project's backward-compatibility contract (e.g. a `BACKWARD_COMPATIBILITY.md` linked from root `AGENTS.md`). Flag any violation as **Critical**. See section below.
+6. **Run checklist**: Apply all applicable rules from this skill's `references/review-checklist.md`. Flag violations with severity, file, line, and fix suggestion.
+7. **Test coverage**: Verify changed behavior is covered by unit tests and/or integration tests. If coverage is missing, flag it with severity, file references, and exact test cases to add.
+8. **Cross-module impact**: If the change touches events, extensions, or widgets, verify the consuming side handles the contract correctly.
+9. **Output**: Produce the review report in the format below.
+
+## CI/CD Verification Gate (MANDATORY)
+
+**NEVER claim code is "ready to ship", "ready to merge", or "CI will pass" without running these checks first and confirming they all pass.** This gate mirrors exactly what CI runs on every PR to the default branch (`framework.config.json` → `git.defaultBranch`) and any long-lived integration branch. The commands to run are the project's verification gate — the list in `framework.config.json` → `validation`. If any step fails, it MUST be fixed before the review can pass.
+
+### Gate Steps (run in order)
+
+Run the commands listed in `framework.config.json` → `validation` and verify each one exits successfully (exit code 0). A typical gate (the commands below are illustrative) covers build, any code-generation/prepare step, i18n sync, typecheck, and tests:
+
+| #   | Command (example)       | What it checks                             | If it fails                                                                          |
+| --- | ----------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| 1   | build                   | The project compiles                       | Fix build/type errors in the changed code                                            |
+| 2   | code-generation/prepare | Any generated/derived files are up to date | Re-run it — it regenerates missing files                                             |
+| 3   | rebuild                 | Rebuild with generated files included      | Fix any type errors exposed by generated files                                       |
+| 4   | i18n sync               | All locale files are in sync               | Add missing i18n keys to all locale files                                            |
+| 5   | i18n usage              | No unused or missing i18n keys             | Remove unused keys or add missing ones (if CI marks this non-blocking, still report) |
+| 6   | typecheck               | Types are correct across the project       | Fix type errors — do NOT dismiss as "pre-existing"                                   |
+| 7   | test                    | All tests pass                             | Fix failing tests — do NOT dismiss as "flaky" or "pre-existing"                      |
+| 8   | app build               | The app builds successfully                | Fix build errors                                                                     |
+
+### Rules
+
+- **Run independent gate steps (e.g. typecheck and test) in parallel** to save time.
+- **Every failure is a finding**: If the typecheck or test command fails, it is a **Critical** finding in the review — even if the failure appears unrelated to the current changes. The PR will fail CI regardless of whose fault it is.
+- **No excuses**: "Pre-existing on develop", "flaky test", "not our code" are not valid reasons to skip. If it fails on your branch, it will fail on CI. Fix it or flag it as a blocker.
+- **Evidence required**: The review output MUST include the actual pass/fail result of each gate step. Do not assume — run the commands and report what happened.
+
+## Frontend Performance Blocking Gate
+
+For PRs touching framework routes, generated frontend, shared providers, backend shell UI, or heavy interactive widgets, the reviewer has blocking power for performance regressions. Request changes when any of these are true:
+
+- a Server Component was converted to a Client Component without an accepted Frontend Architecture Contract / `"use client"` ledger entry,
+- `page.tsx`, `layout.tsx`, or a route shell became a large client-side blob instead of server root + small client islands,
+- global providers/bootstrap import route-specific dashboards, injections, notifications, messages, payments, editors, calendars, graphs, or browser SDKs,
+- bundle/runtime footprint grows without measurement, explanation, and explicit acceptance,
+- changed interactions lack tests for hydration, accessibility, loading state, or error state,
+- the client-boundary check output (if the project lists one in `framework.config.json` → `validation`) is missing for generated frontend/app-shell changes.
+
+Add the client-boundary report and any bundle/RAM/per-route evidence to the review summary.
+
+## Output Format
+
+Use this structure for every review:
+
+```markdown
+# Code Review: {PR title or change description}
+
+## Summary
+
+{1-3 sentences: what the change does, overall assessment}
+
+## CI/CD Verification
+
+List one row per command in `framework.config.json` → `validation` (the example rows below are illustrative):
+
+| Gate                                  | Status         | Notes                   |
+| ------------------------------------- | -------------- | ----------------------- |
+| `<validation command 1>` (build)      | PASS/FAIL      |                         |
+| `<validation command 2>` (codegen)    | PASS/FAIL      |                         |
+| `<validation command 3>` (rebuild)    | PASS/FAIL      |                         |
+| `<validation command 4>` (i18n sync)  | PASS/FAIL      |                         |
+| `<validation command 5>` (i18n usage) | PASS/FAIL/WARN | (if non-blocking in CI) |
+| `<validation command 6>` (typecheck)  | PASS/FAIL      |                         |
+| `<validation command 7>` (test)       | PASS/FAIL      |                         |
+| `<validation command 8>` (app build)  | PASS/FAIL      |                         |
+
+## Findings
+
+### Critical
+
+{Violations that MUST be fixed before merge — security, data integrity, tenant isolation}
+
+### High
+
+{Architecture violations, missing required exports, broken conventions}
+
+### Medium
+
+{Style issues, missing best practices, suboptimal patterns}
+
+### Low
+
+{Suggestions, minor improvements, nits}
+
+## Backward Compatibility
+
+- [ ] No contract surface removed or renamed without deprecation bridge
+- [ ] No event IDs renamed or removed
+- [ ] No API route URLs renamed or removed
+- [ ] No existing response schema fields removed
+- [ ] No database columns/tables renamed or removed
+- [ ] No service/registration names renamed or removed
+- [ ] No authorization/permission IDs renamed or removed
+- [ ] No public import paths removed without re-export bridge
+- [ ] No required type fields removed or narrowed
+- [ ] No function signatures changed in a breaking way
+- [ ] Deprecation protocol followed (if applicable): deprecation annotation, bridge re-export/alias, spec with migration section
+
+## Checklist
+
+- [ ] No `any` types introduced
+- [ ] All inputs validated at boundaries with a schema; types derived from it
+- [ ] Validators defined in a dedicated location (not scattered inline)
+- [ ] If the project is multi-tenant: every read/write scoped by tenant; scoping layer never bypassed
+- [ ] No hardcoded user-facing strings
+- [ ] Project's canonical data-layer / form / API helpers reused (no bespoke fetch/forms/queries)
+- [ ] Events declared through the project's event mechanism before emitting
+- [ ] Background jobs/subscribers declare their required metadata for discovery
+- [ ] Code-generation/prepare command (from `framework.config.json` → `validation`) re-run after file additions
+- [ ] Sensitive/PII fields encrypted via the framework-provided field-encryption mechanism; no hand-rolled crypto
+- [ ] Default-deny authorization: every endpoint declares its required auth/permissions explicitly
+- [ ] If the project ships a scaffolding template, the template-sync check passes
+- [ ] Behavior changes covered by unit and/or integration tests (or explicitly justified as not applicable)
+- [ ] No empty `catch` blocks (all catches must handle, log, rethrow, or explicitly document intentional ignore)
+- [ ] New migrations are scoped to intended entities only (no unrelated bulk drop/alter/create statements)
+- [ ] New or renamed spec files use `{YYYY-MM-DD}-{slug}.md` under the specs root (`framework.config.json` → `paths.specsRoot`)
+- [ ] No two spec files collapse to the same normalized `{YYYY-MM-DD}-{slug}.md` target when legacy prefixed names are removed
+```
+
+Omit empty severity sections. Mark passing checklist items with `[x]` and failing with `[ ]` plus explanation.
+
+## Severity Classification
+
+| Severity     | Criteria                                                                                                                                                                              | Action                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| **Critical** | Security vulnerability, cross-tenant data leak, data corruption risk, missing auth guard, **backward compatibility violation** (breaking contract surface without deprecation bridge) | MUST fix before merge |
+| **High**     | Architecture violation, missing required convention export (API doc/auth metadata, discovery metadata), broken module contract, **missing deprecation annotation** on contract change | MUST fix before merge |
+| **Medium**   | Convention violation, suboptimal pattern, missing best practice                                                                                                                       | Should fix            |
+| **Low**      | Style suggestion, minor improvement, readability                                                                                                                                      | Nice to have          |
+
+## Quick Rule Reference
+
+These are the highest-impact rules. For the full checklist, see this skill's `references/review-checklist.md`.
+
+### Backward Compatibility (Critical)
+
+- Treat shipped public surfaces (APIs, events, schemas, types, import paths, DB columns, service/registration names, authorization feature IDs, convention-file exports) as contracts: **add, don't break; deprecate with aliases**
+- **MUST NOT remove/rename** any contract surface — see the project's backward-compatibility contract (e.g. a `BACKWARD_COMPATIBILITY.md`) for the full list
+- **Deprecate first**: deprecation annotation → bridge re-export/alias → removal after one minor version
+- **Additive-only DB changes**: new columns with defaults OK; rename/remove/narrow columns is BREAKING
+- **Event payloads**: may add optional fields; MUST NOT remove existing fields
+- **Extension/injection-point context**: may add optional fields; MUST NOT remove or change type of existing fields
+- **API responses**: may add fields; MUST NOT remove existing fields
+- **Any PR touching a contract surface** MUST reference a spec with a "Migration & Backward Compatibility" section
+
+### Architecture (Critical/High)
+
+- **No tight coupling between modules** — depend on stable IDs/contracts, fetch separately; avoid direct cross-module imports of business logic
+- **If the project is multi-tenant**, scope every read/write by tenant — never expose cross-tenant data, never bypass the scoping layer
+- **Inject services through the project's dependency-injection mechanism** — never `new` them directly where a registered service exists
+- **No direct module-to-module function calls** for side effects — use events
+- **Cross-module data**: use the project's extension mechanism — never add columns to another module's table
+
+### Security (Critical)
+
+- **Validate all inputs at boundaries with a schema** (defined in a dedicated location, not scattered inline) and derive types from it — never trust raw input
+- **Encrypt sensitive/PII fields** through the project's declarative, framework-provided field-encryption mechanism with per-tenant keys; never hand-roll crypto. Reads/writes of encrypted entities MUST go through the encryption-aware data helpers rather than raw queries.
+- **Hash passwords with a strong adaptive algorithm** — never log credentials
+- **Auth endpoints**: return minimal error messages — never reveal if a given account exists
+- **Default-deny authorization**: every endpoint MUST declare its required auth/permissions explicitly; missing = denied
+- **Sensitive fields**: MUST be excluded from search indexes
+- **MUST NOT cache** passwords, tokens, or PII without encryption
+
+### Data Integrity (Critical/High)
+
+- **Migration files and any schema snapshots must match entity intent** — prefer the project's migration-generation command, but scoped manual SQL is allowed when generation emits unrelated churn; in that case any companion schema-snapshot file MUST be updated too.
+- **Autogenerated migration sanity is mandatory** — generated files can be wrong; reviewers MUST validate migration diff scope
+- **Use an atomic flush/transaction** when mutating entities across phases that include queries
+- **Flush scalar changes BEFORE** relation syncs that query on the same unit of work — avoid stale-state resets
+- **Workers/subscribers MUST be idempotent** — they may be retried
+- **Where the project supports undo/redo, commands MUST be undoable** — include before/after snapshots
+
+#### Migration Sanity Gate (Critical)
+
+For every migration in the diff, reviewer MUST:
+
+1. Compare migration statements against the PR intent/spec and touched entities.
+2. Flag as **Critical** if migration includes unrelated schema churn (especially mass `drop constraint`, `drop table`, or broad `alter table` across many modules).
+3. Require regeneration/removal when scope is incorrect, even if file is autogenerated.
+4. Block merge until migration contains only expected schema changes.
+
+Examples of suspicious patterns that MUST be flagged:
+
+- Migration touches many tables outside module scope for a focused feature PR.
+- Migration mostly contains destructive statements (`drop`, bulk constraint removals) without matching entity changes.
+- Snapshot/migration files appear due to local drift and are not required for feature behavior.
+
+### Naming & Structure (High/Medium)
+
+- Follow the project's established naming conventions consistently (casing for identifiers, tables, columns, modules)
+- Standard entity columns present and consistent (e.g. id, created/updated timestamps, soft-delete marker, and any tenant-scoping columns the project uses)
+- Stable primary keys, explicit foreign keys, junction tables for many-to-many
+- Code MUST be placed in the correct location per the project's structural paths (`framework.config.json` → `paths`); don't dump code in an unstructured root
+- Respect the project's package layering — a shared/low-level package MUST NOT import from higher-level domain packages
+
+### Required Exports (High)
+
+Where the project relies on convention-based files and auto-discovery, verify each changed file declares the exports its convention requires (e.g. API doc metadata, auth-guard metadata, event/subscriber/worker discovery metadata, authorization feature declarations, search/index config). Missing required exports break discovery or docs — flag as **High**.
+
+### UI & HTTP (Medium/High)
+
+- **Reuse the project's canonical data-layer, form, and API helpers** rather than bespoke fetch/forms/queries
+- Forms go through the project's shared form abstraction — never one-off custom form implementations where a canonical one exists
+- Where a page cannot use the canonical form, every write (`POST`/`PUT`/`PATCH`/`DELETE`) MUST go through the project's guarded-mutation/write helper (including its conflict-retry mechanism if one exists)
+- Lists/tables go through the project's shared table abstraction — never manual table markup
+- Notifications go through the project's feedback helper — never `alert()` or ad-hoc toasts
+- HTTP calls go through the project's API-call helper — never raw `fetch`
+- Parse responses and surface validation/CRUD errors through the project's shared helpers — never `.json().catch()` or raw throws
+- Dialogs: MUST support `Cmd/Ctrl+Enter` (submit), `Escape` (cancel)
+- Row-action items MUST have stable `id` values
+- Page sizes for list endpoints stay within the project's bound
+- i18n: use the project's translation helpers (client and server) — never hardcode user-facing strings
+
+### Code Quality (Medium)
+
+- **No `any` types** — derive types from the validation schema, narrow with runtime checks
+- **No empty `catch` blocks** — catch blocks MUST handle, log, rethrow, or include explicit rationale for intentional ignore
+- **No one-letter variable names**
+- **No inline comments** — code should be self-documenting
+- **Reuse the project's shared utility helpers** (e.g. boolean/string parsing) rather than re-implementing them
+- **Prefer functional, data-first utilities** over classes
+- **Don't add docstrings/comments/annotations** to code you didn't change
+
+### Testing Coverage (High/Medium)
+
+- **Behavioral changes MUST include test coverage** through unit tests, integration tests, or both
+- **Risk-heavy paths MUST include integration coverage** (permissions, tenant isolation, workflows, billing, undo/redo, events)
+- **Missing tests are findings**: report exact files/areas lacking coverage and list the tests to add
+- **If tests are intentionally skipped**, reviewer MUST verify a documented rationale and residual risk
+
+## Review Heuristics
+
+When reviewing, pay special attention to:
+
+0. **Backward compatibility**: For EVERY changed file, ask: "Does this touch a contract surface?" Check against the project's backward-compatibility contract (e.g. a `BACKWARD_COMPATIBILITY.md`). If a type field is removed, a function signature changed, an event ID renamed, an injection-point ID removed, a DB column dropped, an import path moved, or a service/registration name changed — flag as **Critical** unless the deprecation protocol is followed (bridge + deprecation annotation + spec).
+1. **New files added**: Check if the code-generation/prepare command (from `framework.config.json` → `validation`) needs to be re-run. Verify auto-discovery paths are correct.
+2. **Entity changes**: Check if migration and schema-snapshot updates are needed. If the project is multi-tenant, look for missing tenant-scoping columns.
+   2a. **Migration presence for entity changes**: If any entity schema file changed, verify the diff also contains a corresponding migration file or a documented no-op explanation, plus any companion schema-snapshot file when schema changed.
+   2b. **Migration files**: Inspect SQL content, not only filename. Autogenerated does not mean valid; reject oversized/unrelated churn.
+   2c. **Snapshot files**: Verify any companion schema-snapshot file represents the post-migration schema. Missing snapshot updates are blockers because they make a future migration-generation run recreate already-committed SQL.
+3. **New API routes**: Verify API-doc/auth metadata exports, default-deny auth guards, input validation, and tenant filtering (if multi-tenant).
+4. **Event emitters**: Verify the event is declared through the project's event-declaration mechanism before being emitted. Check a subscriber exists.
+5. **Search config changes**: Verify change-detection fields, exclusion of sensitive fields from indexes, and result formatting.
+6. **Cache usage**: Verify it is resolved through the project's cache abstraction, scoped by tenant (if multi-tenant), and invalidated on writes.
+7. **Queue workers**: Verify idempotency, required discovery metadata, and bounded concurrency.
+8. **Commands**: Where the project supports undo/redo, verify undoability, before/after snapshots, and an atomic flush/transaction for multi-phase mutations.
+9. **Setup changes**: Verify default role/permission assignments mirror the declared authorization features. Hooks MUST be idempotent.
+   9a. **Authorization declaration shape**: Verify authorization features are declared in the shape the project expects rather than ad-hoc strings; flag wrong shape as **High** because permission UI and role assignment can break.
+10. **UI changes**: Verify the project's canonical form/table/feedback helpers are used, plus keyboard shortcuts and loading/error states.
+11. **Behavior changes**: Verify unit and/or integration tests cover new behavior, regressions, and edge cases.
+12. **Write-path guard coverage**: For pages with manual save/delete logic (not the canonical form), verify the project's guarded-mutation/write helper is wired for all writes (including conflict-retry, if any); for custom write API routes, verify the project's write-guard validation runs before and after success.
+13. **Spec filename hygiene**: If specs were added or renamed, verify new files use `{YYYY-MM-DD}-{slug}.md`, legacy numbered files are not copied forward into new work, and no two files would resolve to the same normalized date+slug target.
+14. **Template sync prompt**: If the project ships a scaffolding template and its template-sync check finds drift (especially layout/routes), ask the user whether to sync; when approved, run the template-sync fix command and include those updates.
+
+## Lessons Learned
+
+Check known pitfalls from the project's lessons file (e.g. `.ai/lessons.md`). Common stack-agnostic classes to watch for:
+
+1. **Stale snapshots when building change logs**: load fresh state from the data layer rather than reusing a possibly-stale in-memory copy.
+2. **Lost updates on flush**: flush scalar changes BEFORE relation syncs that query on the same unit of work.
+3. **Duplicated undo logic**: centralize before/after snapshot extraction in one shared helper rather than re-implementing it per command.
+
+<!-- SLOT:stack.project-rules -->
+<!-- /SLOT:stack.project-rules -->

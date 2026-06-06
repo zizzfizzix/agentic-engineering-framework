@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/adapter.schema.json",
+  "name": "generic-node",
+  "axis": "stack",
+  "description": "Generic Node.js / TypeScript single-repo stack — conventions, validation, and review rules that apply to most Node projects.",
+  "augments": ["code-review", "implement-spec", "integration-tests", "create-agents-md", "open-pr"],
+  "slots": {
+    "stack.layout": "references/layout.md",
+    "stack.validation": "references/validation.md",
+    "stack.project-rules": "references/project-rules.md",
+    "stack.pr-workflow": "references/pr-workflow.md"
+  }
+}

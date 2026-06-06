@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schemas/adapter.schema.json",
+  "name": "mikro-orm",
+  "axis": "orm",
+  "description": "MikroORM adapter — decorator entities, CLI migrations.",
+  "augments": ["migrate-orm", "data-model-design"],
+  "slots": {
+    "orm.cheatsheet": "references/cheatsheet.md",
+    "orm.migration": "references/migration.md"
+  }
+}

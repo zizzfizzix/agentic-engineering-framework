@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schemas/adapter.schema.json",
+  "name": "shadcn",
+  "axis": "ui",
+  "description": "shadcn/ui adapter — Tailwind tokens + Radix-based components. No bundled health-check tool.",
+  "augments": ["ui-consistency"],
+  "slots": {
+    "ui.tokens": "references/tokens.md",
+    "ui.components": "references/components.md"
+  }
+}

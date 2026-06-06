@@ -1,0 +1,43 @@
+{
+  "skill": "data-model-design",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "aa2ea0711815",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "adapters/orm/drizzle/references/cheatsheet.md",
+      "sha": "9c6f14b98b68"
+    },
+    {
+      "path": "core/ai/skills/data-model-design/SKILL.md",
+      "sha": "de8ea16421ce"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/data-model-design/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 222
+    },
+    {
+      "source": "adapters/orm/drizzle/references/cheatsheet.md",
+      "adapter": "drizzle",
+      "slot": "orm.cheatsheet",
+      "startLine": 223,
+      "endLine": 238
+    },
+    {
+      "source": "core/ai/skills/data-model-design/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 239,
+      "endLine": 276
+    }
+  ]
+}

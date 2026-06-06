@@ -1,0 +1,61 @@
+{
+  "skill": "ui-consistency",
+  "selection": {
+    "orm": "drizzle",
+    "ui": "shadcn",
+    "stack": "generic-node"
+  },
+  "digest": "1d6edf84839d",
+  "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
+  "inputs": [
+    {
+      "path": "adapters/ui/shadcn/references/components.md",
+      "sha": "1585503b9e2c"
+    },
+    {
+      "path": "adapters/ui/shadcn/references/tokens.md",
+      "sha": "6e7febf90708"
+    },
+    {
+      "path": "core/ai/skills/ui-consistency/SKILL.md",
+      "sha": "16529a574932"
+    }
+  ],
+  "regions": [
+    {
+      "source": "core/ai/skills/ui-consistency/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 1,
+      "endLine": 19
+    },
+    {
+      "source": "adapters/ui/shadcn/references/tokens.md",
+      "adapter": "shadcn",
+      "slot": "ui.tokens",
+      "startLine": 20,
+      "endLine": 29
+    },
+    {
+      "source": "core/ai/skills/ui-consistency/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 30,
+      "endLine": 32
+    },
+    {
+      "source": "adapters/ui/shadcn/references/components.md",
+      "adapter": "shadcn",
+      "slot": "ui.components",
+      "startLine": 33,
+      "endLine": 41
+    },
+    {
+      "source": "core/ai/skills/ui-consistency/SKILL.md",
+      "adapter": null,
+      "slot": null,
+      "startLine": 42,
+      "endLine": 49
+    }
+  ]
+}
