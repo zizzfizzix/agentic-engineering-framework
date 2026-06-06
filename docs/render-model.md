@@ -1,7 +1,7 @@
 # Render model — the executable contract
 
-`agentic render` (the pure renderer in `src/core/render.ts`, exposed as a CLI subcommand) is the
-executable form of the §5/§3.3a render model. The same renderer backs `agentic init`/`sync`; the
+`aef render` (the pure renderer in `src/core/render.ts`, exposed as a CLI subcommand) is the
+executable form of the §5/§3.3a render model. The same renderer backs `aef init`/`sync`; the
 interface it exercises (`framework.config.json` + `adapter.json` + the slot convention) is what
 everything else builds on.
 
@@ -42,9 +42,9 @@ The convention was stress-tested on a second axis (UI) with deliberately differe
    into the adapter fragment so pruning removes the whole section. Proven: `shadcn` render has no
    orphaned "Health check" heading; `open-mercato-ui` render has the full section.
 
-## Full set + harness wiring — `agentic init`
+## Full set + harness wiring — `aef init`
 
-`agentic init` renders the **whole configured skill set** and wires each harness:
+`aef init` renders the **whole configured skill set** and wires each harness:
 
 ```bash
 pnpm cli init --out examples/consumer        # symlink mode (default)
@@ -67,9 +67,9 @@ It does three things:
 `examples/consumer/` is a committed sample of a full `init` (drizzle + shadcn, claude-code +
 codex).
 
-## Sync — git-native 3-way merge (`agentic sync`)
+## Sync — git-native 3-way merge (`aef sync`)
 
-`init` snapshots a **BASE** under `<out>/.ai/.base/`. `agentic sync` re-renders from the
+`init` snapshots a **BASE** under `<out>/.ai/.base/`. `aef sync` re-renders from the
 (updated) framework source (NEW), reads the on-disk file (LOCAL, possibly hand-edited) and the
 BASE, and reconciles per skill — no custom merge engine, just `git merge-file`:
 

@@ -1,6 +1,6 @@
 # Framework Lessons (synced — read-only)
 
-Generic lessons that apply to **every** consumer of the framework. `agentic sync` renders this
+Generic lessons that apply to **every** consumer of the framework. `aef sync` renders this
 file into your repo; it is **read-only** here. To change it, fix the framework upstream via the
 `improve-framework` skill — don't edit it locally (a later `sync` would overwrite your edit). Your
 project-specific lessons live in `.ai/lessons.md` instead.

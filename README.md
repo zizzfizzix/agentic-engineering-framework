@@ -2,8 +2,8 @@
 
 A reusable, **harness-agnostic** engineering methodology for AI coding agents — a generic skill
 catalog plus pluggable **adapters** for the axes that vary between projects (ORM, UI/design
-system, stack, and AI harness). You author modular source; `agentic init` renders it down to a
-flat, self-contained skill set in your repo, and `agentic sync` keeps it up to date without
+system, stack, and AI harness). You author modular source; `aef init` renders it down to a
+flat, self-contained skill set in your repo, and `aef sync` keeps it up to date without
 clobbering your local edits.
 
 Extracted and generalized from the [open-mercato](https://github.com/open-mercato/open-mercato)
@@ -25,18 +25,18 @@ agentic harness (MIT). See `EXTRACTION_PLAN.md` for the full design rationale (d
 
 ```bash
 # in your project
-npx agentic init --interactive       # pick harness(es), orm, ui, stack
+npx @zizzfizzix/aef init --interactive       # pick harness(es), orm, ui, stack
 # or non-interactively from a config file:
-npx agentic init --config framework.config.json
+npx @zizzfizzix/aef init --config framework.config.json
 ```
 
 This writes `framework.config.json`, renders the selected skills into `.ai/skills/`, installs the
 `AGENTS.md` + specs/qa/runs conventions, and wires each harness's skills directory. Later:
 
 ```bash
-npx agentic sync                 # pull framework updates (3-way merge)
-npx agentic add mikro-orm        # select an adapter, reconcile installed skills
-npx agentic remove shadcn        # deselect an adapter
+npx @zizzfizzix/aef sync                 # pull framework updates (3-way merge)
+npx @zizzfizzix/aef add mikro-orm        # select an adapter, reconcile installed skills
+npx @zizzfizzix/aef remove shadcn        # deselect an adapter
 ```
 
 ## The model
@@ -44,7 +44,7 @@ npx agentic remove shadcn        # deselect an adapter
 ```
 framework source (modular)                 consumer repo (converged)
   core/ai/skills/<skill>/SKILL.md   ──┐
-    ├ generic body                    │   agentic init / sync
+    ├ generic body                    │   aef init / sync
     └ <!-- SLOT:orm.cheatsheet -->    ├──────────────────────▶  .ai/skills/<skill>/SKILL.md
   adapters/orm/drizzle/...          ──┘   (renderer fills/prunes     (one flat file, selected
   adapters/ui/shadcn/...                   slots, deterministic)       adapters only)
@@ -109,6 +109,24 @@ pnpm cli dev        # wire this repo's harness dirs to the dev/ toolchain skills
 pnpm gate           # render every skill across an adapter matrix (invariant gate)
 pnpm test           # vitest: render, sync, adapters, add/remove, byte-equal goldens
 ```
+
+## Releasing
+
+Releases are automated via [release-please](https://github.com/googleapis/release-please): pushes to
+`main` keep a release PR open; merging it cuts a GitHub Release, which triggers a separate
+`publish.yml` workflow that publishes `@zizzfizzix/aef` to npm with provenance. npm auth uses
+[Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC), so there is **no npm token** —
+configure the trusted publisher on npmjs.com pointing at this repo's `publish.yml` workflow. The only
+repo secret is:
+
+- `RELEASE_PLEASE_TOKEN` — a GitHub PAT (Contents + Pull requests: write) so the release PR gets CI
+  and the GitHub Release triggers `publish.yml`; the built-in `GITHUB_TOKEN` can't trigger downstream
+  workflow runs.
+
+`publish.yml` also has a manual **snapshot** button (Actions → Publish → Run workflow) that publishes
+a throwaway prerelease of any branch under a branch-named dist-tag — `npm i @zizzfizzix/aef@<branch>`
+— without touching `latest`. See [`AGENTS.md`](AGENTS.md) for the full flow, including the one-time
+first-publish bootstrap.
 
 ## License
 

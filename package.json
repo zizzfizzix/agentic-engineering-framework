@@ -1,15 +1,21 @@
 {
-  "name": "@agentic/engineering-framework",
+  "name": "@zizzfizzix/aef",
   "version": "0.1.0",
   "description": "Slot-based, adapter-driven engineering skills for AI coding harnesses.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zizzfizzix/agentic-engineering-framework.git"
+  },
+  "homepage": "https://github.com/zizzfizzix/agentic-engineering-framework#readme",
+  "bugs": "https://github.com/zizzfizzix/agentic-engineering-framework/issues",
   "packageManager": "pnpm@11.5.0",
   "engines": {
     "node": ">=20"
   },
   "bin": {
-    "agentic": "dist/cli/index.js"
+    "aef": "dist/cli/index.js"
   },
   "files": [
     "dist",
@@ -32,6 +38,7 @@
     "gate": "tsx scripts/check-render.ts",
     "schemas": "tsx scripts/gen-schemas.ts",
     "goldens:update": "tsx scripts/update-examples.ts",
+    "snapshot": "bash scripts/snapshot.sh",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

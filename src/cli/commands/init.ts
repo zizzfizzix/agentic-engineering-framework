@@ -1,4 +1,4 @@
-// `agentic init` — render the configured skill set into <out>/.ai/skills/, snapshot a
+// `aef init` — render the configured skill set into <out>/.ai/skills/, snapshot a
 // BASE under <out>/.ai/.base/, write the render manifest (sync's base), persist the
 // resolved config, and wire each harness.
 import { readFileSync, writeFileSync } from 'node:fs'

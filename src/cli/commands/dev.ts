@@ -1,4 +1,4 @@
-// `agentic dev` — the "meta" install for developing THIS framework. Wires the repo's
+// `aef dev` — the "meta" install for developing THIS framework. Wires the repo's
 // own harness skill dirs to dev/ skills (source symlinks). Installs the toolchain, not
 // the shipped product; harness dirs are gitignored.
 import { readFileSync, readdirSync, existsSync, mkdirSync, rmSync, symlinkSync } from 'node:fs'

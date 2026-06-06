@@ -1,6 +1,6 @@
 // Shared per-skill reconcile: render a skill from the current framework source and
 // fold the result into a consumer, preserving local edits via a git-native 3-way merge.
-// Used by both `agentic sync` and `agentic add`/`remove` so the reconcile semantics —
+// Used by both `aef sync` and `aef add`/`remove` so the reconcile semantics —
 // fast-forward, clean merge, conflict, and provenance refresh — live in exactly one place.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'

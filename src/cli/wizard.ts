@@ -24,7 +24,7 @@ const axisOptions = (root: string, axis: string): { value: string | null; label:
 ]
 
 export async function runWizard(root: string): Promise<Record<string, unknown>> {
-  p.intro('agentic init')
+  p.intro('aef init')
 
   const projectName = bail(
     await p.text({ message: 'Project name', placeholder: 'my-app', defaultValue: 'my-app' }),

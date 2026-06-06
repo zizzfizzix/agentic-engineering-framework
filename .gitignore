@@ -1,5 +1,5 @@
-# Generated harness wiring (regenerate with `agentic dev` for framework development,
-# or `agentic init` in a consumer). Anchored to repo root so examples/consumer/ stays tracked.
+# Generated harness wiring (regenerate with `aef dev` for framework development,
+# or `aef init` in a consumer). Anchored to repo root so examples/consumer/ stays tracked.
 /.claude/
 /.codex/
 /.cursor/
@@ -10,3 +10,7 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+
+# Throwaway package.json backup from scripts/snapshot.sh (restored on exit;
+# ignored in case a publish is hard-killed mid-run).
+.package.json.snapshot-bak

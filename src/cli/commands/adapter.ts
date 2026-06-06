@@ -1,4 +1,4 @@
-// `agentic add <adapter>` / `agentic remove <adapter>` — change an axis selection in a
+// `aef add <adapter>` / `aef remove <adapter>` — change an axis selection in a
 // consumer's framework.config.json and reconcile the installed skill set:
 //   • newly-selected skills are rendered fresh (+ BASE snapshot),
 //   • skills no longer selected are uninstalled (skill dir, BASE, harness links),

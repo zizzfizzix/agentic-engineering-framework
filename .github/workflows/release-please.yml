@@ -1,0 +1,30 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Maintains a release PR from conventional-commit history. Merging it bumps the
+  # version + CHANGELOG, tags the commit, and publishes a GitHub Release — which
+  # triggers publish.yml (`on: release`) to push the package to npm.
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # A PAT (not the built-in GITHUB_TOKEN) for two reasons: GITHUB_TOKEN is
+          # blocked from triggering further workflow runs, so with it (a) the
+          # release PR would get no CI and (b) the GitHub Release would NOT trigger
+          # publish.yml. The PAT lifts both restrictions (matches scrape-similar).
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}

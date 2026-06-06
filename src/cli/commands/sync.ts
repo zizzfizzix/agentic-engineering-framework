@@ -1,4 +1,4 @@
-// `agentic sync` — re-render from the (updated) framework source and reconcile with
+// `aef sync` — re-render from the (updated) framework source and reconcile with
 // local edits via a git-native 3-way merge (BASE = last render, LOCAL = on-disk,
 // NEW = fresh render). Exit code 2 signals unresolved conflicts written to the tree.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'

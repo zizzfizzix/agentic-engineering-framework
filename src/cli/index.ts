@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// agentic — CLI for the extracted engineering framework.
+// aef — CLI for the Agentic Engineering Framework.
 //
-//   agentic init [--config <cfg>] [--out <dir>] [--copy] [--interactive]
-//   agentic sync [--out <dir>]
-//   agentic add <adapter> [--out <dir>] [--copy]
-//   agentic remove <adapter> [--out <dir>] [--copy]
-//   agentic dev
+//   aef init [--config <cfg>] [--out <dir>] [--copy] [--interactive]
+//   aef sync [--out <dir>]
+//   aef add <adapter> [--out <dir>] [--copy]
+//   aef remove <adapter> [--out <dir>] [--copy]
+//   aef dev
 import { Command } from 'commander'
 import { ZodError } from 'zod'
 import { runInit } from './commands/init.js'
@@ -17,7 +17,7 @@ import { runAdd, runRemove } from './commands/adapter.js'
 const program = new Command()
 
 program
-  .name('agentic')
+  .name('aef')
   .description('Render slot-based engineering skills into a consumer repo and keep them in sync.')
   .version('0.1.0')
 
