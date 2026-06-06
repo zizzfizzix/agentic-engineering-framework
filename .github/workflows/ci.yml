@@ -11,6 +11,10 @@ concurrency:
 
 jobs:
   check:
+    # Skip release-please's PR: its code is identical to main (only the version +
+    # CHANGELOG move), so the gate/test/build is redundant there. main's own push
+    # CI still validates everything after the PR merges.
+    if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
