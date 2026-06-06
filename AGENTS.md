@@ -68,8 +68,12 @@ Conventional Commit history — no manual version bumps or tags.
 - Merging that PR bumps `package.json`, updates the changelog, tags the commit, and cuts a GitHub
   release. That flips the workflow's `release_created` output, which triggers the **publish** job:
   `pnpm build` then `pnpm publish --access public --provenance` to npm.
-- Requires an `NPM_TOKEN` repo secret (an npm automation/granular token with publish rights to the
-  `@agentic` scope). Provenance uses the workflow's OIDC `id-token` — no extra secret needed.
+- Requires two repo secrets:
+  - `RELEASE_PLEASE_TOKEN` — a GitHub PAT used by the release-please action. The built-in
+    `GITHUB_TOKEN` is deliberately blocked from triggering further workflow runs, so the release PR
+    it opens would get no CI; a PAT lifts that restriction (and matches the `scrape-similar` setup).
+  - `NPM_TOKEN` — an npm automation/granular token with publish rights to the `@agentic` scope.
+    Provenance uses the workflow's OIDC `id-token`, so no extra secret is needed for it.
 
 `feat:` → minor, `fix:` → patch, `feat!:`/`BREAKING CHANGE:` → major. While pre-1.0, release-please
 keeps breaking changes in the `0.x` range.

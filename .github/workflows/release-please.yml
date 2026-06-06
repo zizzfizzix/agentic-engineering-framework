@@ -29,7 +29,10 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # A PAT (not the built-in GITHUB_TOKEN) so the release PR it opens
+          # triggers the CI workflow — GITHUB_TOKEN is blocked from triggering
+          # further workflow runs.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
   # Publishes the built CLI/library to npm only when a release was just cut.
   publish:
