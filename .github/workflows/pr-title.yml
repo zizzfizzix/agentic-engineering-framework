@@ -4,9 +4,13 @@ name: PR Title
 # that's what release-please parses for the next version bump. The commit-msg hook
 # can't see PR titles, so lint them here to keep the same Conventional Commits
 # contract (types mirror scripts/check-commit-msg.sh).
+# Only the PR title matters here, and it changes only on these events — not on
+# `synchronize` (every push), so we don't re-run it for each new commit. (Keep it
+# out of required status checks: without `synchronize` the check won't re-report on
+# new head commits, which would otherwise block merges.)
 on:
   pull_request_target:
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened]
 
 permissions:
   pull-requests: read
