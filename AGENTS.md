@@ -88,6 +88,18 @@ Conventional Commit history — no manual version bumps or tags.
 `feat:` → minor, `fix:` → patch, `feat!:`/`BREAKING CHANGE:` → major. While pre-1.0, release-please
 keeps breaking changes in the `0.x` range.
 
+### Snapshots (on-demand prereleases)
+
+The same workflow has a **manual `workflow_dispatch`** snapshot job for publishing a throwaway build
+of any branch — handy for trying a PR's `aef` on a real install without cutting a release.
+
+- **Actions → Release → Run workflow**, pick the branch (optionally override the dist-tag). It
+  publishes `<base>-snapshot.<branch>.<sha>` (the commit rev keeps every snapshot unique) under a
+  **branch-named dist-tag**, so `npm i @zizzfizzix/aef@<branch>` resolves to that branch's latest
+  snapshot. Snapshots **never** move `latest`.
+- Same OIDC trusted publisher as the stable publish (it's the same workflow file), so no extra
+  config or secret. `package.json` is bumped only in the runner, never committed.
+
 ## Authoring rules (see `docs/slot-convention.md`)
 
 - Slot names are `<axis>.<key>`; mandatory-section headings stay in the generic body, optional-

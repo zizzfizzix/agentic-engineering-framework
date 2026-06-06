@@ -121,7 +121,10 @@ there is **no npm token** — configure the trusted publisher on npmjs.com point
 - `RELEASE_PLEASE_TOKEN` — a GitHub PAT (Contents + Pull requests: write) so the release PR gets CI;
   the built-in `GITHUB_TOKEN` can't trigger downstream workflow runs.
 
-See [`AGENTS.md`](AGENTS.md) for the full flow, including the one-time first-publish bootstrap.
+The same workflow has a manual **snapshot** button (Actions → Release → Run workflow) that publishes
+a throwaway prerelease of any branch under a branch-named dist-tag — `npm i @zizzfizzix/aef@<branch>`
+— without touching `latest`. See [`AGENTS.md`](AGENTS.md) for the full flow, including the one-time
+first-publish bootstrap.
 
 ## License
 

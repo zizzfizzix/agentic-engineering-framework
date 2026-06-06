@@ -3,14 +3,24 @@ name: Release
 on:
   push:
     branches: [main]
+  # Manual "publish a snapshot" button. Run it from any branch (e.g. a PR branch)
+  # to publish a throwaway prerelease tagged with that branch — never `latest`.
+  workflow_dispatch:
+    inputs:
+      dist_tag:
+        description: 'npm dist-tag for the snapshot (default: sanitized branch name)'
+        required: false
+        type: string
 
-# release-please needs to open/update the release PR and push tags; the publish
-# job additionally needs id-token for npm provenance.
+# release-please opens/updates the release PR and pushes tags; the publish jobs
+# need id-token for OIDC trusted publishing. Default to read; widen per-job.
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  # Per-ref: a push to main and a manual snapshot on a feature branch are
+  # independent. Don't cancel an in-flight publish.
+  group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -18,6 +28,7 @@ jobs:
   # version + CHANGELOG, tags the commit, and creates a GitHub release — which
   # flips `release_created` to true and triggers the publish job below.
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,13 +45,14 @@ jobs:
           # further workflow runs.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
-  # Publishes the built CLI/library to npm only when a release was just cut.
-  # Auth is via npm Trusted Publishing (OIDC) — no NPM_TOKEN secret. npm mints
-  # short-lived credentials from the GitHub OIDC token and attaches provenance
-  # automatically. Configure the trusted publisher on npmjs.com first (see AGENTS.md).
+  # Publishes the built CLI/library to npm (dist-tag `latest`) when a release was
+  # just cut. Auth is via npm Trusted Publishing (OIDC) — no NPM_TOKEN secret. npm
+  # mints short-lived credentials from the GitHub OIDC token and attaches
+  # provenance automatically. Configure the trusted publisher on npmjs.com first
+  # (see AGENTS.md).
   publish:
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    if: ${{ github.event_name == 'push' && needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -69,3 +81,60 @@ jobs:
 
       - name: Publish to npm
         run: npm publish --access public
+
+  # On-demand snapshot publish (manual trigger). Builds the dispatched ref and
+  # publishes a unique prerelease — `<base>-snapshot.<branch>.<sha>` — under a
+  # branch-named dist-tag, so a PR build is installable via `@<branch>` without
+  # ever moving `latest`. Same OIDC trusted publisher as the stable publish.
+  snapshot:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC: short-lived npm credentials + provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
+      # Derive a unique, valid-semver snapshot version from the branch + commit
+      # rev, and a dist-tag from the branch (overridable via the dispatch input).
+      - name: Compute snapshot version and tag
+        id: snap
+        run: |
+          set -euo pipefail
+          base="$(node -p "require('./package.json').version.split('-')[0]")"
+          # Sanitize the branch to a semver-/dist-tag-safe slug.
+          branch="$(printf '%s' "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')"
+          sha="$(git rev-parse --short HEAD)"
+          # A purely-numeric semver identifier can't have a leading zero; short
+          # SHAs can be all digits, so prefix one with `g` (git-describe style).
+          case "$sha" in *[a-f]*) ;; *) sha="g${sha}" ;; esac
+          version="${base}-snapshot.${branch}.${sha}"
+          tag="${{ inputs.dist_tag }}"
+          [ -n "$tag" ] || tag="$branch"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Publishing snapshot $version under dist-tag '$tag'"
+
+      # `npm version` validates the string is real semver and writes package.json
+      # (not committed — this is a throwaway build).
+      - name: Set snapshot version
+        run: npm version "${{ steps.snap.outputs.version }}" --no-git-tag-version --allow-same-version
+
+      - name: Publish snapshot to npm
+        run: npm publish --access public --tag "${{ steps.snap.outputs.tag }}"
