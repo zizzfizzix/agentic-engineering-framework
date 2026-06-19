@@ -27,11 +27,17 @@ export interface InitOptions {
 export async function runInit(opts: InitOptions): Promise<void> {
   const root = FRAMEWORK_ROOT
 
+  if (!opts.config && !opts.interactive) {
+    throw new Error(
+      `--config is required.\n\nUsage: aef init --config framework.config.json --out . --copy\n\nTo get started, create a framework.config.json. Minimum required:\n  {\n    "harnesses": ["claude-code"]\n  }\n\nRun 'aef init --help' for all options.`,
+    )
+  }
+
   // `raw` is what we persist to framework.config.json (byte-stable); `config` is the
   // zod-validated view the renderer consumes.
   const raw: unknown = opts.interactive
     ? await runWizard(root)
-    : JSON.parse(readFileSync(opts.config ?? join(root, 'framework.config.example.json'), 'utf8'))
+    : JSON.parse(readFileSync(opts.config!, 'utf8'))
   const config = FrameworkConfigSchema.parse(raw)
 
   const out = opts.out ?? join(root, 'examples/consumer')

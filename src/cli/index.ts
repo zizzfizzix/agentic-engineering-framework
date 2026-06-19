@@ -32,7 +32,7 @@ program
 program
   .command('init')
   .description('Render the configured skill set into a consumer repo and wire harnesses.')
-  .option('--config <path>', 'path to framework.config.json (defaults to the bundled example)')
+  .option('--config <path>', 'path to framework.config.json (required unless --interactive)')
   .option('--out <dir>', 'consumer directory to write into')
   .option('--copy', 'copy rendered skills into harness dirs instead of symlinking')
   .option('-i, --interactive', 'build the config interactively via prompts')
