@@ -44,7 +44,7 @@ describe('goldens: examples/consumer', () => {
     const golden = join(ROOT, 'examples/consumer')
     const tmp = mkdtempSync(join(tmpdir(), 'agentic-golden-'))
     try {
-      await runInit({ out: tmp })
+      await runInit({ config: join(ROOT, 'framework.config.example.json'), out: tmp })
       const files = regularFiles(golden)
       expect(files.length).toBeGreaterThan(0)
       for (const rel of files) {

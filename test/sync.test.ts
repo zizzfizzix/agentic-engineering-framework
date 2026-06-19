@@ -5,6 +5,8 @@
 import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+
+const ROOT = process.cwd()
 import { beforeEach, afterEach, test, expect, describe } from 'vitest'
 import { runInit } from '../src/cli/commands/init.js'
 import { runSync } from '../src/cli/commands/sync.js'
@@ -18,7 +20,7 @@ const read = (p: string) => readFileSync(p, 'utf8')
 
 beforeEach(async () => {
   consumer = mkdtempSync(join(tmpdir(), 'agentic-sync-'))
-  await runInit({ out: consumer })
+  await runInit({ config: join(ROOT, 'framework.config.example.json'), out: consumer })
   process.exitCode = 0
 })
 afterEach(() => {
