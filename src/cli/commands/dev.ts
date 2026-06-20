@@ -9,9 +9,7 @@ import { selectSkills } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
 import { isLink } from '../consumer-io.js'
 
-export function runDev(): void {
-  const root = FRAMEWORK_ROOT
-
+export function runDev(root: string = FRAMEWORK_ROOT): void {
   const devSkillsDir = join(root, 'dev', 'skills')
   if (!existsSync(devSkillsDir)) {
     console.error('no dev/skills/ found')
@@ -20,7 +18,12 @@ export function runDev(): void {
   const devSkills = readdirSync(devSkillsDir).filter((d) => existsSync(join(devSkillsDir, d, 'SKILL.md')))
 
   const devConfigPath = join(root, 'dev', 'framework.config.json')
+  if (!existsSync(devConfigPath)) {
+    console.error('no dev/framework.config.json found — run from the framework root')
+    process.exit(1)
+  }
   const config = FrameworkConfigSchema.parse(JSON.parse(readFileSync(devConfigPath, 'utf8')))
+  const devSkillNames = new Set(devSkills)
   const { skills: shippedSkills, skipped } = selectSkills(root, config)
 
   const harnessRoot = join(root, 'adapters', 'harness')
@@ -44,7 +47,8 @@ export function runDev(): void {
     }
 
     // Shipped skills: render with the dev config and write SKILL.md directly.
-    for (const skill of shippedSkills) {
+    // Dev skills take priority — skip any shipped skill whose name is already a dev skill.
+    for (const skill of shippedSkills.filter((s) => !devSkillNames.has(s))) {
       const dest = join(hdir, skill)
       if (existsSync(dest) || isLink(dest)) rmSync(dest, { recursive: true, force: true })
       mkdirSync(dest, { recursive: true })
