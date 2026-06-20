@@ -2,7 +2,7 @@
 // runAdd/runRemove against a temp consumer initialised from the bundled example config
 // (orm: drizzle, ui: shadcn). Verifies axis re-selection, skill install/uninstall, and
 // that local edits to surviving skills are preserved across a re-selection.
-import { mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync, renameSync, existsSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, afterEach, test, expect, describe } from 'vitest'
@@ -96,6 +96,24 @@ describe('add / remove', () => {
     runAdd('framework', { out: consumer })
     const manifest = JSON.parse(readFileSync(join(consumer, '.ai', '.render-manifest.json'), 'utf8'))
     expect(manifest.selection.tiers).toContain('framework')
+  })
+
+  test('add renames framework.config.json → aef.config.json when only the legacy file exists', () => {
+    renameSync(join(consumer, 'aef.config.json'), join(consumer, 'framework.config.json'))
+    expect(existsSync(join(consumer, 'aef.config.json'))).toBe(false)
+    runAdd('mikro-orm', { out: consumer })
+    expect(existsSync(join(consumer, 'aef.config.json'))).toBe(true)
+    expect(existsSync(join(consumer, 'framework.config.json'))).toBe(false)
+  })
+
+  test('add leaves aef.config.json untouched when both config files are present', () => {
+    const content = readFileSync(join(consumer, 'aef.config.json'), 'utf8')
+    writeFileSync(join(consumer, 'framework.config.json'), '{"harnesses":["codex"]}')
+    runAdd('mikro-orm', { out: consumer })
+    expect(readFileSync(join(consumer, 'aef.config.json'), 'utf8')).not.toBe('{"harnesses":["codex"]}')
+    expect(JSON.parse(readFileSync(join(consumer, 'aef.config.json'), 'utf8')).orm).toBe('mikro-orm')
+    expect(existsSync(join(consumer, 'framework.config.json'))).toBe(true)
+    expect(readFileSync(join(consumer, 'aef.config.json'), 'utf8')).not.toBe(content) // mutated by add
   })
 
   test('add updates @zizzfizzix/aef version pin when package.json exists', () => {

@@ -14,6 +14,7 @@ import {
   writeManifest,
   wireHarnesses,
   harnessSkillsDir,
+  migrateConfigName,
   pinAefInPackageJson,
   type ManifestSkills,
 } from '../consumer-io.js'
@@ -51,6 +52,7 @@ function mutate(name: string, op: 'add' | 'remove', opts: AdapterCmdOptions): vo
   const root = FRAMEWORK_ROOT
   const out = opts.out ?? join(root, 'examples/consumer')
   const useCopy = Boolean(opts.copy)
+  migrateConfigName(out)
   const cfgPath = join(out, 'aef.config.json')
 
   const raw = JSON.parse(readFileSync(cfgPath, 'utf8')) as Record<string, unknown>

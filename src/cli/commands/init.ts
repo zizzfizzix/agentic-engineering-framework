@@ -14,6 +14,7 @@ import {
   wireHarnesses,
   writeConventions,
   copySchema,
+  migrateConfigName,
   pinAefInPackageJson,
   type ManifestSkills,
 } from '../consumer-io.js'
@@ -46,6 +47,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   // zod-validated view the renderer consumes.
   let raw: unknown
   if (opts.interactive) {
+    migrateConfigName(out)
     const existingPath = join(out, 'aef.config.json')
     let existingConfig: FrameworkConfig | undefined
     if (existsSync(existingPath)) {

@@ -2,7 +2,7 @@
 // runInit/runSync against a temp consumer. The framework source is unchanged between
 // init and sync, so we simulate "the framework moved on" by rewriting the BASE
 // snapshot (and LOCAL) — NEW is always the current render.
-import { mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync, renameSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, afterEach, test, expect, describe } from 'vitest'
@@ -121,6 +121,22 @@ describe('sync reconcile', () => {
     expect(existsSync(join(consumer, 'schemas', 'aef.config.schema.json'))).toBe(false)
     runSync({ out: consumer })
     expect(existsSync(join(consumer, 'schemas', 'aef.config.schema.json'))).toBe(true)
+  })
+
+  test('sync renames framework.config.json → aef.config.json when only the legacy file exists', () => {
+    renameSync(join(consumer, 'aef.config.json'), join(consumer, 'framework.config.json'))
+    expect(existsSync(join(consumer, 'aef.config.json'))).toBe(false)
+    runSync({ out: consumer })
+    expect(existsSync(join(consumer, 'aef.config.json'))).toBe(true)
+    expect(existsSync(join(consumer, 'framework.config.json'))).toBe(false)
+  })
+
+  test('sync leaves aef.config.json untouched when both config files are present', () => {
+    const content = readFileSync(join(consumer, 'aef.config.json'), 'utf8')
+    writeFileSync(join(consumer, 'framework.config.json'), '{"harnesses":["codex"]}')
+    runSync({ out: consumer })
+    expect(readFileSync(join(consumer, 'aef.config.json'), 'utf8')).toBe(content)
+    expect(existsSync(join(consumer, 'framework.config.json'))).toBe(true)
   })
 
   test('sync updates @zizzfizzix/aef version pin when package.json exists', () => {

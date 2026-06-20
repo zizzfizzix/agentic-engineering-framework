@@ -12,6 +12,7 @@ import {
   wireNewSkills,
   harnessSkillsDir,
   copySchema,
+  migrateConfigName,
   pinAefInPackageJson,
   type ManifestSkills,
 } from '../consumer-io.js'
@@ -36,6 +37,7 @@ export interface SyncOptions {
 export function runSync(opts: SyncOptions): void {
   const root = FRAMEWORK_ROOT
   const out = opts.out ?? process.cwd()
+  migrateConfigName(out)
   const config = FrameworkConfigSchema.parse(JSON.parse(readFileSync(join(out, 'aef.config.json'), 'utf8')))
   const manifestPath = join(out, '.ai', '.render-manifest.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as RenderManifestFile
