@@ -26,10 +26,25 @@ JSON Schema), **vitest** (tests), ESLint + Prettier, **tsup** (build), **tsx** (
 **Lefthook** (git hooks: commit-msg conventional-commits, pre-commit format/lint, pre-push
 gate/test/typecheck — installed on `pnpm install`).
 
+Both steps run automatically on session start — no manual setup needed:
+
 ```bash
-pnpm install                    # deps + git hooks
-pnpm cli dev                    # wire .claude/.codex/.cursor skills -> dev/skills (gitignored)
+pnpm install    # deps + git hooks — run by the session-start hook
+pnpm cli dev    # wire dev skills  — run by the session-start hook
 ```
+
+Each harness has a committed settings file with a session-start hook that calls
+`scripts/dev-setup.sh` (`.claude/settings.json`, `.codex/hooks.json`, `.cursor/hooks.json`).
+Only the generated `skills/` subdirs are gitignored — everything else inside the harness dirs
+(machine-written files, local overrides) is also gitignored via allowlist patterns. When adding
+a new harness adapter, add the equivalent hook.
+
+Note: Claude Code and Codex block on the `SessionStart` hook; Cursor's `sessionStart` is
+fire-and-forget, so on a fresh Cursor session the setup runs in the background. In practice
+both commands finish in seconds, well before any skill invocation.
+
+If hooks don't fire, run both commands manually from the repo root. Per-developer Claude Code
+settings belong in `.claude/settings.local.json` (gitignored).
 
 `pnpm cli dev` installs the **dev** skills, not the shipped ones — you author shipped skills, you
 don't run them here. `pnpm build` emits the distributable `agentic` bin to `dist/`.
