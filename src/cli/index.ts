@@ -77,7 +77,7 @@ program
 program
   .command('sync')
   .description('Re-render from framework source and reconcile with local edits (3-way merge).')
-  .option('--out <dir>', 'consumer directory to sync')
+  .option('--out <dir>', 'consumer directory to sync (default: current directory)')
   .action((opts) => runSync(opts))
 
 program

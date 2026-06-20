@@ -28,7 +28,7 @@ export interface SyncOptions {
 
 export function runSync(opts: SyncOptions): void {
   const root = FRAMEWORK_ROOT
-  const out = opts.out ?? join(root, 'examples/consumer')
+  const out = opts.out ?? process.cwd()
   const config = FrameworkConfigSchema.parse(
     JSON.parse(readFileSync(join(out, 'framework.config.json'), 'utf8')),
   )
