@@ -1,5 +1,5 @@
 {
-  "$schema": "./schemas/framework.config.schema.json",
+  "$schema": "./node_modules/@zizzfizzix/aef/schemas/framework.config.schema.json",
   "projectName": "my-app",
   "harnesses": [
     "claude-code",

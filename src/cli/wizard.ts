@@ -46,7 +46,7 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
   p.outro('Configuration ready.')
 
   return {
-    $schema: './schemas/framework.config.schema.json',
+    $schema: './node_modules/@zizzfizzix/aef/schemas/framework.config.schema.json',
     projectName,
     harnesses,
     orm,
