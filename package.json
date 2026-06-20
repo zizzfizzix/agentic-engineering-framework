@@ -31,6 +31,7 @@
     }
   },
   "scripts": {
+    "aef": "tsx src/cli/index.ts",
     "cli": "tsx src/cli/index.ts",
     "build": "tsup",
     "test": "vitest run",
