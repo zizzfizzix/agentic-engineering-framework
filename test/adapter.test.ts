@@ -63,19 +63,25 @@ describe('add / remove', () => {
     expect(() => runAdd('nonexistent-xyz', { out: consumer })).toThrow(/no adapter/)
   })
 
-  test('add tier installs its skills and writes tiers to config', () => {
+  test('add tier installs its skills, writes tiers to config, and installs outbox', () => {
+    const outbox = join(consumer, '.ai', 'framework-feedback')
     expect(existsSync(skillDir('improve-framework'))).toBe(false)
+    expect(existsSync(outbox)).toBe(false)
     runAdd('framework', { out: consumer })
     expect(cfg().tiers).toContain('framework')
     expect(existsSync(skillDir('improve-framework'))).toBe(true)
+    expect(existsSync(outbox)).toBe(true)
   })
 
-  test('remove tier uninstalls its skills and removes tiers key when empty', () => {
+  test('remove tier uninstalls its skills, removes tiers key when empty, and removes outbox', () => {
+    const outbox = join(consumer, '.ai', 'framework-feedback')
     runAdd('framework', { out: consumer })
     expect(existsSync(skillDir('improve-framework'))).toBe(true)
+    expect(existsSync(outbox)).toBe(true)
     runRemove('framework', { out: consumer })
     expect(cfg().tiers).toBeUndefined()
     expect(existsSync(skillDir('improve-framework'))).toBe(false)
+    expect(existsSync(outbox)).toBe(false)
   })
 
   test('remove non-enabled tier is rejected', () => {

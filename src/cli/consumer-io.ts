@@ -56,14 +56,15 @@ export function writeConventions(root: string, out: string, config: FrameworkCon
     writeFileSync(join(ai, 'lessons.md'), sub(readFileSync(lessonsSrc, 'utf8')))
     written.push('.ai/lessons.md')
   }
-  // Synced-read-only generic lessons + the local-only framework-feedback outbox (decision #8).
+  // Synced-read-only generic lessons.
   const fwLessons = join(root, 'core', 'ai', 'lessons.framework.md')
   if (existsSync(fwLessons)) {
     writeFileSync(join(ai, 'lessons.framework.md'), readFileSync(fwLessons, 'utf8'))
     written.push('.ai/lessons.framework.md')
   }
+  // Framework-feedback outbox: only for consumers who have opted in to the framework tier.
   const outbox = join(root, 'core', 'ai', 'framework-feedback')
-  if (existsSync(outbox)) {
+  if (existsSync(outbox) && config.tiers?.includes('framework')) {
     cpSync(outbox, join(ai, 'framework-feedback'), { recursive: true })
     written.push('.ai/framework-feedback/')
   }

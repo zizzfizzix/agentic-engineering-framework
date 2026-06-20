@@ -5,7 +5,7 @@
 //   • surviving skills are 3-way merged (like sync) so adapter-content changes flow in
 //     without clobbering local edits.
 // The adapter's axis is read from its adapter.json, so the command is `add <name>`.
-import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, rmSync, cpSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { FrameworkConfigSchema, type FrameworkConfig } from '../../core/contracts.js'
 import { selectSkills, loadTiers } from '../../core/select.js'
@@ -91,6 +91,16 @@ function mutate(name: string, op: 'add' | 'remove', opts: AdapterCmdOptions): vo
 
   const config = FrameworkConfigSchema.parse(raw)
   writeFileSync(cfgPath, JSON.stringify(raw, null, 2) + '\n')
+
+  if (isTier && name === 'framework') {
+    const outboxDst = join(out, '.ai', 'framework-feedback')
+    if (op === 'add') {
+      const outboxSrc = join(root, 'core', 'ai', 'framework-feedback')
+      if (existsSync(outboxSrc)) cpSync(outboxSrc, outboxDst, { recursive: true })
+    } else {
+      rmSync(outboxDst, { recursive: true, force: true })
+    }
+  }
 
   const conflicts = reconcile(root, out, config, prevHarnesses, useCopy)
   const kind = isTier ? 'tier' : 'adapter'
