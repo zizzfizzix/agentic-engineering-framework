@@ -1,7 +1,7 @@
 // `aef init` — render the configured skill set into <out>/.ai/skills/, snapshot a
 // BASE under <out>/.ai/.base/, write the render manifest (sync's base), persist the
 // resolved config, and wire each harness.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { FrameworkConfigSchema } from '../../core/contracts.js'
 import { renderSkill } from '../../core/render.js'
@@ -63,9 +63,29 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const conventions = writeConventions(root, out, config)
   const wired = wireHarnesses(root, out, config, skills, useCopy)
 
+  const { version } = JSON.parse(readFileSync(join(FRAMEWORK_ROOT, 'package.json'), 'utf8')) as {
+    version: string
+  }
+  const pkgPath = join(out, 'package.json')
+  let pkgNote: string
+  if (existsSync(pkgPath)) {
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as Record<string, unknown>
+    const scripts = (pkg['scripts'] as Record<string, string> | undefined) ?? {}
+    const devDeps = (pkg['devDependencies'] as Record<string, string> | undefined) ?? {}
+    scripts['aef'] = 'aef'
+    devDeps['@zizzfizzix/aef'] = `^${version}`
+    pkg['scripts'] = scripts
+    pkg['devDependencies'] = devDeps
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+    pkgNote = `added @zizzfizzix/aef@^${version} to devDependencies`
+  } else {
+    pkgNote = `no package.json found — run: pnpm add -D @zizzfizzix/aef@^${version}`
+  }
+
   console.log(`Initialised agentic framework into ${relative(process.cwd(), out) || '.'}`)
   console.log(`  skills installed: ${skills.join(', ') || '(none)'}`)
   console.log(`  conventions: ${conventions.join(', ')}`)
   if (skipped.length) console.log(`  skipped (axis not configured): ${skipped.join(', ')}`)
   console.log(`  harnesses wired: ${wired.join(' | ') || '(none)'}`)
+  console.log(`  package.json: ${pkgNote}`)
 }
