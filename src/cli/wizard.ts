@@ -1,5 +1,5 @@
 // Interactive `init` wizard (opt-in via --interactive). Discovers the available
-// adapters on disk and builds a framework.config object via @clack/prompts.
+// adapters on disk and builds the aef.config.json object via @clack/prompts.
 import { readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as p from '@clack/prompts'

@@ -32,7 +32,7 @@
 
 ### Bug Fixes
 
-- **cli:** show actionable error for unrecognized aef.config.json keys ([#19](https://github.com/zizzfizzix/agentic-engineering-framework/issues/19)) ([ec4c342](https://github.com/zizzfizzix/agentic-engineering-framework/commit/ec4c3424132f43580ed70365e26724b916d3979f))
+- **cli:** show actionable error for unrecognized framework.config.json keys ([#19](https://github.com/zizzfizzix/agentic-engineering-framework/issues/19)) ([ec4c342](https://github.com/zizzfizzix/agentic-engineering-framework/commit/ec4c3424132f43580ed70365e26724b916d3979f))
 - **cli:** show helpful usage error when aef init is run without --config ([#17](https://github.com/zizzfizzix/agentic-engineering-framework/issues/17)) ([9e69dc2](https://github.com/zizzfizzix/agentic-engineering-framework/commit/9e69dc22b52dc6061e1c139de3ad29d63ccc934f))
 
 ## [0.1.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.0.1...v0.1.0) (2026-06-06)
