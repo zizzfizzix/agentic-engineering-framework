@@ -43,6 +43,11 @@ Note: Claude Code and Codex block on the `SessionStart` hook; Cursor's `sessionS
 fire-and-forget, so on a fresh Cursor session the setup runs in the background. In practice
 both commands finish in seconds, well before any skill invocation.
 
+**Claude: after you see the session-start hook output** (the `pnpm cli dev` summary above), tell
+the user to run `/reload-skills` so the slash-command list reflects the freshly installed skills.
+The hook emits a `→ Run /reload-skills` reminder line for this purpose — relay it once, at the
+top of your first response.
+
 If hooks don't fire, run both commands manually from the repo root. Per-developer Claude Code
 settings belong in `.claude/settings.local.json` (gitignored).
 
