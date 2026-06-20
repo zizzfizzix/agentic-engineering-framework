@@ -1,0 +1,8 @@
+{
+  "$schema": "../schemas/framework.config.schema.json",
+  "harnesses": ["claude-code"],
+  "orm": null,
+  "ui": null,
+  "stack": "generic-node",
+  "tiers": ["automation", "security", "framework"]
+}
