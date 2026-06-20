@@ -45,7 +45,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
     : JSON.parse(readFileSync(opts.config!, 'utf8'))
   const config = FrameworkConfigSchema.parse(raw)
 
-  const out = opts.out ?? join(root, 'examples/consumer')
+  const out = opts.out ?? process.cwd()
   const useCopy = Boolean(opts.copy)
 
   const { skills, skipped } = selectSkills(root, config)

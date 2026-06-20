@@ -5,9 +5,9 @@
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { beforeEach, afterEach, test, expect, describe } from 'vitest'
 
 const ROOT = process.cwd()
-import { beforeEach, afterEach, test, expect, describe } from 'vitest'
 import { runInit } from '../src/cli/commands/init.js'
 import { runAdd, runRemove } from '../src/cli/commands/adapter.js'
 
