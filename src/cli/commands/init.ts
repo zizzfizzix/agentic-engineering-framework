@@ -13,6 +13,7 @@ import {
   writeManifest,
   wireHarnesses,
   writeConventions,
+  copySchema,
   pinAefInPackageJson,
   type ManifestSkills,
 } from '../consumer-io.js'
@@ -59,6 +60,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
     manifestSkills[skill] = { digest, inputs: manifest.inputs }
   }
   writeManifest(out, config, manifestSkills)
+  const schemaCopied = copySchema(root, out)
   writeFileSync(join(out, 'framework.config.json'), JSON.stringify(raw, null, 2) + '\n')
 
   const conventions = writeConventions(root, out, config)
@@ -74,5 +76,6 @@ export async function runInit(opts: InitOptions): Promise<void> {
   console.log(`  conventions: ${conventions.join(', ')}`)
   if (skipped.length) console.log(`  skipped (axis not configured): ${skipped.join(', ')}`)
   console.log(`  harnesses wired: ${wired.join(' | ') || '(none)'}`)
+  if (schemaCopied) console.log(`  schema: schemas/framework.config.schema.json`)
   console.log(`  package.json: ${pkgNote}`)
 }

@@ -11,6 +11,7 @@ import {
   writeManifest,
   wireNewSkills,
   harnessSkillsDir,
+  copySchema,
   pinAefInPackageJson,
   type ManifestSkills,
 } from '../consumer-io.js'
@@ -73,6 +74,7 @@ export function runSync(opts: SyncOptions): void {
   if (newSkills.length > 0) wireNewSkills(root, out, config, newSkills)
 
   writeManifest(out, config, manifest.skills)
+  if (copySchema(root, out)) report.push('  ↑ schemas/framework.config.schema.json: refreshed')
 
   console.log(`Synced ${relative(process.cwd(), out) || '.'} from framework source`)
   // Refresh synced read-only framework lessons (loop closure, decision #8).

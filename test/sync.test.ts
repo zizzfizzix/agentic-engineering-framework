@@ -116,6 +116,13 @@ describe('sync reconcile', () => {
     expect(process.exitCode).toBe(2) // non-zero exit signals unresolved conflicts
   })
 
+  test('sync refreshes schemas/framework.config.schema.json', () => {
+    rmSync(join(consumer, 'schemas'), { recursive: true, force: true })
+    expect(existsSync(join(consumer, 'schemas', 'framework.config.schema.json'))).toBe(false)
+    runSync({ out: consumer })
+    expect(existsSync(join(consumer, 'schemas', 'framework.config.schema.json'))).toBe(true)
+  })
+
   test('sync updates @zizzfizzix/aef version pin when package.json exists', () => {
     writeFileSync(
       join(consumer, 'package.json'),

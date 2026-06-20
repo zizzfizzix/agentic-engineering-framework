@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zizzfizzix/agentic-engineering-framework/schemas/framework.config.schema.json",
+  "title": "framework.config.json",
+  "description": "Per-consumer configuration the renderer, init/sync, and skills all read. One axis selection per family; init resolves these into a converged skill set.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "projectName": {
+      "type": "string",
+      "description": "Substituted for {{PROJECT_NAME}} in templates."
+    },
+    "harnesses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "Active harness adapters; each wires its files + skills dir."
+    },
+    "orm": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Selected ORM adapter, or null to omit ORM skills."
+    },
+    "ui": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stack": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "modulesRoot": {
+          "type": "string"
+        },
+        "specsRoot": {
+          "type": "string"
+        },
+        "testsRoot": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Commands skills run as the verification gate."
+    },
+    "git": {
+      "type": "object",
+      "properties": {
+        "defaultBranch": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "tiers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Opt-in tiers to install in addition to the defaults (e.g. [\"framework\", \"automation\"])."
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Local checkout path; if null, clone repo on demand."
+        },
+        "repo": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "description": "Where improve-framework finds the framework SOURCE."
+    },
+    "feedback": {
+      "type": "object",
+      "properties": {
+        "capture": {
+          "type": "boolean",
+          "default": true,
+          "description": "Write scope-tagged lessons locally; zero egress."
+        },
+        "upstream": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "scheduled-pr",
+                "prompt",
+                "off"
+              ],
+              "default": "scheduled-pr"
+            },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "pr",
+                "issue",
+                "fork"
+              ],
+              "default": "pr"
+            },
+            "schedule": {
+              "type": "string",
+              "default": "weekly"
+            },
+            "sanitize": {
+              "type": "boolean",
+              "default": true
+            },
+            "requireHumanApproval": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "harnesses"
+  ],
+  "additionalProperties": false
+}
