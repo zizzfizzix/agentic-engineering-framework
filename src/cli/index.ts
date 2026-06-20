@@ -8,18 +8,47 @@
 //   aef dev
 import { readFileSync } from 'node:fs'
 import { Command } from 'commander'
-import { ZodError } from 'zod'
+import { ZodError, ZodIssueCode } from 'zod'
 import { runInit } from './commands/init.js'
 import { runSync } from './commands/sync.js'
 import { runDev } from './commands/dev.js'
 import { runRender } from './commands/render.js'
 import { runAdd, runRemove } from './commands/adapter.js'
+import { FrameworkConfigSchema } from '../core/contracts.js'
 
 // Single source of truth for the version: read the package's own package.json at
 // runtime so it never drifts from release-please's bump (dev: src/cli/, built:
 // dist/cli/ — both resolve to the package root).
 const { version } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
   version: string
+}
+
+function levenshtein(a: string, b: string): number {
+  const dp = Array.from({ length: b.length + 1 }, (_, j) => j)
+  for (let i = 1; i <= a.length; i++) {
+    let prev = dp[0]!
+    dp[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const temp = dp[j]!
+      dp[j] = a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, temp, dp[j - 1]!)
+      prev = temp
+    }
+  }
+  return dp[b.length]!
+}
+
+function suggestKey(unknown: string, valid: string[]): string | null {
+  let best: string | null = null
+  let bestDist = Infinity
+  for (const k of valid) {
+    const d = levenshtein(unknown, k)
+    if (d < bestDist) {
+      bestDist = d
+      best = k
+    }
+  }
+  // Suggest only for likely typos: 1–2 edits covers transpositions and dropped/swapped chars.
+  return bestDist <= 2 ? best : null
 }
 
 const program = new Command()
@@ -73,10 +102,23 @@ program
   .description('Meta-install: wire this repo’s harness dirs to dev/ skills for framework development.')
   .action(() => runDev())
 
+const validRootKeys = Object.keys(FrameworkConfigSchema.shape)
+
 program.parseAsync(process.argv).catch((err: unknown) => {
   if (err instanceof ZodError) {
     console.error('Invalid configuration:')
-    for (const issue of err.issues) console.error(`  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
+    for (const issue of err.issues) {
+      if (issue.code === ZodIssueCode.unrecognized_keys && issue.path.length === 0) {
+        for (const key of issue.keys) {
+          const suggestion = suggestKey(key, validRootKeys)
+          const hint = suggestion != null ? ` Did you mean '${suggestion}'?` : ''
+          console.error(`  - Unknown key '${key}'.${hint}`)
+        }
+        console.error(`    Valid keys: ${validRootKeys.join(', ')}`)
+      } else {
+        console.error(`  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
+      }
+    }
   } else {
     console.error(err instanceof Error ? err.message : String(err))
   }
