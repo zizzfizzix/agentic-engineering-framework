@@ -46,8 +46,11 @@ both commands finish in seconds, well before any skill invocation.
 If hooks don't fire, run both commands manually from the repo root. Per-developer Claude Code
 settings belong in `.claude/settings.local.json` (gitignored).
 
-`pnpm cli dev` installs the **dev** skills, not the shipped ones — you author shipped skills, you
-don't run them here. `pnpm build` emits the distributable `agentic` bin to `dist/`.
+`pnpm cli dev` installs both the **dev** skills (symlinked live from `dev/skills/`) and the
+**shipped** skills (rendered from `core/ai/skills/` using `dev/framework.config.json`). The tier
+and adapter selection in that config governs which shipped skills are installed. Re-run after
+adding or changing a skill or adapter. `pnpm build` emits the distributable `agentic` bin to
+`dist/`.
 
 ## Validate every change (the test gates)
 
