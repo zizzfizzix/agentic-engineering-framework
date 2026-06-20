@@ -8,7 +8,7 @@ This file is the entry point for any AI agent working in this repo. `CLAUDE.md` 
 - Read this file first. Match your task against the **Task Router** below and load the listed
   context before writing any code.
 - Use the canonical helpers and components the project already provides; reuse before you build.
-- Run the project's verification gate — every command in `framework.config.json` → `validation` —
+- Run the project's verification gate — every command in `aef.config.json` → `validation` —
   before declaring work done. Treat any non-zero exit as a failure to fix.
 - After a correction, record a durable rule in `.ai/lessons.md` so the same mistake doesn't recur.
 
@@ -27,7 +27,7 @@ This file is the entry point for any AI agent working in this repo. `CLAUDE.md` 
 
 ## Validation
 
-The verification gate is defined in `framework.config.json` → `validation`. Run it in full; it is
+The verification gate is defined in `aef.config.json` → `validation`. Run it in full; it is
 all-or-nothing. Paths (`modulesRoot`, `specsRoot`, `testsRoot`) come from the same config.
 
 ## Task Router
@@ -61,5 +61,5 @@ multiple rows — load all of them.
 
 ## Stack
 
-Resolve specifics from `framework.config.json` (`stack`, `orm`, `ui`, `harnesses`). This skeleton
+Resolve specifics from `aef.config.json` (`stack`, `orm`, `ui`, `harnesses`). This skeleton
 is stack-agnostic; the installed adapter pack fills in the project's concrete conventions.

@@ -9,7 +9,7 @@ You are step 4 of an autofix workflow. The previous step (`fix`) edited files, a
 
 Your job: ship the work — commit, push, open the PR, hand off — then release the lock. **You must end your message with the `PR_URL=` and `PR_NUMBER=` markers** so the review step has something to reference.
 
-The integration branch this PR targets is `framework.config.json` → `git.defaultBranch` (referred to below as `<defaultBranch>`).
+The integration branch this PR targets is `aef.config.json` → `git.defaultBranch` (referred to below as `<defaultBranch>`).
 
 ## Arguments
 
@@ -131,7 +131,7 @@ PR_URL=$(gh pr view --json url --jq .url)
 PR_NUMBER=$(gh pr view --json number --jq .number)
 ```
 
-After the PR is created, normalize its labels (drawn from `framework.config.json` → `git.labels`):
+After the PR is created, normalize its labels (drawn from `aef.config.json` → `git.labels`):
 
 - Apply the `review` pipeline label
 - Add `skip-qa` only for clearly low-risk changes (docs-only, dependency-only, CI-only, test-only, trivial typo/single-file maintenance)
@@ -142,7 +142,7 @@ After each label, post a short PR comment explaining why it was applied (e.g., "
 
 ### 6. Hand off the issue and release the lock
 
-Whether or not the PR opened cleanly, always release the lock — use this as a finally-block. The lock label is the in-progress label from `framework.config.json` → `git.labels`.
+Whether or not the PR opened cleanly, always release the lock — use this as a finally-block. The lock label is the in-progress label from `aef.config.json` → `git.labels`.
 
 If a PR exists and the issue author is not the current user / not a bot:
 

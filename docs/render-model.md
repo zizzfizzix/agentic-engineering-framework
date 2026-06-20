@@ -2,7 +2,7 @@
 
 `aef render` (the pure renderer in `src/core/render.ts`, exposed as a CLI subcommand) is the
 executable form of the §5/§3.3a render model. The same renderer backs `aef init`/`sync`; the
-interface it exercises (`framework.config.json` + `adapter.json` + the slot convention) is what
+interface it exercises (`aef.config.json` + `adapter.json` + the slot convention) is what
 everything else builds on.
 
 ## Run it
@@ -12,7 +12,7 @@ everything else builds on.
 pnpm cli render --skill migrate-orm --out /tmp/out
 
 # pick a different ORM
-sed 's/"drizzle"/"mikro-orm"/' framework.config.example.json > /tmp/cfg.json
+sed 's/"drizzle"/"mikro-orm"/' aef.config.example.json > /tmp/cfg.json
 pnpm cli render --config /tmp/cfg.json --skill migrate-orm --out /tmp/out
 
 # no ORM -> slots pruned (in practice the skill wouldn't install at all)

@@ -1,7 +1,7 @@
 ## Repository layout
 
 Next.js App Router project, optionally a workspaces monorepo. Resolve concrete paths from
-`framework.config.json` → `paths`:
+`aef.config.json` → `paths`:
 
 - **Routes / UI** — the `app/` directory (route segments, `layout.tsx`, `page.tsx`, route handlers
   under `app/**/route.ts`). Server Components by default.

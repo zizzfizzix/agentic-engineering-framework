@@ -5,12 +5,12 @@
     "ui": "shadcn",
     "stack": "generic-node"
   },
-  "digest": "ff53f9f69e38",
+  "digest": "d6fc87e3b01e",
   "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
   "inputs": [
     {
       "path": "core/ai/skills/smart-test/SKILL.md",
-      "sha": "9ad82489c64e"
+      "sha": "2864d372ff66"
     }
   ],
   "regions": [

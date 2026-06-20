@@ -4,9 +4,9 @@ Apply every applicable section based on which files changed. Skip sections that 
 
 > **Note on examples**: This checklist is stack-agnostic. Substitute your project's own canonical
 > helpers, convention filenames, and structural layout. Wherever a build/test/generate/migration
-> command appears, use the matching command from `framework.config.json` → `validation`; wherever a
-> structural path appears, use the paths in `framework.config.json` → `paths` (`modulesRoot`,
-> `specsRoot`, `testsRoot`); and for branch/label references use `framework.config.json` → `git`.
+> command appears, use the matching command from `aef.config.json` → `validation`; wherever a
+> structural path appears, use the paths in `aef.config.json` → `paths` (`modulesRoot`,
+> `specsRoot`, `testsRoot`); and for branch/label references use `aef.config.json` → `git`.
 > Skip any section whose concept your stack does not have.
 
 ## 1. Architecture & Module Independence
@@ -20,7 +20,7 @@ Apply every applicable section based on which files changed. Skip sections that 
 - [ ] No cross-tenant data leaks in API responses
 - [ ] Services resolved through the project's dependency-injection mechanism — never `new` directly where a registered service exists
 - [ ] No hardcoded module-specific logic in shared bootstrap/setup code
-- [ ] Code placed in the correct location per the project's structural paths (`framework.config.json` → `paths`); nothing dumped in an unstructured root
+- [ ] Code placed in the correct location per the project's structural paths (`aef.config.json` → `paths`); nothing dumped in an unstructured root
 - [ ] Package layering respected — a shared/low-level package has zero domain dependencies (no imports from higher-level domain packages)
 
 ## 2. Security & Authentication
@@ -225,7 +225,7 @@ Apply every applicable section based on which files changed. Skip sections that 
 - [ ] Generated files never edited manually
 - [ ] The code-generation/prepare command run after adding/modifying convention files
 - [ ] No imports from generated files in libraries (only app bootstrap imports)
-- [ ] Project still builds after changes (the build command in `framework.config.json` → `validation`)
+- [ ] Project still builds after changes (the build command in `aef.config.json` → `validation`)
 - [ ] If the project ships a scaffolding template, its template-parity check passes
 - [ ] If template drift exists (especially layout/routes), reviewer asked whether to sync and, if approved, applied the template-sync fix command
 
@@ -270,7 +270,7 @@ Every item below refers to the project's backward-compatibility contract (e.g. a
 
 - [ ] New or renamed spec files use `{YYYY-MM-DD}-{slug}.md`
 - [ ] Legacy numbered spec files are normalized instead of copied forward into new work
-- [ ] No two spec files under the specs root (`framework.config.json` → `paths.specsRoot`, including any `enterprise/` subfolder) resolve to the same normalized `{YYYY-MM-DD}-{slug}.md` target
+- [ ] No two spec files under the specs root (`aef.config.json` → `paths.specsRoot`, including any `enterprise/` subfolder) resolve to the same normalized `{YYYY-MM-DD}-{slug}.md` target
 - [ ] Filename references/links updated after any normalization
 
 ### Extension / Injection-Point IDs
@@ -328,7 +328,7 @@ Every item below refers to the project's backward-compatibility contract (e.g. a
 - [ ] Deprecation annotation added with migration guidance and target removal version
 - [ ] Bridge provided (re-export, alias, or dual-emit) for at least one minor version
 - [ ] Documented in the project's release notes (e.g. `RELEASE_NOTES.md`)
-- [ ] Spec under the specs root (`framework.config.json` → `paths.specsRoot`) with "Migration & Backward Compatibility" section
+- [ ] Spec under the specs root (`aef.config.json` → `paths.specsRoot`) with "Migration & Backward Compatibility" section
 
 ## 22. Anti-Pattern Checklist
 

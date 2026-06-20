@@ -10,7 +10,7 @@ import { runInit } from '../src/cli/commands/init.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const config = FrameworkConfigSchema.parse(
-  JSON.parse(readFileSync(join(ROOT, 'framework.config.example.json'), 'utf8')),
+  JSON.parse(readFileSync(join(ROOT, 'aef.config.example.json'), 'utf8')),
 )
 
 // 1. Single-skill renders under examples/rendered/.
@@ -26,6 +26,6 @@ for (const skill of ['migrate-orm', 'ui-consistency']) {
 // 2. Full consumer install under examples/consumer/.
 rmSync(join(ROOT, 'examples', 'consumer'), { recursive: true, force: true })
 await runInit({
-  config: join(ROOT, 'framework.config.example.json'),
+  config: join(ROOT, 'aef.config.example.json'),
   out: join(ROOT, 'examples', 'consumer'),
 })

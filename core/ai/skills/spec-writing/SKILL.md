@@ -10,7 +10,7 @@ Design and review specifications (SPECs) against the project's architecture, nam
 ## Workflow
 
 1.  **Load Context**: Load initial context, take user provided context prompt, and load related files using the Task-Routing table from root `AGENTS.md`.
-2.  **Initialize**: Create an empty file with the correct naming convention for scope, under the specs root (`framework.config.json` → `paths.specsRoot`, e.g. `.ai/specs`):
+2.  **Initialize**: Create an empty file with the correct naming convention for scope, under the specs root (`aef.config.json` → `paths.specsRoot`, e.g. `.ai/specs`):
     - Default scope: `{date}-{title}.md` in the specs root
     - Enterprise scope: `{date}-{title}.md` in the `enterprise/` subfolder of the specs root
     - Use `YYYY-MM-DD` for `date` and kebab-case for `title`

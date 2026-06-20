@@ -58,7 +58,7 @@ A UI spec must define at least one verification path for each changed interactiv
 
 - hydration smoke or Playwright route load,
 - key interaction test for table/form/dialog/editor/calendar/graph,
-- output of the project's client-boundary check (one of the commands in `framework.config.json` → `validation`, if present),
+- output of the project's client-boundary check (one of the commands in `aef.config.json` → `validation`, if present),
 - bundle/RAM/build evidence when the work is performance-sensitive.
 
 ## Review Gate

@@ -6,6 +6,7 @@ import {
   mkdirSync,
   existsSync,
   lstatSync,
+  renameSync,
   rmSync,
   cpSync,
   symlinkSync,
@@ -166,10 +167,19 @@ export function pinAefInPackageJson(out: string, version: string): string {
     : `added @zizzfizzix/aef@^${version} to devDependencies — run \`pnpm install\` then \`pnpm aef --help\``
 }
 
+export function migrateConfigName(out: string): void {
+  const newPath = join(out, 'aef.config.json')
+  const legacyPath = join(out, 'framework.config.json')
+  if (!existsSync(newPath) && existsSync(legacyPath)) {
+    renameSync(legacyPath, newPath)
+    console.log(`  ↑ renamed framework.config.json → aef.config.json (stage with \`git add -A\`)`)
+  }
+}
+
 export function copySchema(root: string, out: string): boolean {
-  const src = join(root, 'schemas', 'framework.config.schema.json')
+  const src = join(root, 'schemas', 'aef.config.schema.json')
   if (!existsSync(src)) return false
-  const dest = join(out, 'schemas', 'framework.config.schema.json')
+  const dest = join(out, 'schemas', 'aef.config.schema.json')
   mkdirSync(join(out, 'schemas'), { recursive: true })
   writeFileSync(dest, readFileSync(src, 'utf8'))
   return true

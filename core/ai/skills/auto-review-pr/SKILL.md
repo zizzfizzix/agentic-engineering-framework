@@ -301,7 +301,7 @@ Mandatory scope and gates:
 
 - Scope changed files with `gh pr diff {prNumber} --name-only`
 - Gather context from all matching `AGENTS.md` files, related specs, and `.ai/lessons.md`
-- Run the full CI/CD verification gate (the commands listed in `framework.config.json` → `validation`)
+- Run the full CI/CD verification gate (the commands listed in `aef.config.json` → `validation`)
 - Run any project sync/codegen step the change requires (e.g. a template-sync command)
 - Check `BACKWARD_COMPATIBILITY.md`
 - Apply the full review checklist
@@ -327,7 +327,7 @@ The review body must contain the full structured report from the code-review ski
 
 Use the GraphQL label mutation flow, not `gh pr edit --add-label`.
 
-Pipeline labels (names drawn from `framework.config.json` → `git.labels`; the set below is the conventional default):
+Pipeline labels (names drawn from `aef.config.json` → `git.labels`; the set below is the conventional default):
 
 - `review`
 - `changes-requested`
@@ -413,7 +413,7 @@ Do not stop after the first patch. Treat autofix as an iterative loop:
 4. Run validation for the updated code:
    - Run relevant unit tests for every changed package or module.
    - Run relevant typecheck commands for every changed package or module.
-   - If i18n locale files were added or modified, verify keys are alphabetically sorted (run the project's i18n check from `framework.config.json` → `validation` if it enforces this).
+   - If i18n locale files were added or modified, verify keys are alphabetically sorted (run the project's i18n check from `aef.config.json` → `validation` if it enforces this).
    - If the review findings touched shared contracts or multiple packages, expand validation to the affected workspace scope.
 5. Re-run the code review on the updated diff in the same worktree.
 6. If new or remaining actionable findings exist, repeat from step 1.

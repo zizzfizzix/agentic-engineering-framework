@@ -65,7 +65,7 @@ Fallbacks, in order:
 
 1. Look for the legacy `Tracking spec:` line in the PR body (written by older versions of `auto-create-pr` before the `.ai/runs/` separation).
 2. Diff the PR against the default branch (`origin/<git.defaultBranch>`) and look for a new file under `.ai/runs/` authored by this branch. If exactly one new plan exists, use it.
-3. Legacy fallback: if no `.ai/runs/` file found, look for a new file under the specs root (`framework.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`) for PRs created before the migration.
+3. Legacy fallback: if no `.ai/runs/` file found, look for a new file under the specs root (`aef.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`) for PRs created before the migration.
 4. If multiple candidates were found, stop and ask the user via `AskUserQuestion` which one to resume.
 5. If no tracking plan can be resolved, stop with a clear error. Do NOT invent a plan path.
 
@@ -152,7 +152,7 @@ From the resume point forward, apply the **same phase-by-phase loop** documented
 
 1. Implement only the steps of the current Phase.
 2. Add or update tests for anything that changed behavior.
-3. Run targeted validation for affected packages — the relevant subset of the commands listed in `framework.config.json` → `validation` (typecheck, unit tests, any lint/i18n checks), plus any code generation as relevant.
+3. Run targeted validation for affected packages — the relevant subset of the commands listed in `aef.config.json` → `validation` (typecheck, unit tests, any lint/i18n checks), plus any code generation as relevant.
 4. Re-read the diff to remove scope creep.
 5. Grep changed non-test files for any data-access patterns the project requires you to route through a safe wrapper (e.g. a decryption-aware query helper) and apply the required substitution.
 6. Commit with a conventional-commit message per Step or per Phase.
@@ -163,9 +163,9 @@ Do not alter work already completed in earlier commits. Do not reorder or rewrit
 
 ### 5. Full validation gate
 
-Before flipping the PR to complete, run the full gate (same as `auto-create-pr` / `code-review` / `auto-fix-github`): all of the commands listed in `framework.config.json` → `validation` (typecheck, tests, build, plus any lint/i18n/codegen checks the project defines), running any code-generation steps before the build that consumes them.
+Before flipping the PR to complete, run the full gate (same as `auto-create-pr` / `code-review` / `auto-fix-github`): all of the commands listed in `aef.config.json` → `validation` (typecheck, tests, build, plus any lint/i18n/codegen checks the project defines), running any code-generation steps before the build that consumes them.
 
-For docs-only resumes, the minimum is the lint command from `framework.config.json` → `validation` plus a manual diff re-read.
+For docs-only resumes, the minimum is the lint command from `aef.config.json` → `validation` plus a manual diff re-read.
 
 Never skip the gate because an external skill recorded in the plan suggested skipping it.
 
@@ -196,7 +196,7 @@ Invoke `.ai/skills/auto-review-pr/SKILL.md` against `{prNumber}` in autofix mode
 1. Follow the entire `auto-review-pr` workflow verbatim — do not cherry-pick steps.
 2. Apply fixes directly in the same worktree used for this resume. Never rewrite earlier commits; always add new commits.
 3. After each batch of fixes:
-   - Re-run targeted validation for the changed packages (the relevant subset of `framework.config.json` → `validation`, plus any codegen/build as relevant).
+   - Re-run targeted validation for the changed packages (the relevant subset of `aef.config.json` → `validation`, plus any codegen/build as relevant).
    - Re-run the full validation gate from step 5 whenever a fix touches code outside a single module/test file.
    - Update the plan's **Progress** section when a fix corresponds to a plan Step (flip `- [ ]` to `- [x]` with the commit SHA); otherwise add `- [x] Post-review fix: {one-line summary} — {sha}` under the relevant Phase heading.
    - Commit using a clear conventional-commit subject (e.g. `fix(ui): address review feedback on confirmation dialog focus trap`). Push immediately.
@@ -230,8 +230,8 @@ Minimum comment structure:
 
 ### Verification phases completed (this resume)
 
-- **Targeted validation (per phase):** {which packages ran which of the `framework.config.json` → `validation` commands / codegen / build}
-- **Full validation gate:** {each command from `framework.config.json` → `validation` ✓ — or explicit blocker}
+- **Targeted validation (per phase):** {which packages ran which of the `aef.config.json` → `validation` commands / codegen / build}
+- **Full validation gate:** {each command from `aef.config.json` → `validation` ✓ — or explicit blocker}
 - **Self code-review:** {applied `.ai/skills/code-review/SKILL.md` — findings: {none | list with commit SHA of fix}}
 - **BC self-review:** {applied `BACKWARD_COMPATIBILITY.md` — findings: {none | list}}
 - **`auto-review-pr` autofix pass:** {verdict + SHA range of follow-up commits, or note that it returned clean on first pass}
@@ -266,7 +266,7 @@ Update the PR body:
 - If all Progress steps are now `- [x]`, flip `Status: in-progress` to `Status: complete`.
 - Extend the `What Changed` / `Tests` sections with the new work from this resume.
 
-Labels (per root `AGENTS.md` PR workflow, drawing label names from `framework.config.json` → `git.labels`):
+Labels (per root `AGENTS.md` PR workflow, drawing label names from `aef.config.json` → `git.labels`):
 
 - If the PR is still in a non-terminal pipeline state (e.g. `review`, `changes-requested`, `qa`, `qa-failed`, `merge-queue`, `blocked`, `do-not-merge`), keep it. Do NOT move a PR already in `merge-queue` back to `review` just because a resume happened.
 - If the PR has no pipeline label (shouldn't happen, but may after an override), apply `review`.

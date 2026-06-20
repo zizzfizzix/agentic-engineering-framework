@@ -70,7 +70,7 @@ describe('runDev name collision: dev skill takes priority over same-named shippe
       join(tmp, 'core', 'ai', 'skills', 'tiers.json'),
       JSON.stringify({ default: ['core'], tiers: { core: { skills: ['skill-creator'] } } }),
     )
-    writeFileSync(join(tmp, 'dev', 'framework.config.json'), JSON.stringify({ harnesses: ['test-harness'] }))
+    writeFileSync(join(tmp, 'dev', 'aef.config.json'), JSON.stringify({ harnesses: ['test-harness'] }))
   })
 
   afterAll(() => {

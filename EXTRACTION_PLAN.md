@@ -130,7 +130,7 @@ Each skill is split along a stable seam: **workflow (generic) vs facts (adapter)
 ```
 
 `SKILL.md` says _"load the ORM cheatsheet for the active `orm` adapter from
-`framework.config.json`"_ instead of hard-coding MikroORM. Adapters drop a `references/<adapter>.md`
+`aef.config.json`"_ instead of hard-coding MikroORM. Adapters drop a `references/<adapter>.md`
 into the skill (copy or symlink at init/sync time).
 
 ### 3.2 Axes of variation (each an adapter family)
@@ -155,7 +155,7 @@ were considered:
 | Agent cost          | Resolve config → pick adapter → load reference (extra hops, risk of loading the wrong/both) | Reads one self-contained file                                                         |
 | Repo feel           | Fragmented                                                                                  | Clean, minimal                                                                        |
 
-**`init` is a resolver/renderer, not a copier.** Given `framework.config.json`
+**`init` is a resolver/renderer, not a copier.** Given `aef.config.json`
 (`orm: drizzle`, `ui: shadcn`, …) it:
 
 1. Selects which skills install at all (no `orm` → no `migrate-orm`).
@@ -176,7 +176,7 @@ who want live adapter-switching, but converged is the default and the only v1 mo
   `create-agents-md`, `root-cause`, `verify-in-repo`, `open-pr`, `fix`, `check-and-commit`,
   `pre-implement-spec`, `implement-spec`, `integration-tests`, `smart-test`, and the
   `auto-*-pr` / `review` / `merge-buddy` / `sync-merged-pr-issues` automation family
-  (parameterized via `framework.config.json`).
+  (parameterized via `aef.config.json`).
 - **Generalize + adapterize:** `migrate-mikro-orm` → `migrate-orm`; `backend-ui-design` +
   `ds-guardian` → `ui-consistency`; `code-review` → generic harness + `references/project-rules.md`;
   `data-model-design` (already generic-ish in the standalone kit).
@@ -197,7 +197,7 @@ Net: very little is truly discarded — most "domain" content becomes an adapter
 Port `agentic-setup.ts` into a standalone, dependency-light CLI (Node, no `create-app` coupling):
 
 - `aef init` — interactive or `--harness=claude-code,codex,…`, `--orm=`, `--ui=`, `--stack=`.
-  Writes `framework.config.json`, then **resolves and renders** the converged skill set (§3.3a) —
+  Writes `aef.config.json`, then **resolves and renders** the converged skill set (§3.3a) —
   composing generic bodies with only the selected adapters, omitting the rest — runs the
   (generalized) `install-skills.sh`, and invokes each selected **harness adapter** to wire its
   files + skills dir.
@@ -234,7 +234,7 @@ plain `git` + the renderer + `sync`.
 
 **What the skill knows / does:**
 
-1. Locates the framework **source** — a path in `framework.config.json` (a local checkout) or
+1. Locates the framework **source** — a path in `aef.config.json` (a local checkout) or
    clones it on demand into a scratch dir.
 2. Reads **provenance breadcrumbs** the renderer leaves (which source file + slot produced each
    region of a rendered skill — the same manifest `sync` uses) to map a consumer-side symptom
@@ -379,7 +379,7 @@ agentic-engineering-framework/
 ├── src/cli/                        # the `agentic` CLI: init / sync / render / dev
 ├── scripts/                        # dev-only: check-render (gate), gen-schemas, update-examples
 ├── core/
-│   ├── framework.config.example.json   # harness[], orm, ui, stack: paths/cmds/branch/labels
+│   ├── aef.config.example.json   # harness[], orm, ui, stack: paths/cmds/branch/labels
 │   ├── AGENTS.md.template              # skeleton + <!-- TASK_ROUTER_START/END --> region
 │   └── ai/
 │       ├── skills/                     # generic skill bodies + tiers.json + schema + README
@@ -404,7 +404,7 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 
 ## 6. Genericization tasks (concrete)
 
-1. **`framework.config.json`** — the keystone. Fields: `harnesses[]`, `orm`, `ui`, `stack`,
+1. **`aef.config.json`** — the keystone. Fields: `harnesses[]`, `orm`, `ui`, `stack`,
    `paths` (`modulesRoot`, `specsRoot`, `testsRoot`), `validation` (command list), `git`
    (`defaultBranch`, PR `labels`), `source` (framework checkout path for `improve-framework`),
    and `feedback` (`capture` default true/local-only; `upstream` = `mode`/`channel`/`schedule`/
@@ -422,7 +422,7 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 6. **Generalize `migrate-mikro-orm` → `migrate-orm`** and `backend-ui-design`+`ds-guardian` →
    `ui-consistency`, moving specifics into `adapters/orm/*` and `adapters/ui/*`.
 7. **Parameterize paths/commands** across `spec-writing`, `implement-spec`, `integration-tests`,
-   `auto-*-pr` via `framework.config.json`.
+   `auto-*-pr` via `aef.config.json`.
 8. **Author the `open-mercato` meta-pack** that re-selects the Mercato adapters, proving the
    round-trip (generic core + pack ≈ original experience).
 9. **Deterministic renderer + provenance** — the compose step must be byte-stable and emit a
@@ -437,7 +437,7 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 
 - **Phase 1 — Core skeleton:** copy portable files into `core/`; port `install-skills.sh`,
   `validate-skills-tiers.sh`, `tiers.json`. Get `install-skills.sh --list` green here.
-- **Phase 2 — Config + harness adapters:** add `framework.config.json`, define `adapter.json`,
+- **Phase 2 — Config + harness adapters:** add `aef.config.json`, define `adapter.json`,
   port claude-code/codex/cursor as harness adapters, build `bin/aef init`. _(PoC landed:
   schemas, harness adapters, `aef init` renders the full set with tier ∧ axis selection and
   symlink/copy harness wiring + a render-manifest sync base; see `docs/render-model.md`.)_
@@ -492,7 +492,7 @@ converged `.ai/skills/<skill>/SKILL.md` set containing only the selected adapter
 - **Decisions:** copy+CLI-sync (no submodule) · harness-agnostic via adapters · **generalize**
   domain skills into generic-body + adapters (ORM / UI / stack), don't discard · hard fork.
 - Organizing principle everywhere: **generic core + pluggable adapters**, all reading one
-  `framework.config.json`, all sharing one source of truth: `.ai/skills/`.
+  `aef.config.json`, all sharing one source of truth: `.ai/skills/`.
 - **Author modular, ship converged:** the framework source is fragmented for maintainability;
   `init` renders it down to flat, self-contained skills holding only the selected adapters —
   no fragmentation and no irrelevant parts in the consumer repo.

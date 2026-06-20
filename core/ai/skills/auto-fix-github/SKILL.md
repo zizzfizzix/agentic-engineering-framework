@@ -69,7 +69,7 @@ Capture at least:
 - issue title, URL, state, author
 - issue body and recent comments
 
-**Base branch**: Always use the default branch (`framework.config.json` → `git.defaultBranch`) as the base branch for issue-work branches and PRs. If the project uses a dedicated integration branch (e.g. `develop`) distinct from its release branch, `git.defaultBranch` names the one to target.
+**Base branch**: Always use the default branch (`aef.config.json` → `git.defaultBranch`) as the base branch for issue-work branches and PRs. If the project uses a dedicated integration branch (e.g. `develop`) distinct from its release branch, `git.defaultBranch` names the one to target.
 
 ### 2. Check whether the issue is already solved or already has a solution in progress
 
@@ -81,7 +81,7 @@ Recommended checks:
 gh issue view {issueId} --repo {owner}/{repo} --json state
 gh search prs --repo {owner}/{repo} "#{issueId}" --state open --json number,title,url,state
 gh search prs --repo {owner}/{repo} "#{issueId}" --state merged --json number,title,url,state
-git fetch origin "$(git config --get init.defaultBranch || echo main)"  # use framework.config.json → git.defaultBranch
+git fetch origin "$(git config --get init.defaultBranch || echo main)"  # use aef.config.json → git.defaultBranch
 git log "origin/<default branch>" --grep="#{issueId}" --oneline
 ```
 
@@ -105,7 +105,7 @@ If you stop, report what you found and include the relevant PR or commit link in
 Read enough project context to avoid blind fixes:
 
 - relevant `AGENTS.md` files from the root router
-- related specs under the specs root (`framework.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`)
+- related specs under the specs root (`aef.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`)
 - `.ai/lessons.md`
 
 Then reduce the issue to:
@@ -128,7 +128,7 @@ GIT_DIR=$(git rev-parse --git-dir)
 GIT_COMMON_DIR=$(git rev-parse --git-common-dir)
 WORKTREE_PARENT="$REPO_ROOT/.ai/tmp/auto-fix-github"
 CREATED_WORKTREE=0
-BASE="{default branch from framework.config.json → git.defaultBranch}"
+BASE="{default branch from aef.config.json → git.defaultBranch}"
 
 if [ "$GIT_DIR" != "$GIT_COMMON_DIR" ]; then
   WORKTREE_DIR="$PWD"
@@ -212,14 +212,14 @@ Do not stop after one edit. Keep iterating until the issue is fixed and the chan
 
 Per iteration:
 
-1. Run unit tests for every changed package or module (the test command from `framework.config.json` → `validation`, scoped where feasible).
-2. Run typecheck for every changed package or module (the typecheck command from `framework.config.json` → `validation`).
-3. If i18n files or user-facing strings changed, run any i18n/locale checks defined in `framework.config.json` → `validation`.
+1. Run unit tests for every changed package or module (the test command from `aef.config.json` → `validation`, scoped where feasible).
+2. Run typecheck for every changed package or module (the typecheck command from `aef.config.json` → `validation`).
+3. If i18n files or user-facing strings changed, run any i18n/locale checks defined in `aef.config.json` → `validation`.
 4. If module structure, generated files, entities, or routes changed, run the required code-generation / build steps and any follow-up sync step (e.g. a template-sync command) the change requires.
 5. Re-read the diff and remove any accidental scope creep.
 6. Grep changed non-test files for any raw data-access patterns the project requires you to route through its canonical query helper (which enforces scoping and decryption) instead of bespoke queries. This is a hard rule from AGENTS.md.
 
-Before publishing, run the full CI/CD verification gate from the `code-review` skill: all of the commands listed in `framework.config.json` → `validation` (typecheck, tests, build, plus any lint/i18n/codegen checks the project defines), running any code-generation steps before the build that consumes them.
+Before publishing, run the full CI/CD verification gate from the `code-review` skill: all of the commands listed in `aef.config.json` → `validation` (typecheck, tests, build, plus any lint/i18n/codegen checks the project defines), running any code-generation steps before the build that consumes them.
 
 If the full gate is too expensive to run immediately while debugging, do targeted checks first, but the full gate must pass before you open or update the PR unless a real blocker prevents it.
 
@@ -276,7 +276,7 @@ git push -u origin "$(git branch --show-current)"
 
 ### 11. Open the PR and release the issue lock
 
-Open a PR against the default branch (`framework.config.json` → `git.defaultBranch`) using the current repository.
+Open a PR against the default branch (`aef.config.json` → `git.defaultBranch`) using the current repository.
 
 The PR should:
 
@@ -317,7 +317,7 @@ Fixes #{issueId}
 
 If the issue is in another repository or should not auto-close, replace `Fixes #{issueId}` with a plain issue link.
 
-After creating the PR, normalize its labels immediately (label names per `framework.config.json` → `git.labels`):
+After creating the PR, normalize its labels immediately (label names per `aef.config.json` → `git.labels`):
 
 - apply the `review` pipeline label
 - add `skip-qa` only for clearly low-risk changes such as docs-only, dependency-only, CI-only, test-only, or trivial typo/single-file maintenance fixes
@@ -394,11 +394,11 @@ If you stopped because a fix already exists, report the existing PR or commit in
 - Keep the fix scope minimal
 - Every fix MUST include regression tests — this is non-negotiable; never push without tests, never ask whether to add them
 - Run targeted tests and typecheck while iterating — all tests must pass before pushing
-- Run any i18n checks from `framework.config.json` → `validation` when user-facing strings or locale files changed; auto-fix with the check's `--fix` mode if available
+- Run any i18n checks from `aef.config.json` → `validation` when user-facing strings or locale files changed; auto-fix with the check's `--fix` mode if available
 - Run the full code-review skill and BC check before publishing; auto-fix any actionable findings from the self-review
 - Do not open a PR with known failing required checks unless a real blocker prevents completion and you explain that blocker explicitly
 - Link the issue in the PR and explain what changed and why
-- New PRs opened by this skill must start in the `review` pipeline state (labels per `framework.config.json` → `git.labels`)
+- New PRs opened by this skill must start in the `review` pipeline state (labels per `aef.config.json` → `git.labels`)
 - Add `skip-qa` only for clearly low-risk non-user-facing fixes; otherwise leave QA routing to the author/reviewer
 - When this skill adds PR labels, it must also add a short PR comment explaining why
 - After opening the fix PR, always hand the issue back to the original author with an explicit reassignment/comment handoff when possible

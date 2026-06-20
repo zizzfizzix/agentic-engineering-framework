@@ -62,7 +62,7 @@ The template below is wrapped in a 4-backtick fence so the nested 3-backtick `Va
 ## Validation Commands
 
 ```bash
-# Use the project's validation commands (framework.config.json → validation),
+# Use the project's validation commands (aef.config.json → validation),
 # scoped to the relevant package/module where possible. Example:
 yarn workspace @scope/{package} test
 yarn workspace @scope/{package} build
@@ -171,7 +171,7 @@ Bad examples:
 
 ### Writing Effective `Validation Commands`
 
-List the smallest set of real commands an agent can copy-paste to prove the relevant path. Draw them from `framework.config.json` → `validation`, and prefer package-scoped commands over repo-wide ones for module/package AGENTS.md files.
+List the smallest set of real commands an agent can copy-paste to prove the relevant path. Draw them from `aef.config.json` → `validation`, and prefer package-scoped commands over repo-wide ones for module/package AGENTS.md files.
 
 Good examples (the package scopes here are illustrative):
 
@@ -217,7 +217,7 @@ Include numbered checklists for common tasks. Pattern: "Adding a New X" or "Chec
 ```markdown
 ## Adding a New Worker
 
-1. Create worker file in `<modulesRoot>/<module>/workers/<worker-name>.ts` (where `<modulesRoot>` is `framework.config.json` → `paths.modulesRoot`, e.g. `src/modules`)
+1. Create worker file in `<modulesRoot>/<module>/workers/<worker-name>.ts` (where `<modulesRoot>` is `aef.config.json` → `paths.modulesRoot`, e.g. `src/modules`)
 2. Export `metadata` with `{ queue: '<queue-name>', id: '<worker-id>', concurrency: <n> }`
 3. Export default async handler function
 4. Ensure handler is idempotent — check state before mutating

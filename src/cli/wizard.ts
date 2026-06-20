@@ -1,5 +1,5 @@
 // Interactive `init` wizard (opt-in via --interactive). Discovers the available
-// adapters on disk and builds a framework.config object via @clack/prompts.
+// adapters on disk and builds the aef.config.json object via @clack/prompts.
 import { readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as p from '@clack/prompts'
@@ -55,7 +55,7 @@ export function buildConfig(a: WizardAnswers): Record<string, unknown> {
   if (testsRoot) paths.testsRoot = testsRoot
 
   const config: Record<string, unknown> = {
-    $schema: './schemas/framework.config.schema.json',
+    $schema: './schemas/aef.config.schema.json',
     projectName: a.projectName.trim(),
     harnesses: a.harnesses,
     orm: a.orm,
@@ -122,7 +122,7 @@ export async function runWizard(
   if (existingConfig) {
     const mode = bail(
       await p.select({
-        message: 'framework.config.json already exists — what would you like to do?',
+        message: 'aef.config.json already exists — what would you like to do?',
         options: [
           {
             value: 'update' as const,

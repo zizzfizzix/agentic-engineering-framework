@@ -12,6 +12,7 @@ import {
   wireNewSkills,
   harnessSkillsDir,
   copySchema,
+  migrateConfigName,
   pinAefInPackageJson,
   type ManifestSkills,
 } from '../consumer-io.js'
@@ -36,9 +37,8 @@ export interface SyncOptions {
 export function runSync(opts: SyncOptions): void {
   const root = FRAMEWORK_ROOT
   const out = opts.out ?? process.cwd()
-  const config = FrameworkConfigSchema.parse(
-    JSON.parse(readFileSync(join(out, 'framework.config.json'), 'utf8')),
-  )
+  migrateConfigName(out)
+  const config = FrameworkConfigSchema.parse(JSON.parse(readFileSync(join(out, 'aef.config.json'), 'utf8')))
   const manifestPath = join(out, '.ai', '.render-manifest.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as RenderManifestFile
 
@@ -74,7 +74,7 @@ export function runSync(opts: SyncOptions): void {
   if (newSkills.length > 0) wireNewSkills(root, out, config, newSkills)
 
   writeManifest(out, config, manifest.skills)
-  if (copySchema(root, out)) report.push('  ↑ schemas/framework.config.schema.json: refreshed')
+  if (copySchema(root, out)) report.push('  ↑ schemas/aef.config.schema.json: refreshed')
 
   console.log(`Synced ${relative(process.cwd(), out) || '.'} from framework source`)
   // Refresh synced read-only framework lessons (loop closure, decision #8).

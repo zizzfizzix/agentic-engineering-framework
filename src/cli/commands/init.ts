@@ -14,6 +14,7 @@ import {
   wireHarnesses,
   writeConventions,
   copySchema,
+  migrateConfigName,
   pinAefInPackageJson,
   type ManifestSkills,
 } from '../consumer-io.js'
@@ -36,24 +37,25 @@ export async function runInit(opts: InitOptions): Promise<void> {
   }
   if (!opts.config && !opts.interactive) {
     throw new Error(
-      `--config is required.\n\nUsage: aef init --config framework.config.json --out . --copy\n\nTo get started, create a framework.config.json. Minimum required:\n  {\n    "harnesses": ["claude-code"]\n  }\n\nRun 'aef init --help' for all options.`,
+      `--config is required.\n\nUsage: aef init --config aef.config.json --out . --copy\n\nTo get started, create a aef.config.json. Minimum required:\n  {\n    "harnesses": ["claude-code"]\n  }\n\nRun 'aef init --help' for all options.`,
     )
   }
 
   const out = opts.out ?? process.cwd()
 
-  // `raw` is what we persist to framework.config.json (byte-stable); `config` is the
+  // `raw` is what we persist to aef.config.json (byte-stable); `config` is the
   // zod-validated view the renderer consumes.
   let raw: unknown
   if (opts.interactive) {
-    const existingPath = join(out, 'framework.config.json')
+    migrateConfigName(out)
+    const existingPath = join(out, 'aef.config.json')
     let existingConfig: FrameworkConfig | undefined
     if (existsSync(existingPath)) {
       try {
         existingConfig = FrameworkConfigSchema.parse(JSON.parse(readFileSync(existingPath, 'utf8')))
       } catch {
         console.warn(
-          'Warning: existing framework.config.json could not be parsed — starting the wizard from scratch.',
+          'Warning: existing aef.config.json could not be parsed — starting the wizard from scratch.',
         )
       }
     }
@@ -75,7 +77,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   }
   writeManifest(out, config, manifestSkills)
   const schemaCopied = copySchema(root, out)
-  writeFileSync(join(out, 'framework.config.json'), JSON.stringify(raw, null, 2) + '\n')
+  writeFileSync(join(out, 'aef.config.json'), JSON.stringify(raw, null, 2) + '\n')
 
   const conventions = writeConventions(root, out, config)
   const wired = wireHarnesses(root, out, config, skills, useCopy)
@@ -90,6 +92,6 @@ export async function runInit(opts: InitOptions): Promise<void> {
   console.log(`  conventions: ${conventions.join(', ')}`)
   if (skipped.length) console.log(`  skipped (axis not configured): ${skipped.join(', ')}`)
   console.log(`  harnesses wired: ${wired.join(' | ') || '(none)'}`)
-  if (schemaCopied) console.log(`  schema: schemas/framework.config.schema.json`)
+  if (schemaCopied) console.log(`  schema: schemas/aef.config.schema.json`)
   console.log(`  package.json: ${pkgNote}`)
 }

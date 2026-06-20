@@ -13,7 +13,7 @@ surfaced`, `not applicable`, or `inconclusive (next step)`.
   surface is reachable without an explicit grant. Watch for wildcard /
   "all permissions" grants applied to non-privileged roles. Cross-check
   shared/UI packages and the auth-related modules under the modules
-  root (`framework.config.json` → `paths.modulesRoot`).
+  root (`aef.config.json` → `paths.modulesRoot`).
 - Role-name spoofing — verify guarded routes authorize against stable
   permission/feature identifiers, not against mutable role names. A
   `role` rename must not change the effective permission set.

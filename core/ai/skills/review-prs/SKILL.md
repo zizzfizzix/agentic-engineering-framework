@@ -18,7 +18,7 @@ CURRENT_USER=$(gh api user --jq '.login')
 
 ### 2. Filter to PRs that still need review
 
-Labels referenced below come from `framework.config.json` → `git.labels`. Keep PRs where all of the following are true:
+Labels referenced below come from `aef.config.json` → `git.labels`. Keep PRs where all of the following are true:
 
 - not draft
 - `reviewDecision` is empty or `REVIEW_REQUIRED`

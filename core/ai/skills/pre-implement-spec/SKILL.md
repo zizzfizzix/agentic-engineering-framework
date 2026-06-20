@@ -11,7 +11,7 @@ Performs a thorough pre-implementation analysis of a specification to catch issu
 
 ### Phase 1 — Load Context
 
-1. Read the target spec file(s) fully from the specs root (`framework.config.json` → `paths.specsRoot`; include any `enterprise/` subfolder if the project uses one).
+1. Read the target spec file(s) fully from the specs root (`aef.config.json` → `paths.specsRoot`; include any `enterprise/` subfolder if the project uses one).
 2. Read the project's backward-compatibility contract (e.g. a `BACKWARD_COMPATIBILITY.md`) — the contract surface categories.
 3. Read the project's lessons file (e.g. `.ai/lessons.md`) for known pitfalls.
 4. Using the Task Router in `AGENTS.md`, identify all relevant AGENTS.md guides for affected modules/packages.
@@ -64,7 +64,7 @@ Check that the spec's proposed implementation follows all relevant AGENTS.md rul
 
 **Module structure**:
 
-- Does the spec place code in the correct location? (per the project's structural paths — `framework.config.json` → `paths`)
+- Does the spec place code in the correct location? (per the project's structural paths — `aef.config.json` → `paths`)
 - Does it follow the project's file/directory conventions and required exports?
 - **Default-deny authorization**: does every new endpoint/feature declare its required auth/permissions explicitly? Missing = denied.
 
@@ -237,7 +237,7 @@ Produce a structured report in this format:
 {Ready to implement / Needs spec updates first / Needs major revision}
 ```
 
-Save the report under an `analysis/` subfolder of the specs root (`framework.config.json` → `paths.specsRoot`), e.g. `<specsRoot>/analysis/ANALYSIS-{spec-id}.md`.
+Save the report under an `analysis/` subfolder of the specs root (`aef.config.json` → `paths.specsRoot`), e.g. `<specsRoot>/analysis/ANALYSIS-{spec-id}.md`.
 
 ## Subagent Strategy
 
@@ -256,7 +256,7 @@ Launch parallel Explore agents for independent code areas (events, API routes, w
 - MUST check ALL of the project's backward compatibility contract surface categories — no shortcuts
 - MUST verify against actual codebase (not just spec text) — use Explore agents to find real event IDs, spot IDs, API routes
 - MUST produce the structured report format — no free-form summaries
-- MUST save the report to the `analysis/` subfolder of the specs root (`framework.config.json` → `paths.specsRoot`)
+- MUST save the report to the `analysis/` subfolder of the specs root (`aef.config.json` → `paths.specsRoot`)
 - MUST classify every finding with severity
 - MUST propose concrete fixes for every violation and gap
 - MUST NOT modify any code — this skill is analysis only

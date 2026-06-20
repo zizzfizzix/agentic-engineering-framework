@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, expect, describe } from 'vitest'
 import { runInit } from '../src/cli/commands/init.js'
+import { migrateConfigName } from '../src/cli/consumer-io.js'
 
 const ROOT = process.cwd()
 
@@ -13,7 +14,7 @@ describe('runInit error handling', () => {
   })
 
   test('error message includes usage example', async () => {
-    await expect(runInit({})).rejects.toThrow('aef init --config framework.config.json --out . --copy')
+    await expect(runInit({})).rejects.toThrow('aef init --config aef.config.json --out . --copy')
   })
 
   test('error message includes minimum config snippet', async () => {
@@ -29,7 +30,7 @@ describe('runInit package.json pinning', () => {
   test('adds @zizzfizzix/aef to devDependencies and scripts when package.json exists', async () => {
     const out = mkdtempSync(join(tmpdir(), 'agentic-init-pkg-'))
     writeFileSync(join(out, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 2) + '\n')
-    const cfgPath = join(ROOT, 'framework.config.example.json')
+    const cfgPath = join(ROOT, 'aef.config.example.json')
     try {
       await runInit({ config: cfgPath, out })
       const pkg = JSON.parse(readFileSync(join(out, 'package.json'), 'utf8'))
@@ -50,7 +51,7 @@ describe('runInit package.json pinning', () => {
         2,
       ) + '\n',
     )
-    const cfgPath = join(ROOT, 'framework.config.example.json')
+    const cfgPath = join(ROOT, 'aef.config.example.json')
     try {
       await runInit({ config: cfgPath, out })
       const pkg = JSON.parse(readFileSync(join(out, 'package.json'), 'utf8'))
@@ -64,7 +65,7 @@ describe('runInit package.json pinning', () => {
 
   test('does not throw when package.json is absent', async () => {
     const out = mkdtempSync(join(tmpdir(), 'agentic-init-nopkg-'))
-    const cfgPath = join(ROOT, 'framework.config.example.json')
+    const cfgPath = join(ROOT, 'aef.config.example.json')
     try {
       await expect(runInit({ config: cfgPath, out })).resolves.toBeUndefined()
       expect(existsSync(join(out, 'package.json'))).toBe(false)
@@ -79,7 +80,7 @@ describe('runInit package.json pinning', () => {
       join(out, 'package.json'),
       JSON.stringify({ name: 'my-app', devDependencies: { '@zizzfizzix/aef': '^0.0.1' } }, null, 2) + '\n',
     )
-    const cfgPath = join(ROOT, 'framework.config.example.json')
+    const cfgPath = join(ROOT, 'aef.config.example.json')
     try {
       await runInit({ config: cfgPath, out })
       const pkg = JSON.parse(readFileSync(join(out, 'package.json'), 'utf8'))
@@ -93,7 +94,7 @@ describe('runInit package.json pinning', () => {
   test('preserves non-default (4-space) indentation of existing package.json (M1)', async () => {
     const out = mkdtempSync(join(tmpdir(), 'agentic-init-pkg-'))
     writeFileSync(join(out, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 4) + '\n')
-    const cfgPath = join(ROOT, 'framework.config.example.json')
+    const cfgPath = join(ROOT, 'aef.config.example.json')
     try {
       await runInit({ config: cfgPath, out })
       const raw = readFileSync(join(out, 'package.json'), 'utf8')
@@ -106,9 +107,48 @@ describe('runInit package.json pinning', () => {
   test('throws a friendly error when package.json is malformed (L2)', async () => {
     const out = mkdtempSync(join(tmpdir(), 'agentic-init-pkg-'))
     writeFileSync(join(out, 'package.json'), 'not valid json')
-    const cfgPath = join(ROOT, 'framework.config.example.json')
+    const cfgPath = join(ROOT, 'aef.config.example.json')
     try {
       await expect(runInit({ config: cfgPath, out })).rejects.toThrow('Failed to parse')
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('migrateConfigName', () => {
+  test('renames framework.config.json → aef.config.json when only the legacy file exists', () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-migrate-'))
+    try {
+      writeFileSync(join(out, 'framework.config.json'), '{"harnesses":["claude-code"]}')
+      expect(existsSync(join(out, 'aef.config.json'))).toBe(false)
+      migrateConfigName(out)
+      expect(existsSync(join(out, 'aef.config.json'))).toBe(true)
+      expect(existsSync(join(out, 'framework.config.json'))).toBe(false)
+      expect(readFileSync(join(out, 'aef.config.json'), 'utf8')).toBe('{"harnesses":["claude-code"]}')
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('leaves aef.config.json untouched when both files are present', () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-migrate-'))
+    try {
+      writeFileSync(join(out, 'aef.config.json'), '{"harnesses":["claude-code"]}')
+      writeFileSync(join(out, 'framework.config.json'), '{"harnesses":["codex"]}')
+      migrateConfigName(out)
+      expect(readFileSync(join(out, 'aef.config.json'), 'utf8')).toBe('{"harnesses":["claude-code"]}')
+      expect(existsSync(join(out, 'framework.config.json'))).toBe(true)
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('is a no-op when neither file exists', () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-migrate-'))
+    try {
+      expect(() => migrateConfigName(out)).not.toThrow()
+      expect(existsSync(join(out, 'aef.config.json'))).toBe(false)
     } finally {
       rmSync(out, { recursive: true, force: true })
     }
@@ -118,8 +158,8 @@ describe('runInit package.json pinning', () => {
 describe('runInit conventions', () => {
   test('framework tier active: outbox is written', async () => {
     const out = mkdtempSync(join(tmpdir(), 'agentic-init-'))
-    const base = JSON.parse(readFileSync(join(ROOT, 'framework.config.example.json'), 'utf8'))
-    const cfgPath = join(out, 'framework.config.json')
+    const base = JSON.parse(readFileSync(join(ROOT, 'aef.config.example.json'), 'utf8'))
+    const cfgPath = join(out, 'aef.config.json')
     writeFileSync(cfgPath, JSON.stringify({ ...base, tiers: ['framework'] }, null, 2))
     try {
       await runInit({ config: cfgPath, out })
@@ -132,7 +172,7 @@ describe('runInit conventions', () => {
   test('framework tier absent: outbox is not written', async () => {
     const out = mkdtempSync(join(tmpdir(), 'agentic-init-'))
     try {
-      await runInit({ config: join(ROOT, 'framework.config.example.json'), out })
+      await runInit({ config: join(ROOT, 'aef.config.example.json'), out })
       expect(existsSync(join(out, '.ai', 'framework-feedback'))).toBe(false)
     } finally {
       rmSync(out, { recursive: true, force: true })

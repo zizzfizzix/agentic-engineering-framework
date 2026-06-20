@@ -15,7 +15,7 @@ core/ai/skills/<skill>/
 
 - `name:` in the frontmatter **must** equal the folder name.
 - The body is the **generic workflow**. Anything stack-specific is either parameterized by
-  referencing `framework.config.json` (e.g. "run the commands in `validation`") or injected from an
+  referencing `aef.config.json` (e.g. "run the commands in `validation`") or injected from an
   adapter via a **slot**.
 
 ## Slots (when content varies by adapter)

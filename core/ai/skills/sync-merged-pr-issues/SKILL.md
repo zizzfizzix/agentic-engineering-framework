@@ -31,7 +31,7 @@ DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.na
 SINCE_DATE="<resolved from --since>"
 ```
 
-`DEFAULT_BRANCH` is detected from the repo here; it should match `framework.config.json` → `git.defaultBranch`. Fail fast when `gh` is not authenticated (`gh auth status`). Print the resolved window, the repo, and the default branch before any mutation.
+`DEFAULT_BRANCH` is detected from the repo here; it should match `aef.config.json` → `git.defaultBranch`. Fail fast when `gh` is not authenticated (`gh auth status`). Print the resolved window, the repo, and the default branch before any mutation.
 
 ### 1. Enumerate recently merged PRs
 
@@ -73,7 +73,7 @@ Fetch the issue state first:
 gh issue view {issue} --repo "$REPO" --json number,state,title,url,labels,assignees,comments
 ```
 
-Skip and log when any of the following holds (label names come from `framework.config.json` → `git.labels`):
+Skip and log when any of the following holds (label names come from `aef.config.json` → `git.labels`):
 
 - Issue state is not `OPEN`.
 - Issue carries `do-not-close`, `blocked`, or `in-progress` labels.

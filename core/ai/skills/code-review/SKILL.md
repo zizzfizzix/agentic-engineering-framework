@@ -10,8 +10,8 @@ Review code changes against the project's architecture rules, security requireme
 ## Review Workflow
 
 1. **Scope**: Identify changed files. Classify each file by layer (API route, data model/entity, validator, page/view, background job/subscriber, worker, command, config, authorization rules, events, test).
-2. **Gather context**: Read relevant AGENTS.md for each touched module/package. Check the specs root (`framework.config.json` → `paths.specsRoot`) for active specs on the module. Read the project's lessons file (e.g. `.ai/lessons.md`) for known pitfalls.
-3. **CI/CD verification gate (MANDATORY)**: Run the same checks that CI runs (the commands listed in `framework.config.json` → `validation`), in order. Every gate MUST pass before the review can conclude. If any gate fails, fix the issue first — do NOT mark the review as passing. See **CI/CD Verification Gate** section below.
+2. **Gather context**: Read relevant AGENTS.md for each touched module/package. Check the specs root (`aef.config.json` → `paths.specsRoot`) for active specs on the module. Read the project's lessons file (e.g. `.ai/lessons.md`) for known pitfalls.
+3. **CI/CD verification gate (MANDATORY)**: Run the same checks that CI runs (the commands listed in `aef.config.json` → `validation`), in order. Every gate MUST pass before the review can conclude. If any gate fails, fix the issue first — do NOT mark the review as passing. See **CI/CD Verification Gate** section below.
 4. **Template parity gate**: If the project ships a scaffolding template, run its template-sync check. If drift is reported, ask the user whether to sync now; if approved, run the template-sync fix command and include synced files in the change.
 5. **Backward compatibility gate**: Check every change against the project's backward-compatibility contract (e.g. a `BACKWARD_COMPATIBILITY.md` linked from root `AGENTS.md`). Flag any violation as **Critical**. See section below.
 6. **Run checklist**: Apply all applicable rules from this skill's `references/review-checklist.md`. Flag violations with severity, file, line, and fix suggestion.
@@ -21,11 +21,11 @@ Review code changes against the project's architecture rules, security requireme
 
 ## CI/CD Verification Gate (MANDATORY)
 
-**NEVER claim code is "ready to ship", "ready to merge", or "CI will pass" without running these checks first and confirming they all pass.** This gate mirrors exactly what CI runs on every PR to the default branch (`framework.config.json` → `git.defaultBranch`) and any long-lived integration branch. The commands to run are the project's verification gate — the list in `framework.config.json` → `validation`. If any step fails, it MUST be fixed before the review can pass.
+**NEVER claim code is "ready to ship", "ready to merge", or "CI will pass" without running these checks first and confirming they all pass.** This gate mirrors exactly what CI runs on every PR to the default branch (`aef.config.json` → `git.defaultBranch`) and any long-lived integration branch. The commands to run are the project's verification gate — the list in `aef.config.json` → `validation`. If any step fails, it MUST be fixed before the review can pass.
 
 ### Gate Steps (run in order)
 
-Run the commands listed in `framework.config.json` → `validation` and verify each one exits successfully (exit code 0). A typical gate (the commands below are illustrative) covers build, any code-generation/prepare step, i18n sync, typecheck, and tests:
+Run the commands listed in `aef.config.json` → `validation` and verify each one exits successfully (exit code 0). A typical gate (the commands below are illustrative) covers build, any code-generation/prepare step, i18n sync, typecheck, and tests:
 
 | #   | Command (example)       | What it checks                             | If it fails                                                                          |
 | --- | ----------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
@@ -54,7 +54,7 @@ For PRs touching framework routes, generated frontend, shared providers, backend
 - global providers/bootstrap import route-specific dashboards, injections, notifications, messages, payments, editors, calendars, graphs, or browser SDKs,
 - bundle/runtime footprint grows without measurement, explanation, and explicit acceptance,
 - changed interactions lack tests for hydration, accessibility, loading state, or error state,
-- the client-boundary check output (if the project lists one in `framework.config.json` → `validation`) is missing for generated frontend/app-shell changes.
+- the client-boundary check output (if the project lists one in `aef.config.json` → `validation`) is missing for generated frontend/app-shell changes.
 
 Add the client-boundary report and any bundle/RAM/per-route evidence to the review summary.
 
@@ -71,7 +71,7 @@ Use this structure for every review:
 
 ## CI/CD Verification
 
-List one row per command in `framework.config.json` → `validation` (the example rows below are illustrative):
+List one row per command in `aef.config.json` → `validation` (the example rows below are illustrative):
 
 | Gate                                  | Status         | Notes                   |
 | ------------------------------------- | -------------- | ----------------------- |
@@ -126,14 +126,14 @@ List one row per command in `framework.config.json` → `validation` (the exampl
 - [ ] Project's canonical data-layer / form / API helpers reused (no bespoke fetch/forms/queries)
 - [ ] Events declared through the project's event mechanism before emitting
 - [ ] Background jobs/subscribers declare their required metadata for discovery
-- [ ] Code-generation/prepare command (from `framework.config.json` → `validation`) re-run after file additions
+- [ ] Code-generation/prepare command (from `aef.config.json` → `validation`) re-run after file additions
 - [ ] Sensitive/PII fields encrypted via the framework-provided field-encryption mechanism; no hand-rolled crypto
 - [ ] Default-deny authorization: every endpoint declares its required auth/permissions explicitly
 - [ ] If the project ships a scaffolding template, the template-sync check passes
 - [ ] Behavior changes covered by unit and/or integration tests (or explicitly justified as not applicable)
 - [ ] No empty `catch` blocks (all catches must handle, log, rethrow, or explicitly document intentional ignore)
 - [ ] New migrations are scoped to intended entities only (no unrelated bulk drop/alter/create statements)
-- [ ] New or renamed spec files use `{YYYY-MM-DD}-{slug}.md` under the specs root (`framework.config.json` → `paths.specsRoot`)
+- [ ] New or renamed spec files use `{YYYY-MM-DD}-{slug}.md` under the specs root (`aef.config.json` → `paths.specsRoot`)
 - [ ] No two spec files collapse to the same normalized `{YYYY-MM-DD}-{slug}.md` target when legacy prefixed names are removed
 ```
 
@@ -210,7 +210,7 @@ Examples of suspicious patterns that MUST be flagged:
 - Follow the project's established naming conventions consistently (casing for identifiers, tables, columns, modules)
 - Standard entity columns present and consistent (e.g. id, created/updated timestamps, soft-delete marker, and any tenant-scoping columns the project uses)
 - Stable primary keys, explicit foreign keys, junction tables for many-to-many
-- Code MUST be placed in the correct location per the project's structural paths (`framework.config.json` → `paths`); don't dump code in an unstructured root
+- Code MUST be placed in the correct location per the project's structural paths (`aef.config.json` → `paths`); don't dump code in an unstructured root
 - Respect the project's package layering — a shared/low-level package MUST NOT import from higher-level domain packages
 
 ### Required Exports (High)
@@ -253,7 +253,7 @@ Where the project relies on convention-based files and auto-discovery, verify ea
 When reviewing, pay special attention to:
 
 0. **Backward compatibility**: For EVERY changed file, ask: "Does this touch a contract surface?" Check against the project's backward-compatibility contract (e.g. a `BACKWARD_COMPATIBILITY.md`). If a type field is removed, a function signature changed, an event ID renamed, an injection-point ID removed, a DB column dropped, an import path moved, or a service/registration name changed — flag as **Critical** unless the deprecation protocol is followed (bridge + deprecation annotation + spec).
-1. **New files added**: Check if the code-generation/prepare command (from `framework.config.json` → `validation`) needs to be re-run. Verify auto-discovery paths are correct.
+1. **New files added**: Check if the code-generation/prepare command (from `aef.config.json` → `validation`) needs to be re-run. Verify auto-discovery paths are correct.
 2. **Entity changes**: Check if migration and schema-snapshot updates are needed. If the project is multi-tenant, look for missing tenant-scoping columns.
    2a. **Migration presence for entity changes**: If any entity schema file changed, verify the diff also contains a corresponding migration file or a documented no-op explanation, plus any companion schema-snapshot file when schema changed.
    2b. **Migration files**: Inspect SQL content, not only filename. Autogenerated does not mean valid; reject oversized/unrelated churn.

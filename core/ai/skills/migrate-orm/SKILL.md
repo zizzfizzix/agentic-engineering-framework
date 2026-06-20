@@ -6,7 +6,7 @@ description: Migrate and evolve the data layer for the project's configured ORM.
 # Migrate / evolve the data layer
 
 This skill is ORM-agnostic. The concrete commands and idioms below are rendered for the ORM
-configured in `framework.config.json` (`orm`). If no ORM is configured this skill is not
+configured in `aef.config.json` (`orm`). If no ORM is configured this skill is not
 installed at all.
 
 ## When to use
@@ -36,4 +36,4 @@ _(Filled at render time with the active ORM's migration commands.)_
 - Never hand-edit generated migration files — change the schema and regenerate.
 - Keep one logical schema change per migration.
 - Review the SQL diff before applying to any shared environment.
-- Run the project's verification gate (`validation` in `framework.config.json`) after migrating.
+- Run the project's verification gate (`validation` in `aef.config.json`) after migrating.

@@ -5,7 +5,7 @@
     "ui": "shadcn",
     "stack": "generic-node"
   },
-  "digest": "c259362a982a",
+  "digest": "60e85892bc61",
   "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
   "inputs": [
     {
@@ -18,7 +18,7 @@
     },
     {
       "path": "core/ai/skills/migrate-orm/SKILL.md",
-      "sha": "309b17f24b9d"
+      "sha": "5e17af942181"
     }
   ],
   "regions": [

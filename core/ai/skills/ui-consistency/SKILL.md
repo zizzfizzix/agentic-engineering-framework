@@ -6,7 +6,7 @@ description: Build and review backend/admin UI that stays visually consistent wi
 # UI consistency
 
 This skill is design-system-agnostic. The tokens, components, and health checks below are
-rendered for the UI library configured in `framework.config.json` (`ui`). If no UI library is
+rendered for the UI library configured in `aef.config.json` (`ui`). If no UI library is
 configured this skill is not installed.
 
 ## Always

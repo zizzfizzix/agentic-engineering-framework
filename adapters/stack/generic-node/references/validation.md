@@ -1,6 +1,6 @@
 ## Validation gate
 
-Run **every** command in `framework.config.json` → `validation` before declaring work done, and
+Run **every** command in `aef.config.json` → `validation` before declaring work done, and
 treat any non-zero exit as a failure to fix, not a warning to note. For a generic Node/TypeScript
 project that is typically:
 

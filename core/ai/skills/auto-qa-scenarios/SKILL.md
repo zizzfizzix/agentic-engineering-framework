@@ -9,7 +9,7 @@ Produce a QA-tester-facing report that translates a window of merged pull
 requests into a practical manual verification plan. The report groups PRs by
 product area, recommends a testing order, tells QA where to click, what to
 verify, and what can go wrong. The final deliverable is a docs-only PR
-against the default branch (`framework.config.json` → `git.defaultBranch`)
+against the default branch (`aef.config.json` → `git.defaultBranch`)
 with markdown and HTML artifacts under the analysis directory
 (`.ai/analysis/` by convention).
 
@@ -29,7 +29,7 @@ workflow.
   - Omitted — defaults to the last 7 days (UTC), i.e. everything merged
     between today minus 7 days and today.
 - `--base <branch>` (optional) — which base branch to count merges into.
-  Defaults to the default branch (`framework.config.json` →
+  Defaults to the default branch (`aef.config.json` →
   `git.defaultBranch`). Merges into other branches are still reported but
   flagged when a different base is specified.
 - `--include-open` (optional) — also include open non-draft PRs in the
@@ -58,7 +58,7 @@ BRANCH="feat/${SLUG}"
 ### 1. Resolve the PR window
 
 Translate `{windowSpec}` into a concrete query (`${BASE}` defaults to
-`framework.config.json` → `git.defaultBranch`):
+`aef.config.json` → `git.defaultBranch`):
 
 ```bash
 # Date mode
@@ -97,7 +97,7 @@ From each PR, extract:
 - Labels (category, pipeline, meta).
 - Issue references from the body (`#\d+` and `Fixes #\d+`).
 - Affected top-level module/package paths from the file list (e.g. paths
-  under the modules root `framework.config.json` → `paths.modulesRoot`, or
+  under the modules root `aef.config.json` → `paths.modulesRoot`, or
   a shared UI package).
 - Heuristic area tag derived from the changed paths and titles (for
   example: auth, sales, catalog, customers, workflows, webhooks, events,
@@ -172,7 +172,7 @@ Follow `auto-create-pr` step 3. The plan at
 ### 5. Isolated worktree, branch, first commit
 
 Follow `auto-create-pr` steps 4–5 verbatim. Branch
-base is always the default branch (`framework.config.json` →
+base is always the default branch (`aef.config.json` →
 `git.defaultBranch`). Commit the plan first, then push.
 
 ### 6. Execute the phases
@@ -279,14 +279,14 @@ the markdown. This keeps the two files in sync without a build step.
 
 This run is docs-only. The minimum gate is:
 
-- The lint step among the commands listed in `framework.config.json` →
+- The lint step among the commands listed in `aef.config.json` →
   `validation` (if it catches markdown/YAML issues in frontmatter).
 - `git diff --check` — no trailing whitespace, no merge markers.
 - A manual re-read of both artifacts and a spot-check that every PR link
   resolves to a real URL (`https://github.com/{owner}/{repo}/pull/{n}`).
 
 Never run the build, test, or typecheck commands from
-`framework.config.json` → `validation` on a docs-only run unless you
+`aef.config.json` → `validation` on a docs-only run unless you
 actually modified code. If the run did touch code, fall back to the full
 `auto-create-pr` step 7 gate.
 
@@ -302,7 +302,7 @@ needed.
 Follow `auto-create-pr` step 9 with these specifics:
 
 - Title: `docs(analysis): add auto-qa-scenarios report for {window caption}`.
-- Base: the default branch (`framework.config.json` → `git.defaultBranch`).
+- Base: the default branch (`aef.config.json` → `git.defaultBranch`).
   Never merge directly.
 - Body MUST include `Tracking plan: .ai/runs/${DATE}-${SLUG}.md` and
   `Status: complete` (or `in-progress` if phases remain).
@@ -311,7 +311,7 @@ Follow `auto-create-pr` step 9 with these specifics:
 
 ### 10. Labels
 
-Apply in this order (label names come from `framework.config.json` →
+Apply in this order (label names come from `aef.config.json` →
 `git.labels`), each with a short explanatory comment (per root
 `AGENTS.md` PR workflow):
 

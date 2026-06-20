@@ -27,7 +27,7 @@ Do not run `git commit`, `git push`, or `gh pr create` — those are the next st
 
 ### 1. Claim the issue
 
-This is the only step before PR-open that mutates GitHub state. Run the claim once, up front, so any parallel automation sees the lock immediately. The lock label is the in-progress label from `framework.config.json` → `git.labels`.
+This is the only step before PR-open that mutates GitHub state. Run the claim once, up front, so any parallel automation sees the lock immediately. The lock label is the in-progress label from `aef.config.json` → `git.labels`.
 
 ```bash
 CURRENT_USER=$(gh api user --jq '.login')
@@ -86,7 +86,7 @@ Iterate until clean. Per iteration:
 4. If entities/routes/templates changed, run the project's code-generation and follow-up steps
 5. Re-read the diff and remove any accidental scope creep
 
-Before declaring done, run the full verification gate — the commands listed in `framework.config.json` → `validation` (build, codegen, i18n checks, typecheck, test, app build, etc., as configured for this project).
+Before declaring done, run the full verification gate — the commands listed in `aef.config.json` → `validation` (build, codegen, i18n checks, typecheck, test, app build, etc., as configured for this project).
 
 If the full gate is genuinely too expensive in the time available, run the targeted subset for changed packages and call out in your final summary which gate steps were skipped. The `open-pr` step will surface this in the PR body.
 
