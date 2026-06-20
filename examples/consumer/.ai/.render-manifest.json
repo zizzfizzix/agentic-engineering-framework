@@ -71,20 +71,20 @@
       ]
     },
     "implement-spec": {
-      "digest": "746212db1abb",
+      "digest": "482dca29b649",
       "inputs": [
         {
           "path": "core/ai/skills/implement-spec/SKILL.md",
-          "sha": "7ae293aefa36"
+          "sha": "037a87e2173b"
         }
       ]
     },
     "integration-tests": {
-      "digest": "626d2cbd4512",
+      "digest": "6c77a905c4d9",
       "inputs": [
         {
           "path": "core/ai/skills/integration-tests/SKILL.md",
-          "sha": "582ccb3f6839"
+          "sha": "4470a4cacf33"
         }
       ]
     },
