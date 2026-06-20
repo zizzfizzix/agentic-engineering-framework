@@ -163,7 +163,7 @@ export function pinAefInPackageJson(out: string, version: string): string {
   writeFileSync(pkgPath, JSON.stringify(pkg, null, indent) + '\n')
   return wasPresent
     ? `updated @zizzfizzix/aef to ^${version} in devDependencies`
-    : `added @zizzfizzix/aef@^${version} to devDependencies`
+    : `added @zizzfizzix/aef@^${version} to devDependencies — run \`pnpm install\` then \`pnpm aef --help\``
 }
 
 export function wireHarnesses(
