@@ -24,6 +24,61 @@ const axisOptions = (root: string, axis: string): { value: string | null; label:
   ...listAdapters(root, axis).map((v) => ({ value: v, label: v })),
 ]
 
+export interface WizardAnswers {
+  projectName: string
+  harnesses: string[]
+  orm: string | null
+  ui: string | null
+  stack: string | null
+  selectedTiers: string[]
+  validationCommands: string[]
+  defaultBranch: string
+  sourceRepo: string
+  modulesRoot: string
+  specsRoot: string
+  testsRoot: string
+  feedbackMode: string
+}
+
+export function buildConfig(a: WizardAnswers): Record<string, unknown> {
+  const tiers = a.selectedTiers.length > 0 ? a.selectedTiers : undefined
+  const validation = a.validationCommands.length > 0 ? a.validationCommands : undefined
+  const sourceRepoUrl = a.sourceRepo.trim()
+
+  const paths: Record<string, string> = {}
+  if (a.modulesRoot.trim()) paths.modulesRoot = a.modulesRoot.trim()
+  if (a.specsRoot.trim()) paths.specsRoot = a.specsRoot.trim()
+  if (a.testsRoot.trim()) paths.testsRoot = a.testsRoot.trim()
+
+  const config: Record<string, unknown> = {
+    $schema: './schemas/framework.config.schema.json',
+    projectName: a.projectName,
+    harnesses: a.harnesses,
+    orm: a.orm,
+    ui: a.ui,
+    stack: a.stack,
+    git: { defaultBranch: a.defaultBranch, labels: [] },
+  }
+
+  if (Object.keys(paths).length > 0) config.paths = paths
+  if (tiers !== undefined) config.tiers = tiers
+  if (validation !== undefined) config.validation = validation
+  if (sourceRepoUrl) config.source = { repo: sourceRepoUrl, path: null }
+
+  config.feedback = {
+    capture: true,
+    upstream: {
+      mode: a.feedbackMode,
+      channel: 'pr',
+      schedule: 'weekly',
+      sanitize: true,
+      requireHumanApproval: true,
+    },
+  }
+
+  return config
+}
+
 export async function runWizard(root: string): Promise<Record<string, unknown>> {
   p.intro('aef init')
 
@@ -47,7 +102,7 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
     await p.select({ message: 'Stack adapter', options: axisOptions(root, 'stack'), initialValue: null }),
   )
 
-  // Opt-in tiers: everything not in the default tier list, read dynamically from tiers.json.
+  // Opt-in tiers: read dynamically from tiers.json so new tiers appear automatically.
   const { default: defaultTiers, tiers: tiersData } = loadTiers(root)
   const optInTierOptions = Object.entries(tiersData)
     .filter(([key]) => !defaultTiers.includes(key))
@@ -64,12 +119,22 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
     }),
   )
 
-  const validationRaw = bail(
-    await p.text({
-      message: 'Verification gate commands (comma-separated, e.g. pnpm test, pnpm build)',
-      placeholder: 'pnpm test, pnpm build',
-    }),
-  )
+  // Collect gate commands one per prompt; blank line ends input.
+  const validationCommands: string[] = []
+  while (true) {
+    const cmd = bail(
+      await p.text({
+        message:
+          validationCommands.length === 0
+            ? 'Gate command (e.g. pnpm test; blank to skip)'
+            : `Gate command ${validationCommands.length + 1} (blank to finish)`,
+        placeholder: validationCommands.length === 0 ? 'pnpm test' : 'pnpm build',
+      }),
+    )
+    if (!cmd.trim()) break
+    validationCommands.push(cmd.trim())
+  }
+
   const defaultBranch = bail(
     await p.text({
       message: 'Default git branch',
@@ -106,45 +171,19 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
 
   p.outro('Configuration ready.')
 
-  const tiers = selectedTiers.length > 0 ? selectedTiers : undefined
-  const validation = validationRaw.trim()
-    ? validationRaw
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : undefined
-  const sourceRepoUrl = sourceRepo.trim()
-
-  const paths: Record<string, string> = {}
-  if (modulesRoot.trim()) paths.modulesRoot = modulesRoot.trim()
-  if (specsRoot.trim()) paths.specsRoot = specsRoot.trim()
-  if (testsRoot.trim()) paths.testsRoot = testsRoot.trim()
-
-  const config: Record<string, unknown> = {
-    $schema: './schemas/framework.config.schema.json',
+  return buildConfig({
     projectName,
-    harnesses,
-    orm,
-    ui,
-    stack,
-    git: { defaultBranch, labels: [] },
-  }
-
-  if (Object.keys(paths).length > 0) config.paths = paths
-  if (tiers !== undefined) config.tiers = tiers
-  if (validation !== undefined) config.validation = validation
-  if (sourceRepoUrl) config.source = { repo: sourceRepoUrl, path: null }
-
-  config.feedback = {
-    capture: true,
-    upstream: {
-      mode: feedbackMode,
-      channel: 'pr',
-      schedule: 'weekly',
-      sanitize: true,
-      requireHumanApproval: true,
-    },
-  }
-
-  return config
+    harnesses: harnesses as string[],
+    orm: orm as string | null,
+    ui: ui as string | null,
+    stack: stack as string | null,
+    selectedTiers: selectedTiers as string[],
+    validationCommands,
+    defaultBranch,
+    sourceRepo,
+    modulesRoot,
+    specsRoot,
+    testsRoot,
+    feedbackMode,
+  })
 }
