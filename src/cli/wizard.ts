@@ -4,6 +4,7 @@ import { readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as p from '@clack/prompts'
 import { loadTiers } from '../core/select.js'
+import { type FrameworkConfig } from '../core/contracts.js'
 
 function listAdapters(root: string, axis: string): string[] {
   const dir = join(root, 'adapters', axis)
@@ -82,27 +83,103 @@ export function buildConfig(a: WizardAnswers): Record<string, unknown> {
   return config
 }
 
-export async function runWizard(root: string): Promise<Record<string, unknown>> {
+/**
+ * Carries over fields not covered by wizard prompts from an existing config.
+ * Called after buildConfig during reinit to avoid silently resetting rare fields.
+ */
+export function mergeNonPromptedFields(result: Record<string, unknown>, existing: FrameworkConfig): void {
+  // git.labels: keep non-empty label arrays
+  if (existing.git?.labels?.length && result.git) {
+    ;(result.git as Record<string, unknown>).labels = existing.git.labels
+  }
+  // source.path: keep a local clone path when the repo is preserved
+  if (existing.source?.path && result.source) {
+    ;(result.source as Record<string, unknown>).path = existing.source.path
+  }
+  // feedback.upstream: keep non-mode settings (channel, schedule, sanitize, requireHumanApproval)
+  if (existing.feedback?.upstream && result.feedback) {
+    const upstream = (result.feedback as Record<string, unknown>).upstream as
+      | Record<string, unknown>
+      | undefined
+    if (upstream) {
+      const { channel, schedule, sanitize, requireHumanApproval } = existing.feedback.upstream
+      if (channel !== undefined) upstream.channel = channel
+      if (schedule !== undefined) upstream.schedule = schedule
+      if (sanitize !== undefined) upstream.sanitize = sanitize
+      if (requireHumanApproval !== undefined) upstream.requireHumanApproval = requireHumanApproval
+    }
+  }
+}
+
+export async function runWizard(
+  root: string,
+  existingConfig?: FrameworkConfig,
+): Promise<Record<string, unknown>> {
   p.intro('aef init')
 
+  // When an existing config is present, ask whether to update it or start fresh.
+  let cfg: FrameworkConfig | undefined = existingConfig
+  if (existingConfig) {
+    const mode = bail(
+      await p.select({
+        message: 'framework.config.json already exists — what would you like to do?',
+        options: [
+          {
+            value: 'update' as const,
+            label: 'Update',
+            hint: 'pre-fill each prompt with the current value',
+          },
+          {
+            value: 'scratch' as const,
+            label: 'Start from scratch',
+            hint: 'ignore the existing config entirely',
+          },
+        ],
+        initialValue: 'update' as const,
+      }),
+    )
+    if (mode === 'scratch') {
+      cfg = undefined
+    } else {
+      p.note('Existing values shown as defaults — press Enter to keep each one.', 'Updating')
+    }
+  }
+
   const projectName = bail(
-    await p.text({ message: 'Project name', placeholder: 'my-app', defaultValue: 'my-app' }),
+    await p.text({
+      message: 'Project name',
+      placeholder: 'my-app',
+      defaultValue: cfg?.projectName ?? 'my-app',
+    }),
   )
   const harnesses = bail(
     await p.multiselect({
       message: 'Which AI harnesses should be wired?',
       options: listAdapters(root, 'harness').map((v) => ({ value: v, label: v })),
+      initialValues: cfg?.harnesses,
       required: true,
     }),
   )
   const orm = bail(
-    await p.select({ message: 'ORM adapter', options: axisOptions(root, 'orm'), initialValue: null }),
+    await p.select({
+      message: 'ORM adapter',
+      options: axisOptions(root, 'orm'),
+      initialValue: cfg?.orm !== undefined ? cfg.orm : null,
+    }),
   )
   const ui = bail(
-    await p.select({ message: 'UI adapter', options: axisOptions(root, 'ui'), initialValue: null }),
+    await p.select({
+      message: 'UI adapter',
+      options: axisOptions(root, 'ui'),
+      initialValue: cfg?.ui !== undefined ? cfg.ui : null,
+    }),
   )
   const stack = bail(
-    await p.select({ message: 'Stack adapter', options: axisOptions(root, 'stack'), initialValue: null }),
+    await p.select({
+      message: 'Stack adapter',
+      options: axisOptions(root, 'stack'),
+      initialValue: cfg?.stack !== undefined ? cfg.stack : null,
+    }),
   )
 
   // Opt-in tiers: read dynamically from tiers.json so new tiers appear automatically.
@@ -120,47 +197,76 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
           await p.multiselect({
             message: 'Opt-in skill tiers (space to toggle, none for core only)',
             options: optInTierOptions,
+            initialValues: cfg?.tiers ?? [],
             required: false,
           }),
         )
       : []
 
+  // Validation commands: on reinit offer to keep existing; otherwise collect interactively.
   const validationCommands: string[] = []
-  while (true) {
-    const cmd = bail(
-      await p.text({
-        message:
-          validationCommands.length === 0
-            ? 'Gate command (e.g. pnpm test; blank to skip)'
-            : `Gate command ${validationCommands.length + 1} (blank to finish)`,
-        placeholder: validationCommands.length === 0 ? 'pnpm test' : 'pnpm build',
+  const existingCmds = cfg?.validation ?? []
+  if (existingCmds.length > 0) {
+    const keep = bail(
+      await p.confirm({
+        message: `Keep existing validation commands (${existingCmds.join(', ')})?`,
+        initialValue: true,
       }),
     )
-    if (!cmd.trim()) break
-    validationCommands.push(cmd.trim())
+    if (keep) {
+      validationCommands.push(...existingCmds)
+    }
+  }
+  if (validationCommands.length === 0) {
+    while (true) {
+      const cmd = bail(
+        await p.text({
+          message:
+            validationCommands.length === 0
+              ? 'Gate command (e.g. pnpm test; blank to skip)'
+              : `Gate command ${validationCommands.length + 1} (blank to finish)`,
+          placeholder: validationCommands.length === 0 ? 'pnpm test' : 'pnpm build',
+        }),
+      )
+      if (!cmd.trim()) break
+      validationCommands.push(cmd.trim())
+    }
   }
 
   const defaultBranch = bail(
     await p.text({
       message: 'Default git branch',
       placeholder: 'main',
-      defaultValue: 'main',
+      defaultValue: cfg?.git?.defaultBranch ?? 'main',
     }),
   )
   const sourceRepo = bail(
     await p.text({
       message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
       placeholder: 'git@github.com:owner/agentic-engineering-framework.git',
+      defaultValue: cfg?.source?.repo || undefined,
     }),
   )
   const modulesRoot = bail(
-    await p.text({ message: 'Modules root path (blank for default)', placeholder: 'src/modules' }),
+    await p.text({
+      message: 'Modules root path (blank for default)',
+      placeholder: 'src/modules',
+      defaultValue: cfg?.paths?.modulesRoot || undefined,
+    }),
   )
   const specsRoot = bail(
-    await p.text({ message: 'Specs root path (blank for default)', placeholder: '.ai/specs' }),
+    await p.text({
+      message: 'Specs root path (blank for default)',
+      placeholder: '.ai/specs',
+      defaultValue: cfg?.paths?.specsRoot || undefined,
+    }),
   )
   const testsRoot = bail(
-    await p.text({ message: 'Tests root path (blank for default)', placeholder: '.ai/qa/tests' }),
+    await p.text({
+      message: 'Tests root path (blank for default)',
+      placeholder: '.ai/qa/tests',
+      defaultValue: cfg?.paths?.testsRoot || undefined,
+    }),
   )
   const feedbackMode = bail(
     await p.select<'scheduled-pr' | 'prompt' | 'off'>({
@@ -174,13 +280,13 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
         { value: 'prompt' as const, label: 'prompt', hint: 'Ask before routing each batch' },
         { value: 'off' as const, label: 'off', hint: 'Capture locally only, never route upstream' },
       ],
-      initialValue: 'scheduled-pr',
+      initialValue: cfg?.feedback?.upstream?.mode ?? 'scheduled-pr',
     }),
   )
 
   p.outro('Configuration ready.')
 
-  return buildConfig({
+  const result = buildConfig({
     projectName,
     harnesses,
     orm,
@@ -195,4 +301,10 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
     testsRoot,
     feedbackMode,
   })
+
+  if (cfg) {
+    mergeNonPromptedFields(result, cfg)
+  }
+
+  return result
 }
