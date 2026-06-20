@@ -112,6 +112,17 @@ describe('buildConfig', () => {
     expect(upstream.mode).toBe('prompt')
   })
 
+  test('defaultBranch is trimmed', () => {
+    expect(buildConfig({ ...base, defaultBranch: '  main  ' }).git).toEqual({
+      defaultBranch: 'main',
+      labels: [],
+    })
+  })
+
+  test('projectName is trimmed', () => {
+    expect(buildConfig({ ...base, projectName: '  my-app  ' }).projectName).toBe('my-app')
+  })
+
   test('stack value is passed through to config', () => {
     expect(buildConfig({ ...base, stack: 'next-js' }).stack).toBe('next-js')
   })

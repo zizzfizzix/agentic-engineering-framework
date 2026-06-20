@@ -45,19 +45,22 @@ export function buildConfig(a: WizardAnswers): Record<string, unknown> {
   const validation = a.validationCommands.length > 0 ? a.validationCommands : undefined
   const sourceRepoUrl = a.sourceRepo.trim()
 
+  const modulesRoot = a.modulesRoot.trim()
+  const specsRoot = a.specsRoot.trim()
+  const testsRoot = a.testsRoot.trim()
   const paths: Record<string, string> = {}
-  if (a.modulesRoot.trim()) paths.modulesRoot = a.modulesRoot.trim()
-  if (a.specsRoot.trim()) paths.specsRoot = a.specsRoot.trim()
-  if (a.testsRoot.trim()) paths.testsRoot = a.testsRoot.trim()
+  if (modulesRoot) paths.modulesRoot = modulesRoot
+  if (specsRoot) paths.specsRoot = specsRoot
+  if (testsRoot) paths.testsRoot = testsRoot
 
   const config: Record<string, unknown> = {
     $schema: './schemas/framework.config.schema.json',
-    projectName: a.projectName,
+    projectName: a.projectName.trim(),
     harnesses: a.harnesses,
     orm: a.orm,
     ui: a.ui,
     stack: a.stack,
-    git: { defaultBranch: a.defaultBranch, labels: [] },
+    git: { defaultBranch: a.defaultBranch.trim(), labels: [] },
   }
 
   if (Object.keys(paths).length > 0) config.paths = paths
@@ -111,13 +114,16 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
       label: key,
       hint: String((val as Record<string, unknown>).description ?? ''),
     }))
-  const selectedTiers = bail(
-    await p.multiselect({
-      message: 'Opt-in skill tiers (space to toggle, none for core only)',
-      options: optInTierOptions,
-      required: false,
-    }),
-  )
+  const selectedTiers =
+    optInTierOptions.length > 0
+      ? bail(
+          await p.multiselect({
+            message: 'Opt-in skill tiers (space to toggle, none for core only)',
+            options: optInTierOptions,
+            required: false,
+          }),
+        )
+      : []
 
   const validationCommands: string[] = []
   while (true) {
