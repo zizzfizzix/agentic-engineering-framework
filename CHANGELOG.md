@@ -2,17 +2,15 @@
 
 ## [0.5.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.4.1...v0.5.0) (2026-06-20)
 
-
 ### Features
 
-* **cli:** add missing prompts to interactive init wizard ([#39](https://github.com/zizzfizzix/agentic-engineering-framework/issues/39)) ([ded02ae](https://github.com/zizzfizzix/agentic-engineering-framework/commit/ded02ae3bc3829f4a16c0172b7523a453ff34784))
-* **config:** rename framework.config.json → aef.config.json with auto-migration ([#41](https://github.com/zizzfizzix/agentic-engineering-framework/issues/41)) ([9c2f80d](https://github.com/zizzfizzix/agentic-engineering-framework/commit/9c2f80d05a39a9a18ddbb3d58014632cab497764))
-
+- **cli:** add missing prompts to interactive init wizard ([#39](https://github.com/zizzfizzix/agentic-engineering-framework/issues/39)) ([ded02ae](https://github.com/zizzfizzix/agentic-engineering-framework/commit/ded02ae3bc3829f4a16c0172b7523a453ff34784))
+- **config:** rename framework.config.json → aef.config.json with auto-migration ([#41](https://github.com/zizzfizzix/agentic-engineering-framework/issues/41)) ([9c2f80d](https://github.com/zizzfizzix/agentic-engineering-framework/commit/9c2f80d05a39a9a18ddbb3d58014632cab497764))
 
 ### Bug Fixes
 
-* **cli:** copy schema into consumer repo so $schema resolves in IDEs ([#37](https://github.com/zizzfizzix/agentic-engineering-framework/issues/37)) ([3f3eea1](https://github.com/zizzfizzix/agentic-engineering-framework/commit/3f3eea1275f0702c2c1627d43284d5dd35fc3f46))
-* **cli:** preserve existing config on --interactive reinit ([#40](https://github.com/zizzfizzix/agentic-engineering-framework/issues/40)) ([6440492](https://github.com/zizzfizzix/agentic-engineering-framework/commit/6440492cb3abe86a916d0ccb66c1171aa2888443))
+- **cli:** copy schema into consumer repo so $schema resolves in IDEs ([#37](https://github.com/zizzfizzix/agentic-engineering-framework/issues/37)) ([3f3eea1](https://github.com/zizzfizzix/agentic-engineering-framework/commit/3f3eea1275f0702c2c1627d43284d5dd35fc3f46))
+- **cli:** preserve existing config on --interactive reinit ([#40](https://github.com/zizzfizzix/agentic-engineering-framework/issues/40)) ([6440492](https://github.com/zizzfizzix/agentic-engineering-framework/commit/6440492cb3abe86a916d0ccb66c1171aa2888443))
 
 ## [0.4.1](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.4.0...v0.4.1) (2026-06-20)
 
