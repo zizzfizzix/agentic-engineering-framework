@@ -166,6 +166,14 @@ export function pinAefInPackageJson(out: string, version: string): string {
     : `added @zizzfizzix/aef@^${version} to devDependencies — run \`pnpm install\` then \`pnpm aef --help\``
 }
 
+export function copySchema(root: string, out: string): void {
+  const src = join(root, 'schemas', 'framework.config.schema.json')
+  if (!existsSync(src)) return
+  const dest = join(out, 'schemas', 'framework.config.schema.json')
+  mkdirSync(join(out, 'schemas'), { recursive: true })
+  writeFileSync(dest, readFileSync(src, 'utf8'))
+}
+
 export function wireHarnesses(
   root: string,
   out: string,
