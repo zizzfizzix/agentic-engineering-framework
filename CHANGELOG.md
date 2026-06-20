@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.1.0...v0.2.0) (2026-06-20)
+
+
+### Features
+
+* **cli:** add opt-in tier support + framework-feedback gate ([#20](https://github.com/zizzfizzix/agentic-engineering-framework/issues/20)) ([98f8c87](https://github.com/zizzfizzix/agentic-engineering-framework/commit/98f8c8715d455576eb9c8754018c0ac015c43056))
+* **dev:** wire dev skills automatically on session start for all harnesses ([#21](https://github.com/zizzfizzix/agentic-engineering-framework/issues/21)) ([4add032](https://github.com/zizzfizzix/agentic-engineering-framework/commit/4add032029cfcf9158af12f746544c1fd89130e2))
+
+
+### Bug Fixes
+
+* **cli:** show actionable error for unrecognized framework.config.json keys ([#19](https://github.com/zizzfizzix/agentic-engineering-framework/issues/19)) ([ec4c342](https://github.com/zizzfizzix/agentic-engineering-framework/commit/ec4c3424132f43580ed70365e26724b916d3979f))
+* **cli:** show helpful usage error when aef init is run without --config ([#17](https://github.com/zizzfizzix/agentic-engineering-framework/issues/17)) ([9e69dc2](https://github.com/zizzfizzix/agentic-engineering-framework/commit/9e69dc22b52dc6061e1c139de3ad29d63ccc934f))
+
 ## [0.1.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.0.1...v0.1.0) (2026-06-06)
 
 ### Features
