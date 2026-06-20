@@ -5,6 +5,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "pnpm install"
+          },
+          {
+            "type": "command",
             "command": "pnpm cli dev"
           }
         ]

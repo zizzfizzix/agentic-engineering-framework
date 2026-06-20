@@ -27,16 +27,15 @@ JSON Schema), **vitest** (tests), ESLint + Prettier, **tsup** (build), **tsx** (
 gate/test/typecheck — installed on `pnpm install`).
 
 ```bash
-pnpm install                    # deps + git hooks + auto-wires dev skills (via prepare)
+pnpm install                    # deps + git hooks (dev skills wired by harness session-start hook)
 ```
 
-Dev skills are wired automatically — no manual step needed:
+Dev skills are wired automatically on session start — no manual step needed:
 
-- **`pnpm install`** runs `pnpm cli dev` via the `prepare` script (harness-agnostic; wires all).
-- **Claude Code** fires the `SessionStart` hook in `.claude/settings.json` → `pnpm cli dev`.
-- **Other harnesses** (Codex, Cursor): add an equivalent session-start hook in their settings file
-  (e.g. `.codex/settings.json`) pointing to `pnpm cli dev`. The hook file is tracked; the
-  generated `skills/` subdir stays gitignored.
+- Each harness has a committed settings file (e.g. `.claude/settings.json`) with a session-start
+  hook that runs `pnpm install` then `pnpm cli dev` as separate steps.
+- The hook file is tracked; only the generated `skills/` subdir is gitignored.
+- When adding a new harness adapter, add the equivalent session-start hook in its settings file.
 
 `pnpm cli dev` installs the **dev** skills, not the shipped ones — you author shipped skills, you
 don't run them here. `pnpm build` emits the distributable `agentic` bin to `dist/`.
