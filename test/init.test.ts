@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test, expect, describe } from 'vitest'
 import { runInit } from '../src/cli/commands/init.js'
+import { migrateConfigName } from '../src/cli/consumer-io.js'
 
 const ROOT = process.cwd()
 
@@ -109,6 +110,45 @@ describe('runInit package.json pinning', () => {
     const cfgPath = join(ROOT, 'aef.config.example.json')
     try {
       await expect(runInit({ config: cfgPath, out })).rejects.toThrow('Failed to parse')
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('migrateConfigName', () => {
+  test('renames framework.config.json → aef.config.json when only the legacy file exists', () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-migrate-'))
+    try {
+      writeFileSync(join(out, 'framework.config.json'), '{"harnesses":["claude-code"]}')
+      expect(existsSync(join(out, 'aef.config.json'))).toBe(false)
+      migrateConfigName(out)
+      expect(existsSync(join(out, 'aef.config.json'))).toBe(true)
+      expect(existsSync(join(out, 'framework.config.json'))).toBe(false)
+      expect(readFileSync(join(out, 'aef.config.json'), 'utf8')).toBe('{"harnesses":["claude-code"]}')
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('leaves aef.config.json untouched when both files are present', () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-migrate-'))
+    try {
+      writeFileSync(join(out, 'aef.config.json'), '{"harnesses":["claude-code"]}')
+      writeFileSync(join(out, 'framework.config.json'), '{"harnesses":["codex"]}')
+      migrateConfigName(out)
+      expect(readFileSync(join(out, 'aef.config.json'), 'utf8')).toBe('{"harnesses":["claude-code"]}')
+      expect(existsSync(join(out, 'framework.config.json'))).toBe(true)
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('is a no-op when neither file exists', () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-migrate-'))
+    try {
+      expect(() => migrateConfigName(out)).not.toThrow()
+      expect(existsSync(join(out, 'aef.config.json'))).toBe(false)
     } finally {
       rmSync(out, { recursive: true, force: true })
     }
