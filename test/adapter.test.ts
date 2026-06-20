@@ -5,6 +5,8 @@
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+
+const ROOT = process.cwd()
 import { beforeEach, afterEach, test, expect, describe } from 'vitest'
 import { runInit } from '../src/cli/commands/init.js'
 import { runAdd, runRemove } from '../src/cli/commands/adapter.js'
@@ -16,7 +18,7 @@ const skillMd = (s: string) => join(skillDir(s), 'SKILL.md')
 
 beforeEach(async () => {
   consumer = mkdtempSync(join(tmpdir(), 'agentic-adapter-'))
-  await runInit({ out: consumer })
+  await runInit({ config: join(ROOT, 'framework.config.example.json'), out: consumer })
   process.exitCode = 0
 })
 afterEach(() => {
