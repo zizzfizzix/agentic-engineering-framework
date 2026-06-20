@@ -38,7 +38,7 @@ If the issue is already `closed`, stop with `NO_ACTION_NEEDED`.
 
 ### 2. Is it already in progress by someone else?
 
-Use the in-progress label configured in `framework.config.json` → `git.labels` (the lock label, e.g. `in-progress`). The issue is **already in progress** when ANY of:
+Use the in-progress label configured in `aef.config.json` → `git.labels` (the lock label, e.g. `in-progress`). The issue is **already in progress** when ANY of:
 
 - It carries the in-progress label AND its assignees do not include the current `gh api user --jq .login`
 - A `🤖`-prefixed claim comment newer than 30 minutes exists from a different actor
@@ -49,7 +49,7 @@ Stale-lock recovery: if the in-progress label is older than 60 minutes and no co
 
 ### 3. Is the fix already in flight or already shipped?
 
-Use the integration branch from `framework.config.json` → `git.defaultBranch` (referred to below as `<defaultBranch>`).
+Use the integration branch from `aef.config.json` → `git.defaultBranch` (referred to below as `<defaultBranch>`).
 
 ```bash
 gh search prs --repo {owner}/{repo} "#{issueId}" --state open  --json number,title,url,state

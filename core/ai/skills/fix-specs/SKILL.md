@@ -33,7 +33,7 @@ Normalize legacy spec filenames to the date+slug convention with minimal churn.
 
 ## Notes
 
-- The script scans the specs root (`framework.config.json` → `paths.specsRoot`), defaulting to `.ai/specs` / `ai/specs` if present.
+- The script scans the specs root (`aef.config.json` → `paths.specsRoot`), defaulting to `.ai/specs` / `ai/specs` if present.
 - Enterprise typos are tolerated (`enterprise` and `enterpirse`).
 - Conflict resolution drops legacy numeric prefixes first, then adds a slug suffix only when two files would land on the same target filename.
 - Files without an embedded `YYYY-MM-DD` segment are skipped by the script and must be normalized manually.

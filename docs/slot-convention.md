@@ -38,7 +38,7 @@ A generic `SKILL.md` marks injection points with HTML comments (invisible in ren
 ## Render rules
 
 1. For each slot in the generic body, look up the adapter selected for that axis in
-   `framework.config.json`. If it provides the slot, **substitute** the fragment; otherwise
+   `aef.config.json`. If it provides the slot, **substitute** the fragment; otherwise
    **prune** the slot block entirely (nothing is emitted — drizzle, not prisma).
 2. Output is **deterministic**: normalized newlines, stable ordering, no timestamps in the file
    body. A `digest` over all inputs + the axis selection goes in a one-line generated header, so

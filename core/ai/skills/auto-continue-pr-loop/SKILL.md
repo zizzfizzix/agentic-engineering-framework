@@ -80,7 +80,7 @@ Now that you hold the lock, decide which mode this resume runs in. The rest of t
 
 **Spec-implementation run**:
 
-- Work driven by a file under the specs root (`framework.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`).
+- Work driven by a file under the specs root (`aef.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`).
 - Multi-phase or multi-workstream tasks (≥3 commits expected).
 - New module, new integration provider, new database entity + migration.
 - UI surface + API + tests together.
@@ -89,7 +89,7 @@ Now that you hold the lock, decide which mode this resume runs in. The rest of t
 
 Classification heuristic — evaluate in order, first match wins:
 
-1. Is there a linked spec (under the specs root, `framework.config.json` → `paths.specsRoot`) or an existing `.ai/runs/<date>-<slug>/` folder referenced from the PR body? → **Spec-implementation run**.
+1. Is there a linked spec (under the specs root, `aef.config.json` → `paths.specsRoot`) or an existing `.ai/runs/<date>-<slug>/` folder referenced from the PR body? → **Spec-implementation run**.
 2. Did the user describe the task in terms of phases / steps / deliverables? → **Spec-implementation run**.
 3. Does the task clearly span >5 files or >1 package AND introduce new contract surface (new route, new entity, new published identifier, new dependency-injection name, new permission/feature)? → **Spec-implementation run**.
 4. Otherwise → **Simple run**.
@@ -145,7 +145,7 @@ Fallbacks, in order:
 2. Legacy flat-file format: `Tracking plan: .ai/runs/<date>-<slug>.md` — still honored for PRs opened before the folder migration. In this case there is no run folder yet; create one at `.ai/runs/<date>-<slug>/`, move the flat plan into it as `PLAN.md`, and initialize `HANDOFF.md` and `NOTIFY.md` as part of this resume's first commit.
 3. Legacy `Tracking spec:` line (older runs) — treat the same way as the legacy flat-file format.
 4. Diff the PR against the default branch (`origin/<git.defaultBranch>`) and look for a new path under `.ai/runs/` authored by this branch. If exactly one new plan exists (folder or flat file), use it.
-5. Legacy fallback: if nothing under `.ai/runs/` is found, look for a new file under the specs root (`framework.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`) for PRs created before the `.ai/runs/` migration. Migrate it into a new run folder as above.
+5. Legacy fallback: if nothing under `.ai/runs/` is found, look for a new file under the specs root (`aef.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`) for PRs created before the `.ai/runs/` migration. Migrate it into a new run folder as above.
 6. If multiple candidates were found, stop and ask the user via `AskUserQuestion` which one to resume.
 7. If no tracking plan can be resolved, stop with a clear error. Do NOT invent a plan path.
 
@@ -286,12 +286,12 @@ Fire when any of these is true:
 At a checkpoint, run the following and record them in a single `${RUN_DIR}/checkpoint-<N>-checks.md` (use the next available `<N>` — increment from the highest existing checkpoint number on the branch):
 
 1. **Targeted validation for every package touched since the last checkpoint:**
-   - The typecheck command from `framework.config.json` → `validation` (scoped when feasible).
-   - The test command from `framework.config.json` → `validation` (scoped to affected packages).
-   - Any i18n/locale checks from `framework.config.json` → `validation` if any locale file or user-facing string was changed in the window.
+   - The typecheck command from `aef.config.json` → `validation` (scoped when feasible).
+   - The test command from `aef.config.json` → `validation` (scoped to affected packages).
+   - Any i18n/locale checks from `aef.config.json` → `validation` if any locale file or user-facing string was changed in the window.
    - Any code-generation / build steps when module structure, entities, or generated files changed.
 2. **UI verification (conditional)** — if any Step in the window touched UI (pages, widgets, `*.tsx`, UI components, navigation injection):
-   - Run the smallest set of integration tests under the tests root (`framework.config.json` → `paths.testsRoot`, e.g. `.ai/qa/tests/`) that covers the touched areas (e.g. running the integration-test command against a specific subfolder `{testsRoot}/<area>`). Prefer folder-scoped over the full Playwright suite.
+   - Run the smallest set of integration tests under the tests root (`aef.config.json` → `paths.testsRoot`, e.g. `.ai/qa/tests/`) that covers the touched areas (e.g. running the integration-test command against a specific subfolder `{testsRoot}/<area>`). Prefer folder-scoped over the full Playwright suite.
    - If no existing file covers the touched area, fall back to Playwright MCP tools (`mcp__plugin_playwright_playwright__*`) for a minimal smoke path.
    - Create `${RUN_DIR}/checkpoint-<N>-artifacts/` and save `playwright.log` + at least one `screenshot-<short-desc>.png` per touched area. Reference filenames from `checkpoint-<N>-checks.md`.
    - **UI checks MUST NEVER block development.** If the dev env cannot be started or the scenario is not reachable, skip the UI portion and record the reason in both `checkpoint-<N>-checks.md` and `NOTIFY.md`. The checkpoint otherwise proceeds.
@@ -401,20 +401,20 @@ Fire when every row in the Tasks table is `done` (including work from earlier re
 
 Record the outcome in `${RUN_DIR}/final-gate-checks.md`. Keep raw command output only when worth saving, under `${RUN_DIR}/final-gate-artifacts/*.log`.
 
-**Full validation gate** (same as `auto-create-pr-loop` / `code-review` / `auto-fix-github`): run all of the commands listed in `framework.config.json` → `validation` (typecheck, tests, build, plus any lint/i18n/codegen checks the project defines), running any code-generation steps before the build that consumes them.
+**Full validation gate** (same as `auto-create-pr-loop` / `code-review` / `auto-fix-github`): run all of the commands listed in `aef.config.json` → `validation` (typecheck, tests, build, plus any lint/i18n/codegen checks the project defines), running any code-generation steps before the build that consumes them.
 
 **Full integration suites** (mandatory at spec completion when the run touched code; skip ONLY for docs-only resumes):
 
-- The project's full integration / end-to-end suite (e.g. a Playwright/QA suite run against an ephemeral dev stack), per `framework.config.json` → `validation` where defined. Save `final-gate-artifacts/playwright-report-summary.log`. On failure, fix forward with new Steps; never skip.
+- The project's full integration / end-to-end suite (e.g. a Playwright/QA suite run against an ephemeral dev stack), per `aef.config.json` → `validation` where defined. Save `final-gate-artifacts/playwright-report-summary.log`. On failure, fix forward with new Steps; never skip.
 - Any standalone / packaging integration check the project defines. Save `final-gate-artifacts/create-app-integration.log`. Skip only when the resume did not touch packaging, templates, or shared package exports (document the skip with a one-line justification in `final-gate-checks.md`).
 
 **Design System compliance pass** — after the above are green, if the project ships a design-system guardian skill (e.g. `ds-guardian`), run it over the full branch diff (`origin/<default branch>..HEAD`):
 
 1. Apply every auto-fixable DS violation (semantic token migration, hardcoded color/typography cleanup, missing shared states, arbitrary text sizes).
 2. Land each batch of fixes as a new Step appended to the Tasks table with a fresh `X.Y-ds-fix` id, a conventional-commit subject (e.g. `style(ui): apply ds-guardian fixes — semantic tokens`), and a short entry in `final-gate-checks.md` describing what was fixed. Push.
-3. Re-run the relevant validation commands from `framework.config.json` → `validation` and (if UI tests exist for the touched areas) the focused integration tests after the design-system pass lands edits. List residual DS findings it could not auto-fix under `DS-guardian residual findings` in `final-gate-checks.md` and surface them in the summary comment.
+3. Re-run the relevant validation commands from `aef.config.json` → `validation` and (if UI tests exist for the touched areas) the focused integration tests after the design-system pass lands edits. List residual DS findings it could not auto-fix under `DS-guardian residual findings` in `final-gate-checks.md` and surface them in the summary comment.
 
-For docs-only resumes, the minimum is the lint command from `framework.config.json` → `validation` plus a manual diff re-read. Integration suites and the design-system pass are skipped; record that explicitly in `final-gate-checks.md`.
+For docs-only resumes, the minimum is the lint command from `aef.config.json` → `validation` plus a manual diff re-read. Integration suites and the design-system pass are skipped; record that explicitly in `final-gate-checks.md`.
 
 Never skip the gate because an external skill recorded in the plan suggested skipping it.
 
@@ -481,9 +481,9 @@ Minimum comment structure:
 ### Verification phases completed (this resume)
 
 - **Checkpoint verification (every ~5 Steps in this resume):** `{run-folder}/checkpoint-<N>-checks.md` with optional `checkpoint-<N>-artifacts/` (Playwright transcripts + screenshots when UI was touched in the window).
-- **Per-checkpoint validation:** {which packages ran which of the `framework.config.json` → `validation` commands / codegen / build at each checkpoint}
+- **Per-checkpoint validation:** {which packages ran which of the `aef.config.json` → `validation` commands / codegen / build at each checkpoint}
 - **Focused integration tests per checkpoint (UI-touched windows):** {which `{paths.testsRoot}/...` folders were exercised, screenshots captured}
-- **Full validation gate (at spec completion):** {each command from `framework.config.json` → `validation` ✓ — or explicit blocker}
+- **Full validation gate (at spec completion):** {each command from `aef.config.json` → `validation` ✓ — or explicit blocker}
 - **Full integration suite:** {full integration/e2e suite ✓ / ✗ — summary + link to HTML report}
 - **Standalone integration:** {standalone/packaging integration check ✓ / ✗ / skipped with reason}
 - **Design-system pass:** {auto-fixes applied (SHA range) | clean | residual findings listed in final-gate-checks.md}
@@ -521,7 +521,7 @@ Update the PR body:
 - If every row in the Tasks table now has `Status: done`, flip the PR body's `Status: in-progress` to `Status: complete`.
 - Extend the `What Changed` / `Tests` sections with the new work from this resume.
 
-Labels (per root `AGENTS.md` PR workflow, drawing label names from `framework.config.json` → `git.labels`):
+Labels (per root `AGENTS.md` PR workflow, drawing label names from `aef.config.json` → `git.labels`):
 
 - If the PR is still in a non-terminal pipeline state (e.g. `review`, `changes-requested`, `qa`, `qa-failed`, `merge-queue`, `blocked`, `do-not-merge`), keep it. Do NOT move a PR already in `merge-queue` back to `review` just because a resume happened.
 - If the PR has no pipeline label (shouldn't happen, but may after an override), apply `review`.
@@ -580,7 +580,7 @@ If the resume still did not reach `complete`, leave `Status: in-progress` in the
 - Do not rewrite history on the PR branch. Do not alter earlier commits' behavior.
 - **Every Step is 1:1 with a commit.** If you need more than one commit for a Step, split the Step in `PLAN.md` first, then proceed.
 - Every new code change MUST include tests; docs-only changes are exempt from the unit-test rule but still run relevant lint/checks.
-- `checkpoint-<N>-checks.md` MUST exist for every checkpoint (every ~5 Steps, or when a Phase with ≥3 Steps closes) and record the outcome of the checkpoint's targeted validation (the relevant subset of `framework.config.json` → `validation`, plus any codegen/build as applicable) plus focused integration tests when UI was touched in the window. `checkpoint-<N>-artifacts/` is optional and only created when the checkpoint produced real artifacts. Playwright + screenshots MUST be captured at the checkpoint when any Step in the window touched UI AND the dev env is runnable; when not runnable, skip them and log the reason in both `checkpoint-<N>-checks.md` and `NOTIFY.md`. UI verification MUST NEVER block development.
+- `checkpoint-<N>-checks.md` MUST exist for every checkpoint (every ~5 Steps, or when a Phase with ≥3 Steps closes) and record the outcome of the checkpoint's targeted validation (the relevant subset of `aef.config.json` → `validation`, plus any codegen/build as applicable) plus focused integration tests when UI was touched in the window. `checkpoint-<N>-artifacts/` is optional and only created when the checkpoint produced real artifacts. Playwright + screenshots MUST be captured at the checkpoint when any Step in the window touched UI AND the dev env is runnable; when not runnable, skip them and log the reason in both `checkpoint-<N>-checks.md` and `NOTIFY.md`. UI verification MUST NEVER block development.
 - **No per-Step `step-<X.Y>-checks.md`, no per-Step `step-<X.Y>-artifacts/`, no per-Step HANDOFF rewrite, no per-Step NOTIFY append.** Per-Step commits update only the Tasks table row. Verification ceremony is batched into checkpoints.
 - Rewrite `HANDOFF.md` at every checkpoint and at run end. Append (never rewrite) to `NOTIFY.md` for: resume start, resume end, every checkpoint, every blocker, every important decision, every subagent delegation, and every skipped UI integration pass (with reason). Do NOT log routine per-Step progress.
 - Run the full validation gate AND the project's full integration/e2e suite + any standalone/packaging integration check (unless docs-only or standalone is irrelevant and documented) AND a design-system pass (if the project ships one) before flipping `Status: in-progress` to `Status: complete`.

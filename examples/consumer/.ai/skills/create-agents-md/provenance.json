@@ -5,16 +5,16 @@
     "ui": "shadcn",
     "stack": "generic-node"
   },
-  "digest": "e0e933e8902c",
+  "digest": "35a31398bac7",
   "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
   "inputs": [
     {
       "path": "adapters/stack/generic-node/references/layout.md",
-      "sha": "42205040faa0"
+      "sha": "8b0df5ee80ce"
     },
     {
       "path": "core/ai/skills/create-agents-md/SKILL.md",
-      "sha": "15d09e0ddbd2"
+      "sha": "29eb666f3317"
     }
   ],
   "regions": [

@@ -5,7 +5,7 @@ description: Draft a CHANGELOG.md release entry in the house emoji-driven format
 
 # Auto Update Changelog
 
-Release-engineering skill. Compile a CHANGELOG.md entry for the unreleased window using the project's existing emoji-driven format, then hand the file edit off to `auto-create-pr` so it lands as a normal docs PR against the default branch (`framework.config.json` → `git.defaultBranch`).
+Release-engineering skill. Compile a CHANGELOG.md entry for the unreleased window using the project's existing emoji-driven format, then hand the file edit off to `auto-create-pr` so it lands as a normal docs PR against the default branch (`aef.config.json` → `git.defaultBranch`).
 
 ## When to use
 
@@ -47,13 +47,13 @@ gh pr list \
   --limit 250
 ```
 
-Filter to PRs whose `baseRefName` is the default branch (`framework.config.json` → `git.defaultBranch`). Exclude PRs that touched only the runs/execution-plan directory (these are execution-plan commits, not release work) unless the entire body says `Update CHANGELOG.md for vX.Y.Z` (those are prior runs of this skill — also exclude).
+Filter to PRs whose `baseRefName` is the default branch (`aef.config.json` → `git.defaultBranch`). Exclude PRs that touched only the runs/execution-plan directory (these are execution-plan commits, not release work) unless the entire body says `Update CHANGELOG.md for vX.Y.Z` (those are prior runs of this skill — also exclude).
 
 ### 2. Categorize each PR
 
 Per-PR category derivation, in priority order:
 
-1. **Labels** (drawn from `framework.config.json` → `git.labels`) — pick the first match:
+1. **Labels** (drawn from `aef.config.json` → `git.labels`) — pick the first match:
    - `bug` → `fix`
    - `security` → `security`
    - `feature` → `feat`

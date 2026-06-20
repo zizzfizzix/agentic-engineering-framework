@@ -1,7 +1,7 @@
 ## Repository layout
 
 Single-repo Node/TypeScript project. Always resolve concrete paths from
-`framework.config.json` → `paths`, never hard-code them:
+`aef.config.json` → `paths`, never hard-code them:
 
 - **Source / modules** — `paths.modulesRoot` (e.g. `src/`). One feature or module per directory.
 - **Specs** — `paths.specsRoot` (e.g. `.ai/specs`).

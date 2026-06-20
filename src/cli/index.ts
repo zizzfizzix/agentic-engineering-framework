@@ -60,7 +60,7 @@ program
 program
   .command('init')
   .description('Render the configured skill set into a consumer repo and wire harnesses.')
-  .option('--config <path>', 'path to framework.config.json (required unless --interactive)')
+  .option('--config <path>', 'path to aef.config.json (required unless --interactive)')
   .option('--out <dir>', 'consumer directory to write into (default: current directory)')
   .option('--copy', 'copy rendered skills into harness dirs instead of symlinking')
   .option('-i, --interactive', 'build the config interactively via prompts')
@@ -70,7 +70,7 @@ program
   .command('render')
   .description('Render a single skill to stdout (or --out <dir>) for inspection.')
   .requiredOption('--skill <name>', 'skill id to render')
-  .option('--config <path>', 'path to framework.config.json (required)')
+  .option('--config <path>', 'path to aef.config.json (required)')
   .option('--out <dir>', 'write SKILL.md + provenance.json under <dir>/<skill>/ instead of stdout')
   .action((opts) => runRender(opts))
 

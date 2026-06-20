@@ -20,7 +20,7 @@ const read = (p: string) => readFileSync(p, 'utf8')
 
 beforeEach(async () => {
   consumer = mkdtempSync(join(tmpdir(), 'agentic-sync-'))
-  await runInit({ config: join(ROOT, 'framework.config.example.json'), out: consumer })
+  await runInit({ config: join(ROOT, 'aef.config.example.json'), out: consumer })
   process.exitCode = 0
 })
 afterEach(() => {
@@ -66,7 +66,7 @@ describe('sync reconcile', () => {
   })
 
   test('sync installs a new skill when a tier is added to the config', () => {
-    const cfgPath = join(consumer, 'framework.config.json')
+    const cfgPath = join(consumer, 'aef.config.json')
     const raw = JSON.parse(readFileSync(cfgPath, 'utf8'))
     raw.tiers = ['framework']
     writeFileSync(cfgPath, JSON.stringify(raw, null, 2) + '\n')
@@ -77,7 +77,7 @@ describe('sync reconcile', () => {
   })
 
   test('sync removes a skill when its required axis is cleared from the config', () => {
-    const cfgPath = join(consumer, 'framework.config.json')
+    const cfgPath = join(consumer, 'aef.config.json')
     const raw = JSON.parse(readFileSync(cfgPath, 'utf8'))
     raw.orm = null
     writeFileSync(cfgPath, JSON.stringify(raw, null, 2) + '\n')
@@ -90,7 +90,7 @@ describe('sync reconcile', () => {
   })
 
   test('manifest selection reflects tiers after sync', () => {
-    const cfgPath = join(consumer, 'framework.config.json')
+    const cfgPath = join(consumer, 'aef.config.json')
     const raw = JSON.parse(readFileSync(cfgPath, 'utf8'))
     raw.tiers = ['framework']
     writeFileSync(cfgPath, JSON.stringify(raw, null, 2) + '\n')
@@ -116,11 +116,11 @@ describe('sync reconcile', () => {
     expect(process.exitCode).toBe(2) // non-zero exit signals unresolved conflicts
   })
 
-  test('sync refreshes schemas/framework.config.schema.json', () => {
+  test('sync refreshes schemas/aef.config.schema.json', () => {
     rmSync(join(consumer, 'schemas'), { recursive: true, force: true })
-    expect(existsSync(join(consumer, 'schemas', 'framework.config.schema.json'))).toBe(false)
+    expect(existsSync(join(consumer, 'schemas', 'aef.config.schema.json'))).toBe(false)
     runSync({ out: consumer })
-    expect(existsSync(join(consumer, 'schemas', 'framework.config.schema.json'))).toBe(true)
+    expect(existsSync(join(consumer, 'schemas', 'aef.config.schema.json'))).toBe(true)
   })
 
   test('sync updates @zizzfizzix/aef version pin when package.json exists', () => {

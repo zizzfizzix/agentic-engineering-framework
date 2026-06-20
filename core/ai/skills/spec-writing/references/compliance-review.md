@@ -24,7 +24,7 @@ Verify the spec is aligned with all relevant AGENTS rules and internally consist
 
 ## Compliance Matrix Template
 
-The matrix below is an illustrative sample. The rule sources and rule wording are examples — substitute your project's actual `AGENTS.md` files (under `framework.config.json` → `paths.modulesRoot` and your packages) and the canonical primitive names your conventions define.
+The matrix below is an illustrative sample. The rule sources and rule wording are examples — substitute your project's actual `AGENTS.md` files (under `aef.config.json` → `paths.modulesRoot` and your packages) and the canonical primitive names your conventions define.
 
 ```markdown
 ### Compliance Matrix

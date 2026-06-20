@@ -10,7 +10,7 @@ npx @zizzfizzix/aef init --interactive
 ```
 
 The wizard asks for your harness(es), ORM, UI/design system, and stack, writes
-`framework.config.json`, then:
+`aef.config.json`, then:
 
 - renders the selected skills into `.ai/skills/<skill>/SKILL.md` (one flat file each),
 - snapshots a BASE under `.ai/.base/` and a `.ai/.render-manifest.json` (sync's merge base),
@@ -22,7 +22,7 @@ The wizard asks for your harness(es), ORM, UI/design system, and stack, writes
 Non-interactive:
 
 ```bash
-npx @zizzfizzix/aef init --config framework.config.json   # see README for the schema
+npx @zizzfizzix/aef init --config aef.config.json   # see README for the schema
 npx @zizzfizzix/aef init --copy                            # copy into harness dirs instead of symlinking
 ```
 

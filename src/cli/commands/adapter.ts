@@ -1,5 +1,5 @@
 // `aef add <adapter>` / `aef remove <adapter>` — change an axis selection in a
-// consumer's framework.config.json and reconcile the installed skill set:
+// consumer's aef.config.json and reconcile the installed skill set:
 //   • newly-selected skills are rendered fresh (+ BASE snapshot),
 //   • skills no longer selected are uninstalled (skill dir, BASE, harness links),
 //   • surviving skills are 3-way merged (like sync) so adapter-content changes flow in
@@ -51,7 +51,7 @@ function mutate(name: string, op: 'add' | 'remove', opts: AdapterCmdOptions): vo
   const root = FRAMEWORK_ROOT
   const out = opts.out ?? join(root, 'examples/consumer')
   const useCopy = Boolean(opts.copy)
-  const cfgPath = join(out, 'framework.config.json')
+  const cfgPath = join(out, 'aef.config.json')
 
   const raw = JSON.parse(readFileSync(cfgPath, 'utf8')) as Record<string, unknown>
   const prevConfig = FrameworkConfigSchema.parse(raw)

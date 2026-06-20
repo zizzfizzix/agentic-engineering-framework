@@ -22,7 +22,7 @@ const base: WizardAnswers = {
 describe('buildConfig', () => {
   test('includes $schema and core identity fields', () => {
     const config = buildConfig(base)
-    expect(config.$schema).toBe('./schemas/framework.config.schema.json')
+    expect(config.$schema).toBe('./schemas/aef.config.schema.json')
     expect(config.projectName).toBe('my-app')
     expect(config.harnesses).toEqual(['claude-code'])
   })

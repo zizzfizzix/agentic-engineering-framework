@@ -10,20 +10,20 @@
   },
   "skills": {
     "check-and-commit": {
-      "digest": "9d15ba3fe865",
+      "digest": "5805980c8220",
       "inputs": [
         {
           "path": "adapters/stack/generic-node/references/validation.md",
-          "sha": "7001c56b49cb"
+          "sha": "7e9c65187f09"
         },
         {
           "path": "core/ai/skills/check-and-commit/SKILL.md",
-          "sha": "e3e4c3fb2290"
+          "sha": "e1deca45bb97"
         }
       ]
     },
     "code-review": {
-      "digest": "734019601e50",
+      "digest": "990cd7ae95d3",
       "inputs": [
         {
           "path": "adapters/stack/generic-node/references/project-rules.md",
@@ -31,20 +31,20 @@
         },
         {
           "path": "core/ai/skills/code-review/SKILL.md",
-          "sha": "b5c4ce9d410e"
+          "sha": "b00576e37252"
         }
       ]
     },
     "create-agents-md": {
-      "digest": "e0e933e8902c",
+      "digest": "35a31398bac7",
       "inputs": [
         {
           "path": "adapters/stack/generic-node/references/layout.md",
-          "sha": "42205040faa0"
+          "sha": "8b0df5ee80ce"
         },
         {
           "path": "core/ai/skills/create-agents-md/SKILL.md",
-          "sha": "15d09e0ddbd2"
+          "sha": "29eb666f3317"
         }
       ]
     },
@@ -62,34 +62,34 @@
       ]
     },
     "fix-specs": {
-      "digest": "7eb0392e292e",
+      "digest": "2bfa73bfb49f",
       "inputs": [
         {
           "path": "core/ai/skills/fix-specs/SKILL.md",
-          "sha": "2f2ad371df01"
+          "sha": "2c1e72d31396"
         }
       ]
     },
     "implement-spec": {
-      "digest": "2c80591c61a4",
+      "digest": "746212db1abb",
       "inputs": [
         {
           "path": "core/ai/skills/implement-spec/SKILL.md",
-          "sha": "30c1a1d32477"
+          "sha": "7ae293aefa36"
         }
       ]
     },
     "integration-tests": {
-      "digest": "dfad39c9888f",
+      "digest": "626d2cbd4512",
       "inputs": [
         {
           "path": "core/ai/skills/integration-tests/SKILL.md",
-          "sha": "94d9258cd3b3"
+          "sha": "582ccb3f6839"
         }
       ]
     },
     "migrate-orm": {
-      "digest": "c259362a982a",
+      "digest": "60e85892bc61",
       "inputs": [
         {
           "path": "adapters/orm/drizzle/references/cheatsheet.md",
@@ -101,16 +101,16 @@
         },
         {
           "path": "core/ai/skills/migrate-orm/SKILL.md",
-          "sha": "309b17f24b9d"
+          "sha": "5e17af942181"
         }
       ]
     },
     "pre-implement-spec": {
-      "digest": "98db03a8a9b1",
+      "digest": "02589ffcaebf",
       "inputs": [
         {
           "path": "core/ai/skills/pre-implement-spec/SKILL.md",
-          "sha": "c4268e3a9275"
+          "sha": "a49b24dd8fe1"
         }
       ]
     },
@@ -124,25 +124,25 @@
       ]
     },
     "smart-test": {
-      "digest": "ff53f9f69e38",
+      "digest": "d6fc87e3b01e",
       "inputs": [
         {
           "path": "core/ai/skills/smart-test/SKILL.md",
-          "sha": "9ad82489c64e"
+          "sha": "2864d372ff66"
         }
       ]
     },
     "spec-writing": {
-      "digest": "a1416d862e3c",
+      "digest": "b08b59c903a0",
       "inputs": [
         {
           "path": "core/ai/skills/spec-writing/SKILL.md",
-          "sha": "bdc7126047c8"
+          "sha": "7274da75a9da"
         }
       ]
     },
     "ui-consistency": {
-      "digest": "1d6edf84839d",
+      "digest": "d8a5d9092212",
       "inputs": [
         {
           "path": "adapters/ui/shadcn/references/components.md",
@@ -154,7 +154,7 @@
         },
         {
           "path": "core/ai/skills/ui-consistency/SKILL.md",
-          "sha": "16529a574932"
+          "sha": "214d62b2e03e"
         }
       ]
     }

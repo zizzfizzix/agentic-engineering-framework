@@ -12,7 +12,7 @@ import { runInit } from '../src/cli/commands/init.js'
 
 const ROOT = process.cwd()
 const cfg = FrameworkConfigSchema.parse(
-  JSON.parse(readFileSync(join(ROOT, 'framework.config.example.json'), 'utf8')),
+  JSON.parse(readFileSync(join(ROOT, 'aef.config.example.json'), 'utf8')),
 )
 
 // Recursively collect relative paths of regular files (symlinks excluded — harness
@@ -44,7 +44,7 @@ describe('goldens: examples/consumer', () => {
     const golden = join(ROOT, 'examples/consumer')
     const tmp = mkdtempSync(join(tmpdir(), 'agentic-golden-'))
     try {
-      await runInit({ config: join(ROOT, 'framework.config.example.json'), out: tmp })
+      await runInit({ config: join(ROOT, 'aef.config.example.json'), out: tmp })
       const files = regularFiles(golden)
       expect(files.length).toBeGreaterThan(0)
       for (const rel of files) {

@@ -30,8 +30,8 @@ function emit(schema: ZodTypeAny, file: string, title: string, description: stri
 console.log('Generating JSON Schemas from zod contracts:')
 emit(
   FrameworkConfigSchema,
-  'framework.config.schema.json',
-  'framework.config.json',
+  'aef.config.schema.json',
+  'aef.config.json',
   'Per-consumer configuration the renderer, init/sync, and skills all read. One axis selection per family; init resolves these into a converged skill set.',
 )
 emit(

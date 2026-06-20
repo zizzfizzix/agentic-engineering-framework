@@ -22,13 +22,13 @@ target when you want a deep read on exactly one thing.
   - `pr:{number}` or a bare number (e.g. `1456`) — analyze one pull
     request. Works for merged or open PRs.
   - `spec:{path}` or any path ending in `.md` under the specs root
-    (`framework.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`) —
+    (`aef.config.json` → `paths.specsRoot`, e.g. `.ai/specs/`) —
     analyze one specification.
   - `branch:{name}` — analyze the diff of a branch against the base
     (defaults to `origin/<git.defaultBranch>`). Works with local branches
     after a `git fetch origin {name}`.
 - `--base <branch>` (optional) — base ref for the branch/PR diff.
-  Defaults to `origin/<git.defaultBranch>` (`framework.config.json` → `git.defaultBranch`).
+  Defaults to `origin/<git.defaultBranch>` (`aef.config.json` → `git.defaultBranch`).
 - `--out-fragment <path>` (optional) — when invoked as a sub-unit by
   `auto-sec-report`, write the markdown section fragment to this path
   instead of creating a standalone artifact + PR. When set, do NOT open
@@ -99,7 +99,7 @@ else
       git fetch origin "${TARGET}"
       git worktree add "$WORKTREE_DIR" "origin/${TARGET}" ;;
     spec)
-      git fetch origin "$BASE"   # BASE defaults to framework.config.json → git.defaultBranch
+      git fetch origin "$BASE"   # BASE defaults to aef.config.json → git.defaultBranch
       git worktree add --detach "$WORKTREE_DIR" "origin/$BASE" ;;
   esac
   CREATED_WORKTREE=1
@@ -255,7 +255,7 @@ Each "next step" MUST be one of:
 - `auto-sec-report-pr pr:{n} --deep-scan` — re-run the same PR with
   full-repo grep if the initial sweep was module-scoped.
 - A named follow-up scope (e.g. "audit a module under the modules root,
-  `framework.config.json` → `paths.modulesRoot`, for TOCTOU on a
+  `aef.config.json` → `paths.modulesRoot`, for TOCTOU on a
   concurrent operation") with a one-sentence justification.
 
 Produce 3–10 next steps. Order them by expected security impact,
@@ -322,7 +322,7 @@ Ordered highest-impact first. The **recommended next run** is marked.
   biggest remaining risk}.
 - `auto-sec-report-pr spec:{specsRoot}/2026-04-15-foo.md` — {why}.
 - `auto-sec-report-pr branch:feat/bar` — {why}.
-- Audit a module under the modules root (`framework.config.json` →
+- Audit a module under the modules root (`aef.config.json` →
   `paths.modulesRoot`, e.g. `{modulesRoot}/<module>/`) for TOCTOU on a
   concurrent operation — {why}.
 - ...
@@ -344,9 +344,9 @@ the same HTML rules documented in `auto-sec-report`:
 
 After the artifacts exist, follow `.ai/skills/auto-create-pr/SKILL.md`
 verbatim to open a docs-only PR against the default branch
-(`framework.config.json` → `git.defaultBranch`). PR title:
+(`aef.config.json` → `git.defaultBranch`). PR title:
 `docs(analysis): add auto-sec-report-pr for {target caption}`. Labels
-(per `framework.config.json` → `git.labels`): `review`, `documentation`,
+(per `aef.config.json` → `git.labels`): `review`, `documentation`,
 `security`, `skip-qa`. Never merge from within this skill.
 
 #### 6b. Sub-unit mode (`--out-fragment` set)
@@ -449,7 +449,7 @@ If the run cannot finish in a single invocation:
   `pre-implement-spec` patterns and checklists. Do not duplicate
   their rules — reference them.
 - Never merge any PR created by this skill. Labels (per
-  `framework.config.json` → `git.labels`): `review`, `documentation`,
+  `aef.config.json` → `git.labels`): `review`, `documentation`,
   `security`, `skip-qa`. Never `needs-qa`.
 - Sub-unit mode (`--out-fragment`) never opens a PR, never applies
   labels, and never runs autofix. The driver owns PR delivery.

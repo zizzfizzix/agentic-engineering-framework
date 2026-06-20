@@ -27,10 +27,10 @@ agentic harness (MIT). See `EXTRACTION_PLAN.md` for the full design rationale (d
 # in your project
 npx @zizzfizzix/aef init --interactive       # pick harness(es), orm, ui, stack
 # or non-interactively from a config file:
-npx @zizzfizzix/aef init --config framework.config.json
+npx @zizzfizzix/aef init --config aef.config.json
 ```
 
-This writes `framework.config.json`, renders the selected skills into `.ai/skills/`, installs the
+This writes `aef.config.json`, renders the selected skills into `.ai/skills/`, installs the
 `AGENTS.md` + specs/qa/runs conventions, and wires each harness's skills directory. Later:
 
 ```bash
@@ -64,7 +64,7 @@ A skill whose required axis isn't configured simply isn't installed (no ORM → 
 
 ## Configuration
 
-`framework.config.json` (validated by `schemas/framework.config.schema.json`):
+`aef.config.json` (validated by `schemas/aef.config.schema.json`):
 
 ```json
 {

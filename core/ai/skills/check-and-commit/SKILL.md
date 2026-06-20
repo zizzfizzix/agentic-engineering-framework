@@ -18,12 +18,12 @@ Use this skill when the user wants a branch verified end to end and published on
 ## Scope
 
 - Read `git status --short` and `git diff --stat` first.
-- If the diff touches a specific package or module (under `framework.config.json` → `paths.modulesRoot`), read the relevant `AGENTS.md` before making fixes.
+- If the diff touches a specific package or module (under `aef.config.json` → `paths.modulesRoot`), read the relevant `AGENTS.md` before making fixes.
 - Do not revert unrelated user changes.
 
 ## Verification Gates
 
-Run the verification commands listed in `framework.config.json` → `validation` in order unless the user asks for a narrower scope. A typical sequence runs build/generation steps first, then the static and test gates, then the final app build. For example, in a project whose `validation` includes these:
+Run the verification commands listed in `aef.config.json` → `validation` in order unless the user asks for a narrower scope. A typical sequence runs build/generation steps first, then the static and test gates, then the final app build. For example, in a project whose `validation` includes these:
 
 ```bash
 # build + codegen (project-specific build steps)
@@ -35,20 +35,20 @@ Run the verification commands listed in `framework.config.json` → `validation`
 <i18n usage check>
 ```
 
-Then run the typecheck and test gates (from `framework.config.json` → `validation`), which can typically run in parallel:
+Then run the typecheck and test gates (from `aef.config.json` → `validation`), which can typically run in parallel:
 
 ```bash
 <typecheck command>
 <test command>
 ```
 
-Finish with the final app build (also from `framework.config.json` → `validation`):
+Finish with the final app build (also from `aef.config.json` → `validation`):
 
 ```bash
 <app build command>
 ```
 
-(The exact commands above are illustrative — always use the ones declared in `framework.config.json` → `validation`.)
+(The exact commands above are illustrative — always use the ones declared in `aef.config.json` → `validation`.)
 
 ## I18n Repair Rules
 

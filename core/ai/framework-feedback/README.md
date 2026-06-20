@@ -6,7 +6,7 @@ Capture is on by default and writes only files here — **zero egress**, always 
 `project`-scoped lessons never land here (they go to `.ai/lessons.md`).
 
 > **Note:** `improve-framework` is in the `framework` tier (opt-in). Install it by adding
-> `"tiers": ["framework"]` to `framework.config.json` and re-running `aef init`, or by running
+> `"tiers": ["framework"]` to `aef.config.json` and re-running `aef init`, or by running
 > `aef add framework`.
 
 ## Scope tag

@@ -2,15 +2,15 @@
 
 This reference documents the test architecture for the project. The framework names, paths, counts,
 and module names below are examples drawn from one platform's monorepo — substitute your project's
-test runners, the paths in `framework.config.json` → `paths`, and the test commands in
-`framework.config.json` → `validation`.
+test runners, the paths in `aef.config.json` → `paths`, and the test commands in
+`aef.config.json` → `validation`.
 
 ## Frameworks (example)
 
-| Framework      | Purpose                  | Config                                                                                                                            |
-| -------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| Jest + ts-jest | Unit and component tests | `jest.config.cjs` (root + per-package + per-app)                                                                                  |
-| Playwright     | Integration / E2E tests  | the Playwright config under the tests root (`framework.config.json` → `paths.testsRoot`, e.g. `<testsRoot>/playwright.config.ts`) |
+| Framework      | Purpose                  | Config                                                                                                                      |
+| -------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Jest + ts-jest | Unit and component tests | `jest.config.cjs` (root + per-package + per-app)                                                                            |
+| Playwright     | Integration / E2E tests  | the Playwright config under the tests root (`aef.config.json` → `paths.testsRoot`, e.g. `<testsRoot>/playwright.config.ts`) |
 
 ## File Counts (record this project's actual counts here)
 
@@ -39,7 +39,7 @@ packages/<pkg>/src/modules/<module>/
 
 ## Module Path Extraction
 
-Extract module name from file path by finding `/modules/<name>/` (under `framework.config.json` → `paths.modulesRoot`). The example paths below are from one platform's layout:
+Extract module name from file path by finding `/modules/<name>/` (under `aef.config.json` → `paths.modulesRoot`). The example paths below are from one platform's layout:
 
 | File path                                                | Module               |
 | -------------------------------------------------------- | -------------------- |
@@ -161,7 +161,7 @@ extra `dependsOnModules`:
 
 ## Unit Test Run Commands
 
-Use the unit test command from `framework.config.json` → `validation`. The commands below are one platform's examples:
+Use the unit test command from `aef.config.json` → `validation`. The commands below are one platform's examples:
 
 ```bash
 yarn test                              # All unit tests (turbo)
@@ -172,7 +172,7 @@ yarn workspace <pkg> test              # Single package (example)
 
 ## Integration Test Run Commands
 
-Use the integration test command from `framework.config.json` → `validation` and the Playwright config under the tests root. The commands below are examples:
+Use the integration test command from `aef.config.json` → `validation` and the Playwright config under the tests root. The commands below are examples:
 
 ```bash
 yarn test:integration                  # Full integration suite
@@ -183,7 +183,7 @@ yarn test:integration:report           # View HTML report
 
 ## CI Pipeline
 
-The pipeline runs the project's verification gate (`framework.config.json` → `validation`) on every PR — typically:
+The pipeline runs the project's verification gate (`aef.config.json` → `validation`) on every PR — typically:
 
 1. the unit test command — all unit tests (every PR)
 2. the integration test command (with coverage) — integration tests on an ephemeral app (every PR)

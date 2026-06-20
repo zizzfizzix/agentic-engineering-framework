@@ -1,6 +1,6 @@
 ## Validation gate
 
-Run **every** command in `framework.config.json` → `validation` before declaring work done; any
+Run **every** command in `aef.config.json` → `validation` before declaring work done; any
 non-zero exit is a failure to fix. A Next.js project's gate is typically, in order:
 
 - a codegen/discovery step if the project uses one (run it after adding or moving files that rely

@@ -167,9 +167,9 @@ export function pinAefInPackageJson(out: string, version: string): string {
 }
 
 export function copySchema(root: string, out: string): boolean {
-  const src = join(root, 'schemas', 'framework.config.schema.json')
+  const src = join(root, 'schemas', 'aef.config.schema.json')
   if (!existsSync(src)) return false
-  const dest = join(out, 'schemas', 'framework.config.schema.json')
+  const dest = join(out, 'schemas', 'aef.config.schema.json')
   mkdirSync(join(out, 'schemas'), { recursive: true })
   writeFileSync(dest, readFileSync(src, 'utf8'))
   return true

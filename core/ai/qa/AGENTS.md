@@ -1,7 +1,7 @@
 # QA conventions (`.ai/qa/`)
 
 This folder holds end-to-end / integration QA artifacts. The concrete **test runner** is a stack
-concern — use whatever `framework.config.json` → `validation` runs and whatever the project's
+concern — use whatever `aef.config.json` → `validation` runs and whatever the project's
 `testsRoot` already uses.
 
 ## Layout
@@ -22,7 +22,7 @@ concern — use whatever `framework.config.json` → `validation` runs and whate
 - Cover the happy path plus the empty, loading, and error states for any UI flow.
 - Prefer testing observable behaviour (what the user sees/does) over internal calls.
 - A test is done only when it passes under the project's validation gate
-  (`framework.config.json` → `validation`).
+  (`aef.config.json` → `validation`).
 
 See the `integration-tests`, `smart-test`, and `auto-qa-scenarios` skills for the workflows that
 create and maintain these artifacts.

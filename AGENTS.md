@@ -52,7 +52,7 @@ If hooks don't fire, run both commands manually from the repo root. Per-develope
 settings belong in `.claude/settings.local.json` (gitignored).
 
 `pnpm cli dev` installs both the **dev** skills (symlinked live from `dev/skills/`) and the
-**shipped** skills (rendered from `core/ai/skills/` using `dev/framework.config.json`). The tier
+**shipped** skills (rendered from `core/ai/skills/` using `dev/aef.config.json`). The tier
 and adapter selection in that config governs which shipped skills are installed. Re-run after
 adding or changing a skill or adapter. `pnpm build` emits the distributable `agentic` bin to
 `dist/`.

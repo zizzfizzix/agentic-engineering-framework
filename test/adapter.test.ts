@@ -12,13 +12,13 @@ import { runInit } from '../src/cli/commands/init.js'
 import { runAdd, runRemove } from '../src/cli/commands/adapter.js'
 
 let consumer: string
-const cfg = () => JSON.parse(readFileSync(join(consumer, 'framework.config.json'), 'utf8'))
+const cfg = () => JSON.parse(readFileSync(join(consumer, 'aef.config.json'), 'utf8'))
 const skillDir = (s: string) => join(consumer, '.ai', 'skills', s)
 const skillMd = (s: string) => join(skillDir(s), 'SKILL.md')
 
 beforeEach(async () => {
   consumer = mkdtempSync(join(tmpdir(), 'agentic-adapter-'))
-  await runInit({ config: join(ROOT, 'framework.config.example.json'), out: consumer })
+  await runInit({ config: join(ROOT, 'aef.config.example.json'), out: consumer })
   process.exitCode = 0
 })
 afterEach(() => {

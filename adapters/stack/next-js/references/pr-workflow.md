@@ -1,6 +1,6 @@
 ## PR workflow
 
-- Branch from `git.defaultBranch` (`framework.config.json`); never commit directly to it.
+- Branch from `git.defaultBranch` (`aef.config.json`); never commit directly to it.
 - One logical change per PR; keep the diff small and reviewable.
 - Include any generated files the codegen/discovery step produces, so CI is reproducible.
 - Apply whichever `git.labels` fit the change.

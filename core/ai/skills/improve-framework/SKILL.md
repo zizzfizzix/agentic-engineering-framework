@@ -17,7 +17,7 @@ Two modes:
 
 ## 0. Prerequisites
 
-- Read `framework.config.json`:
+- Read `aef.config.json`:
   - `source.path` → a local framework checkout to edit. If null, clone `source.repo` into a
     scratch dir and work there.
   - `feedback.upstream` → `channel` (`pr`/`issue`/`fork`), `sanitize`, `requireHumanApproval`.

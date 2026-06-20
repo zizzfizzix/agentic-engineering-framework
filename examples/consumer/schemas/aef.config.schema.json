@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/zizzfizzix/agentic-engineering-framework/schemas/framework.config.schema.json",
-  "title": "framework.config.json",
+  "$id": "https://github.com/zizzfizzix/agentic-engineering-framework/schemas/aef.config.schema.json",
+  "title": "aef.config.json",
   "description": "Per-consumer configuration the renderer, init/sync, and skills all read. One axis selection per family; init resolves these into a converged skill set.",
   "type": "object",
   "properties": {

@@ -5,12 +5,12 @@
     "ui": "shadcn",
     "stack": "generic-node"
   },
-  "digest": "98db03a8a9b1",
+  "digest": "02589ffcaebf",
   "note": "region line numbers are body-relative (line 1 = first line after the 2-line header); digest covers consumed inputs only",
   "inputs": [
     {
       "path": "core/ai/skills/pre-implement-spec/SKILL.md",
-      "sha": "c4268e3a9275"
+      "sha": "a49b24dd8fe1"
     }
   ],
   "regions": [

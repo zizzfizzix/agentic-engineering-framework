@@ -1,6 +1,6 @@
 // `aef dev` — the "meta" install for developing THIS framework. Wires the repo's
 // own harness skill dirs to dev/ skills (source symlinks) and renders shipped skills
-// from dev/framework.config.json into the same dirs. Harness dirs are gitignored.
+// from dev/aef.config.json into the same dirs. Harness dirs are gitignored.
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, rmSync, symlinkSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { AdapterSchema, FrameworkConfigSchema } from '../../core/contracts.js'
@@ -17,9 +17,9 @@ export function runDev(root: string = FRAMEWORK_ROOT): void {
   }
   const devSkills = readdirSync(devSkillsDir).filter((d) => existsSync(join(devSkillsDir, d, 'SKILL.md')))
 
-  const devConfigPath = join(root, 'dev', 'framework.config.json')
+  const devConfigPath = join(root, 'dev', 'aef.config.json')
   if (!existsSync(devConfigPath)) {
-    console.error('no dev/framework.config.json found — run from the framework root')
+    console.error('no dev/aef.config.json found — run from the framework root')
     process.exit(1)
   }
   const config = FrameworkConfigSchema.parse(JSON.parse(readFileSync(devConfigPath, 'utf8')))

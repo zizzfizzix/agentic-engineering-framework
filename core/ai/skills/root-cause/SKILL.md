@@ -35,7 +35,7 @@ Skim the body and the last few comments. Note explicit reproduction steps and an
 
 ### 2. Read just enough project context
 
-Read the relevant `AGENTS.md` files (start at the repo root) for the affected area. If the specs root (`framework.config.json` → `paths.specsRoot`) or a lessons file contains material related to the affected module, skim it.
+Read the relevant `AGENTS.md` files (start at the repo root) for the affected area. If the specs root (`aef.config.json` → `paths.specsRoot`) or a lessons file contains material related to the affected module, skim it.
 
 Stop reading project context as soon as you can name the file(s) involved. Do not pre-emptively read the whole codebase.
 

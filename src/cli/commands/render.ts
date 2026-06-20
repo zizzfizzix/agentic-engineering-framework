@@ -16,7 +16,7 @@ export interface RenderOptions {
 export function runRender(opts: RenderOptions): void {
   if (!opts.config) {
     throw new Error(
-      `--config is required.\n\nUsage: aef render --skill <name> --config framework.config.json\n\nRun 'aef render --help' for all options.`,
+      `--config is required.\n\nUsage: aef render --skill <name> --config aef.config.json\n\nRun 'aef render --help' for all options.`,
     )
   }
   const root = FRAMEWORK_ROOT

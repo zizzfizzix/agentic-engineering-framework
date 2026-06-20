@@ -23,7 +23,7 @@ For every non-draft PR:
 gh pr checks {number} --json name,state,link
 ```
 
-Evaluate these gates (label names come from `framework.config.json` → `git.labels`):
+Evaluate these gates (label names come from `aef.config.json` → `git.labels`):
 
 - review decision must be `APPROVED`
 - required CI checks must be green
