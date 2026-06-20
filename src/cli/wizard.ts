@@ -295,10 +295,10 @@ export async function runWizard(
     selectedTiers,
     validationCommands,
     defaultBranch,
-    sourceRepo: sourceRepo ?? '',
-    modulesRoot: modulesRoot ?? '',
-    specsRoot: specsRoot ?? '',
-    testsRoot: testsRoot ?? '',
+    sourceRepo,
+    modulesRoot,
+    specsRoot,
+    testsRoot,
     feedbackMode,
   })
 

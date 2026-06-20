@@ -52,7 +52,9 @@ export async function runInit(opts: InitOptions): Promise<void> {
       try {
         existingConfig = FrameworkConfigSchema.parse(JSON.parse(readFileSync(existingPath, 'utf8')))
       } catch {
-        // ignore — wizard starts fresh if the existing config is unreadable
+        console.warn(
+          'Warning: existing framework.config.json could not be parsed — starting the wizard from scratch.',
+        )
       }
     }
     raw = await runWizard(root, existingConfig)
