@@ -62,4 +62,39 @@ describe('add / remove', () => {
   test('unknown adapter name throws', () => {
     expect(() => runAdd('nonexistent-xyz', { out: consumer })).toThrow(/no adapter/)
   })
+
+  test('add tier installs its skills, writes tiers to config, and installs outbox', () => {
+    const outbox = join(consumer, '.ai', 'framework-feedback')
+    expect(existsSync(skillDir('improve-framework'))).toBe(false)
+    expect(existsSync(outbox)).toBe(false)
+    runAdd('framework', { out: consumer })
+    expect(cfg().tiers).toContain('framework')
+    expect(existsSync(skillDir('improve-framework'))).toBe(true)
+    expect(existsSync(outbox)).toBe(true)
+  })
+
+  test('remove tier uninstalls its skills, removes tiers key when empty, and removes outbox', () => {
+    const outbox = join(consumer, '.ai', 'framework-feedback')
+    runAdd('framework', { out: consumer })
+    expect(existsSync(skillDir('improve-framework'))).toBe(true)
+    expect(existsSync(outbox)).toBe(true)
+    runRemove('framework', { out: consumer })
+    expect(cfg().tiers).toBeUndefined()
+    expect(existsSync(skillDir('improve-framework'))).toBe(false)
+    expect(existsSync(outbox)).toBe(false)
+  })
+
+  test('remove non-enabled tier is rejected', () => {
+    expect(() => runRemove('framework', { out: consumer })).toThrow(/not enabled/)
+  })
+
+  test('add default tier is rejected', () => {
+    expect(() => runAdd('core', { out: consumer })).toThrow(/default tier/)
+  })
+
+  test('manifest selection includes tiers after add framework', () => {
+    runAdd('framework', { out: consumer })
+    const manifest = JSON.parse(readFileSync(join(consumer, '.ai', '.render-manifest.json'), 'utf8'))
+    expect(manifest.selection.tiers).toContain('framework')
+  })
 })

@@ -36,6 +36,10 @@ export const FrameworkConfigSchema = z
       })
       .strict()
       .optional(),
+    tiers: z
+      .array(z.string())
+      .describe('Opt-in tiers to install in addition to the defaults (e.g. ["framework", "automation"]).')
+      .optional(),
     source: z
       .object({
         path: z

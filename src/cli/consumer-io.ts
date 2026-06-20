@@ -56,14 +56,15 @@ export function writeConventions(root: string, out: string, config: FrameworkCon
     writeFileSync(join(ai, 'lessons.md'), sub(readFileSync(lessonsSrc, 'utf8')))
     written.push('.ai/lessons.md')
   }
-  // Synced-read-only generic lessons + the local-only framework-feedback outbox (decision #8).
+  // Synced-read-only generic lessons.
   const fwLessons = join(root, 'core', 'ai', 'lessons.framework.md')
   if (existsSync(fwLessons)) {
     writeFileSync(join(ai, 'lessons.framework.md'), readFileSync(fwLessons, 'utf8'))
     written.push('.ai/lessons.framework.md')
   }
+  // Framework-feedback outbox: only for consumers who have opted in to the framework tier.
   const outbox = join(root, 'core', 'ai', 'framework-feedback')
-  if (existsSync(outbox)) {
+  if (existsSync(outbox) && config.tiers?.includes('framework')) {
     cpSync(outbox, join(ai, 'framework-feedback'), { recursive: true })
     written.push('.ai/framework-feedback/')
   }
@@ -97,8 +98,34 @@ export function writeManifest(out: string, config: FrameworkConfig, skills: Mani
   mkdirSync(join(out, '.ai'), { recursive: true })
   writeFileSync(
     join(out, '.ai', '.render-manifest.json'),
-    JSON.stringify({ selection: pick(config, ['orm', 'ui', 'stack', 'harnesses']), skills }, null, 2) + '\n',
+    JSON.stringify(
+      { selection: pick(config, ['orm', 'ui', 'stack', 'harnesses', 'tiers']), skills },
+      null,
+      2,
+    ) + '\n',
   )
+}
+
+export function harnessSkillsDir(root: string, harness: string): string | null {
+  const p = join(root, 'adapters', 'harness', harness, 'adapter.json')
+  if (!existsSync(p)) return null
+  const ad = AdapterSchema.parse(JSON.parse(readFileSync(p, 'utf8')))
+  return ad.skillsDir ?? null
+}
+
+export function wireNewSkills(root: string, out: string, config: FrameworkConfig, skills: string[]): void {
+  for (const harness of config.harnesses) {
+    const adPath = join(root, 'adapters', 'harness', harness, 'adapter.json')
+    if (!existsSync(adPath)) continue
+    const ad = AdapterSchema.parse(JSON.parse(readFileSync(adPath, 'utf8')))
+    if (!ad.skillsDir || !ad.linkBase) continue
+    const hdir = join(out, ad.skillsDir)
+    mkdirSync(hdir, { recursive: true })
+    for (const skill of skills) {
+      const link = join(hdir, skill)
+      if (!existsSync(link) && !isLink(link)) symlinkSync(`${ad.linkBase}/${skill}`, link)
+    }
+  }
 }
 
 export function wireHarnesses(

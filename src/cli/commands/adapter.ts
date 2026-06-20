@@ -5,12 +5,12 @@
 //   • surviving skills are 3-way merged (like sync) so adapter-content changes flow in
 //     without clobbering local edits.
 // The adapter's axis is read from its adapter.json, so the command is `add <name>`.
-import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, rmSync, cpSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { FrameworkConfigSchema, AdapterSchema, type FrameworkConfig } from '../../core/contracts.js'
-import { selectSkills } from '../../core/select.js'
+import { FrameworkConfigSchema, type FrameworkConfig } from '../../core/contracts.js'
+import { selectSkills, loadTiers } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
-import { writeManifest, wireHarnesses, type ManifestSkills } from '../consumer-io.js'
+import { writeManifest, wireHarnesses, harnessSkillsDir, type ManifestSkills } from '../consumer-io.js'
 import { reconcileSkill } from '../reconcile.js'
 
 const AXES = ['orm', 'ui', 'stack', 'harness'] as const
@@ -33,13 +33,6 @@ function resolveAxis(root: string, name: string): (typeof AXES)[number] {
   throw new Error(`no adapter '${name}' found under adapters/{${AXES.join(',')}}/`)
 }
 
-function harnessSkillsDir(root: string, harness: string): string | null {
-  const p = join(root, 'adapters', 'harness', harness, 'adapter.json')
-  if (!existsSync(p)) return null
-  const ad = AdapterSchema.parse(JSON.parse(readFileSync(p, 'utf8')))
-  return ad.skillsDir ?? null
-}
-
 export function runAdd(name: string, opts: AdapterCmdOptions): void {
   mutate(name, 'add', opts)
 }
@@ -55,33 +48,64 @@ function mutate(name: string, op: 'add' | 'remove', opts: AdapterCmdOptions): vo
   const cfgPath = join(out, 'framework.config.json')
 
   const raw = JSON.parse(readFileSync(cfgPath, 'utf8')) as Record<string, unknown>
-  const axis = resolveAxis(root, name)
-  const prevHarnesses = [...(FrameworkConfigSchema.parse(raw).harnesses ?? [])]
+  const prevConfig = FrameworkConfigSchema.parse(raw)
+  const prevHarnesses = [...(prevConfig.harnesses ?? [])]
 
-  if (axis === 'harness') {
-    const list = new Set(prevHarnesses)
+  const tierDef = loadTiers(root)
+  const isTier = name in tierDef.tiers
+
+  if (isTier) {
+    if (tierDef.default.includes(name))
+      throw new Error(
+        `tier '${name}' is a default tier — it is always active and cannot be ${op === 'add' ? 'explicitly opted in' : 'removed'}`,
+      )
+    const current = prevConfig.tiers ?? []
     if (op === 'add') {
-      list.add(name)
+      if (!current.includes(name)) raw.tiers = [...current, name]
     } else {
-      if (!list.has(name)) throw new Error(`harness '${name}' is not installed; nothing to remove`)
-      if (list.size === 1) throw new Error('cannot remove the last harness — at least one is required')
-      list.delete(name)
+      if (!current.includes(name)) throw new Error(`tier '${name}' is not enabled; nothing to remove`)
+      const after = current.filter((t) => t !== name)
+      if (after.length > 0) raw.tiers = after
+      else delete raw.tiers
     }
-    raw.harnesses = [...list]
-  } else if (op === 'add') {
-    raw[axis] = name
   } else {
-    // remove: only clear the axis if this adapter is the one selected
-    if (raw[axis] !== name) throw new Error(`'${name}' is not the active ${axis} adapter; nothing to remove`)
-    raw[axis] = null
+    const axis = resolveAxis(root, name)
+    if (axis === 'harness') {
+      const list = new Set(prevHarnesses)
+      if (op === 'add') {
+        list.add(name)
+      } else {
+        if (!list.has(name)) throw new Error(`harness '${name}' is not installed; nothing to remove`)
+        if (list.size === 1) throw new Error('cannot remove the last harness — at least one is required')
+        list.delete(name)
+      }
+      raw.harnesses = [...list]
+    } else if (op === 'add') {
+      raw[axis] = name
+    } else {
+      if (raw[axis] !== name)
+        throw new Error(`'${name}' is not the active ${axis} adapter; nothing to remove`)
+      raw[axis] = null
+    }
   }
 
   const config = FrameworkConfigSchema.parse(raw)
   writeFileSync(cfgPath, JSON.stringify(raw, null, 2) + '\n')
 
+  if (isTier && name === 'framework') {
+    const outboxDst = join(out, '.ai', 'framework-feedback')
+    if (op === 'add') {
+      const outboxSrc = join(root, 'core', 'ai', 'framework-feedback')
+      if (existsSync(outboxSrc)) cpSync(outboxSrc, outboxDst, { recursive: true })
+    } else {
+      rmSync(outboxDst, { recursive: true, force: true })
+    }
+  }
+
   const conflicts = reconcile(root, out, config, prevHarnesses, useCopy)
+  const kind = isTier ? 'tier' : 'adapter'
   console.log(
-    `${op === 'add' ? 'Added' : 'Removed'} ${name} (${axis}) in ${relative(process.cwd(), out) || '.'}`,
+    `${op === 'add' ? 'Added' : 'Removed'} ${name} (${kind}) in ${relative(process.cwd(), out) || '.'}`,
   )
   if (conflicts) {
     console.log(

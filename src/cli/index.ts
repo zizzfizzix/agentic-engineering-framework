@@ -47,8 +47,7 @@ function suggestKey(unknown: string, valid: string[]): string | null {
       best = k
     }
   }
-  // Suggest only for likely typos: 1–2 edits covers transpositions and dropped/swapped chars.
-  return bestDist <= 2 ? best : null
+  return bestDist / Math.max(unknown.length, best!.length) <= 0.4 ? best : null
 }
 
 const program = new Command()

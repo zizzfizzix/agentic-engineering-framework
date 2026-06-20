@@ -2,7 +2,7 @@
 // runInit/runSync against a temp consumer. The framework source is unchanged between
 // init and sync, so we simulate "the framework moved on" by rewriting the BASE
 // snapshot (and LOCAL) — NEW is always the current render.
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -63,6 +63,42 @@ describe('sync reconcile', () => {
     expect(merged).toMatch(/local note/) // local edit preserved
     expect(merged).not.toMatch(/<<<<<<</) // clean, no conflict markers
     expect(process.exitCode).toBe(0)
+  })
+
+  test('sync installs a new skill when a tier is added to the config', () => {
+    const cfgPath = join(consumer, 'framework.config.json')
+    const raw = JSON.parse(readFileSync(cfgPath, 'utf8'))
+    raw.tiers = ['framework']
+    writeFileSync(cfgPath, JSON.stringify(raw, null, 2) + '\n')
+
+    expect(existsSync(join(consumer, '.ai', 'skills', 'improve-framework'))).toBe(false)
+    runSync({ out: consumer })
+    expect(existsSync(join(consumer, '.ai', 'skills', 'improve-framework'))).toBe(true)
+  })
+
+  test('sync removes a skill when its required axis is cleared from the config', () => {
+    const cfgPath = join(consumer, 'framework.config.json')
+    const raw = JSON.parse(readFileSync(cfgPath, 'utf8'))
+    raw.orm = null
+    writeFileSync(cfgPath, JSON.stringify(raw, null, 2) + '\n')
+
+    expect(existsSync(join(consumer, '.ai', 'skills', 'migrate-orm'))).toBe(true)
+    runSync({ out: consumer })
+    expect(existsSync(join(consumer, '.ai', 'skills', 'migrate-orm'))).toBe(false)
+    // unrelated skills are unaffected
+    expect(existsSync(join(consumer, '.ai', 'skills', 'code-review'))).toBe(true)
+  })
+
+  test('manifest selection reflects tiers after sync', () => {
+    const cfgPath = join(consumer, 'framework.config.json')
+    const raw = JSON.parse(readFileSync(cfgPath, 'utf8'))
+    raw.tiers = ['framework']
+    writeFileSync(cfgPath, JSON.stringify(raw, null, 2) + '\n')
+
+    runSync({ out: consumer })
+
+    const manifest = JSON.parse(readFileSync(join(consumer, '.ai', '.render-manifest.json'), 'utf8'))
+    expect(manifest.selection.tiers).toContain('framework')
   })
 
   test('conflict: framework and local edit the same line', () => {
