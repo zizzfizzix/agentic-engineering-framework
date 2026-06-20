@@ -128,6 +128,44 @@ export function wireNewSkills(root: string, out: string, config: FrameworkConfig
   }
 }
 
+function detectIndent(json: string): string | number {
+  const m = json.match(/^\s*[{[]\r?\n([ \t]+)/)
+  return m ? m[1]! : 2
+}
+
+/**
+ * Upsert `@zizzfizzix/aef@^<version>` into the consumer's `package.json` devDependencies
+ * and add an `"aef": "aef"` script so collaborators can run `pnpm aef sync` without a
+ * global or npx-resolved binary. Preserves existing indentation. Returns a human-readable
+ * note for the init/sync summary line. Silently skips (with a hint) when no package.json
+ * is present; throws a friendly error when the file is present but malformed.
+ */
+export function pinAefInPackageJson(out: string, version: string): string {
+  const pkgPath = join(out, 'package.json')
+  if (!existsSync(pkgPath)) {
+    return `no package.json found — run: pnpm add -D @zizzfizzix/aef@^${version}`
+  }
+  const raw = readFileSync(pkgPath, 'utf8')
+  let pkg: Record<string, unknown>
+  try {
+    pkg = JSON.parse(raw) as Record<string, unknown>
+  } catch (e) {
+    throw new Error(`Failed to parse ${pkgPath}: ${e instanceof Error ? e.message : String(e)}`)
+  }
+  const indent = detectIndent(raw)
+  const scripts = (pkg['scripts'] as Record<string, string> | undefined) ?? {}
+  const devDeps = (pkg['devDependencies'] as Record<string, string> | undefined) ?? {}
+  const wasPresent = '@zizzfizzix/aef' in devDeps
+  scripts['aef'] = 'aef'
+  devDeps['@zizzfizzix/aef'] = `^${version}`
+  pkg['scripts'] = scripts
+  pkg['devDependencies'] = devDeps
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, indent) + '\n')
+  return wasPresent
+    ? `updated @zizzfizzix/aef to ^${version} in devDependencies`
+    : `added @zizzfizzix/aef@^${version} to devDependencies`
+}
+
 export function wireHarnesses(
   root: string,
   out: string,

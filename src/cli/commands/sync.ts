@@ -7,7 +7,13 @@ import { FrameworkConfigSchema } from '../../core/contracts.js'
 import { selectSkills } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
 import { reconcileSkill, type ReconcileStatus } from '../reconcile.js'
-import { writeManifest, wireNewSkills, harnessSkillsDir, type ManifestSkills } from '../consumer-io.js'
+import {
+  writeManifest,
+  wireNewSkills,
+  harnessSkillsDir,
+  pinAefInPackageJson,
+  type ManifestSkills,
+} from '../consumer-io.js'
 
 interface RenderManifestFile {
   selection: unknown
@@ -81,6 +87,12 @@ export function runSync(opts: SyncOptions): void {
   }
 
   report.forEach((l) => console.log(l))
+
+  const { version } = JSON.parse(readFileSync(join(FRAMEWORK_ROOT, 'package.json'), 'utf8')) as {
+    version: string
+  }
+  console.log(`  package.json: ${pinAefInPackageJson(out, version)}`)
+
   if (conflicts) {
     console.log(
       `\n${conflicts} conflict(s) written as <<<<<<< markers. Review with 'git diff', resolve, commit.`,

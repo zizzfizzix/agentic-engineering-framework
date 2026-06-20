@@ -10,7 +10,13 @@ import { join, relative } from 'node:path'
 import { FrameworkConfigSchema, type FrameworkConfig } from '../../core/contracts.js'
 import { selectSkills, loadTiers } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
-import { writeManifest, wireHarnesses, harnessSkillsDir, type ManifestSkills } from '../consumer-io.js'
+import {
+  writeManifest,
+  wireHarnesses,
+  harnessSkillsDir,
+  pinAefInPackageJson,
+  type ManifestSkills,
+} from '../consumer-io.js'
 import { reconcileSkill } from '../reconcile.js'
 
 const AXES = ['orm', 'ui', 'stack', 'harness'] as const
@@ -107,6 +113,12 @@ function mutate(name: string, op: 'add' | 'remove', opts: AdapterCmdOptions): vo
   console.log(
     `${op === 'add' ? 'Added' : 'Removed'} ${name} (${kind}) in ${relative(process.cwd(), out) || '.'}`,
   )
+
+  const { version } = JSON.parse(readFileSync(join(FRAMEWORK_ROOT, 'package.json'), 'utf8')) as {
+    version: string
+  }
+  console.log(`  package.json: ${pinAefInPackageJson(out, version)}`)
+
   if (conflicts) {
     console.log(
       `\n${conflicts} conflict(s) written as <<<<<<< markers — review with 'git diff', resolve, commit.`,
