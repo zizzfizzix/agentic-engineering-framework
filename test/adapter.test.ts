@@ -91,4 +91,10 @@ describe('add / remove', () => {
   test('add default tier is rejected', () => {
     expect(() => runAdd('core', { out: consumer })).toThrow(/default tier/)
   })
+
+  test('manifest selection includes tiers after add framework', () => {
+    runAdd('framework', { out: consumer })
+    const manifest = JSON.parse(readFileSync(join(consumer, '.ai', '.render-manifest.json'), 'utf8'))
+    expect(manifest.selection.tiers).toContain('framework')
+  })
 })
