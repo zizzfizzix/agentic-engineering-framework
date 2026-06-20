@@ -10,10 +10,12 @@ const ROOT = process.cwd()
 
 // Run against the real framework root — idempotent since session-start already ran it.
 describe('runDev against real framework root', () => {
-  test('dev skills are installed as symlinks', () => {
+  beforeAll(() => {
     runDev(ROOT)
+  })
+
+  test('dev skills are installed as symlinks', () => {
     const skillsDir = join(ROOT, '.claude', 'skills')
-    // adapter-creator and triage-feedback are the known dev skills
     for (const name of ['adapter-creator', 'triage-feedback']) {
       const entry = join(skillsDir, name)
       expect(existsSync(entry), `${name} should exist`).toBe(true)
@@ -22,9 +24,7 @@ describe('runDev against real framework root', () => {
   })
 
   test('shipped skills are installed as rendered files (not symlinks)', () => {
-    runDev(ROOT)
     const skillsDir = join(ROOT, '.claude', 'skills')
-    // skill-creator is a core-tier shipped skill with no slots
     const entry = join(skillsDir, 'skill-creator')
     expect(existsSync(entry), 'skill-creator should exist').toBe(true)
     expect(lstatSync(entry).isSymbolicLink(), 'skill-creator should not be a symlink').toBe(false)
@@ -34,14 +34,12 @@ describe('runDev against real framework root', () => {
   })
 
   test('improve-framework (framework tier) is installed', () => {
-    runDev(ROOT)
     const entry = join(ROOT, '.claude', 'skills', 'improve-framework')
     expect(existsSync(entry)).toBe(true)
     expect(lstatSync(entry).isSymbolicLink()).toBe(false)
   })
 
   test('orm-gated skills are not installed (no orm in dev config)', () => {
-    runDev(ROOT)
     const skillsDir = join(ROOT, '.claude', 'skills')
     for (const name of ['migrate-orm', 'data-model-design']) {
       expect(existsSync(join(skillsDir, name)), `${name} should be absent`).toBe(false)

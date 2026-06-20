@@ -24,7 +24,8 @@ export function runDev(root: string = FRAMEWORK_ROOT): void {
   }
   const config = FrameworkConfigSchema.parse(JSON.parse(readFileSync(devConfigPath, 'utf8')))
   const devSkillNames = new Set(devSkills)
-  const { skills: shippedSkills, skipped } = selectSkills(root, config)
+  const { skills: allShipped, skipped } = selectSkills(root, config)
+  const shippedSkills = allShipped.filter((s) => !devSkillNames.has(s))
 
   const harnessRoot = join(root, 'adapters', 'harness')
   const harnesses = readdirSync(harnessRoot).filter((d) => existsSync(join(harnessRoot, d, 'adapter.json')))
@@ -47,8 +48,7 @@ export function runDev(root: string = FRAMEWORK_ROOT): void {
     }
 
     // Shipped skills: render with the dev config and write SKILL.md directly.
-    // Dev skills take priority — skip any shipped skill whose name is already a dev skill.
-    for (const skill of shippedSkills.filter((s) => !devSkillNames.has(s))) {
+    for (const skill of shippedSkills) {
       const dest = join(hdir, skill)
       if (existsSync(dest) || isLink(dest)) rmSync(dest, { recursive: true, force: true })
       mkdirSync(dest, { recursive: true })
