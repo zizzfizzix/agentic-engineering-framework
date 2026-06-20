@@ -3,6 +3,7 @@
 import { readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as p from '@clack/prompts'
+import { loadTiers } from '../core/select.js'
 
 function listAdapters(root: string, axis: string): string[] {
   const dir = join(root, 'adapters', axis)
@@ -45,17 +46,24 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
   const stack = bail(
     await p.select({ message: 'Stack adapter', options: axisOptions(root, 'stack'), initialValue: null }),
   )
+
+  // Opt-in tiers: everything not in the default tier list, read dynamically from tiers.json.
+  const { default: defaultTiers, tiers: tiersData } = loadTiers(root)
+  const optInTierOptions = Object.entries(tiersData)
+    .filter(([key]) => !defaultTiers.includes(key))
+    .map(([key, val]) => ({
+      value: key,
+      label: key,
+      hint: String((val as Record<string, unknown>).description ?? ''),
+    }))
   const selectedTiers = bail(
     await p.multiselect({
       message: 'Opt-in skill tiers (space to toggle, none for core only)',
-      options: [
-        { value: 'automation', label: 'automation', hint: 'PR/issue automation workflows' },
-        { value: 'security', label: 'security', hint: 'Security audit skills' },
-        { value: 'framework', label: 'framework', hint: 'Contribute fixes/lessons back to the framework' },
-      ],
+      options: optInTierOptions,
       required: false,
     }),
   )
+
   const validationRaw = bail(
     await p.text({
       message: 'Verification gate commands (comma-separated, e.g. pnpm test, pnpm build)',
@@ -75,11 +83,27 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
       placeholder: 'git@github.com:owner/agentic-engineering-framework.git',
     }),
   )
-
-  p.note(
-    'Edit framework.config.json to set paths, feedback routing, and other advanced fields.\nSee framework.config.example.json for a full reference of all available options.',
-    'Next steps',
+  const modulesRoot = bail(
+    await p.text({ message: 'Modules root path (blank for default)', placeholder: 'src/modules' }),
   )
+  const specsRoot = bail(
+    await p.text({ message: 'Specs root path (blank for default)', placeholder: '.ai/specs' }),
+  )
+  const testsRoot = bail(
+    await p.text({ message: 'Tests root path (blank for default)', placeholder: '.ai/qa/tests' }),
+  )
+  const feedbackMode = bail(
+    await p.select({
+      message: 'Feedback upstream routing',
+      options: [
+        { value: 'scheduled-pr', label: 'scheduled-pr', hint: 'Open a PR with lessons on a schedule' },
+        { value: 'prompt', label: 'prompt', hint: 'Ask before routing each batch' },
+        { value: 'off', label: 'off', hint: 'Capture locally only, never route upstream' },
+      ],
+      initialValue: 'scheduled-pr' as string,
+    }),
+  )
+
   p.outro('Configuration ready.')
 
   const tiers = selectedTiers.length > 0 ? selectedTiers : undefined
@@ -91,6 +115,11 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
     : undefined
   const sourceRepoUrl = sourceRepo.trim()
 
+  const paths: Record<string, string> = {}
+  if (modulesRoot.trim()) paths.modulesRoot = modulesRoot.trim()
+  if (specsRoot.trim()) paths.specsRoot = specsRoot.trim()
+  if (testsRoot.trim()) paths.testsRoot = testsRoot.trim()
+
   const config: Record<string, unknown> = {
     $schema: './schemas/framework.config.schema.json',
     projectName,
@@ -98,12 +127,24 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
     orm,
     ui,
     stack,
-    git: { defaultBranch },
+    git: { defaultBranch, labels: [] },
   }
 
+  if (Object.keys(paths).length > 0) config.paths = paths
   if (tiers !== undefined) config.tiers = tiers
   if (validation !== undefined) config.validation = validation
   if (sourceRepoUrl) config.source = { repo: sourceRepoUrl, path: null }
+
+  config.feedback = {
+    capture: true,
+    upstream: {
+      mode: feedbackMode,
+      channel: 'pr',
+      schedule: 'weekly',
+      sanitize: true,
+      requireHumanApproval: true,
+    },
+  }
 
   return config
 }
