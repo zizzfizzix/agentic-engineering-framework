@@ -4,5 +4,5 @@
   "orm": null,
   "ui": null,
   "stack": "generic-node",
-  "tiers": ["automation", "framework"]
+  "tiers": ["automation", "security", "framework"]
 }
