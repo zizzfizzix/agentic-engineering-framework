@@ -24,7 +24,7 @@ jobs:
       prs_created: ${{ steps.release.outputs.prs_created }}
       pr: ${{ steps.release.outputs.pr }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release
         with:
           # A PAT (not the built-in GITHUB_TOKEN) for two reasons: GITHUB_TOKEN is
@@ -53,14 +53,14 @@ jobs:
           PR_JSON: ${{ needs.release-please.outputs.pr }}
         run: echo "branch=$(jq -r .headBranchName <<<"$PR_JSON")" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ steps.pr.outputs.branch }}
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
