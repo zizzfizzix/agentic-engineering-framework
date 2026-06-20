@@ -47,7 +47,7 @@ function suggestKey(unknown: string, valid: string[]): string | null {
       best = k
     }
   }
-  return bestDist / Math.max(unknown.length, best!.length) <= 0.4 ? best : null
+  return best !== null && bestDist / Math.max(unknown.length, best.length) <= 0.4 ? best : null
 }
 
 const program = new Command()
@@ -61,7 +61,7 @@ program
   .command('init')
   .description('Render the configured skill set into a consumer repo and wire harnesses.')
   .option('--config <path>', 'path to framework.config.json (required unless --interactive)')
-  .option('--out <dir>', 'consumer directory to write into')
+  .option('--out <dir>', 'consumer directory to write into (default: current directory)')
   .option('--copy', 'copy rendered skills into harness dirs instead of symlinking')
   .option('-i, --interactive', 'build the config interactively via prompts')
   .action((opts) => runInit(opts))
