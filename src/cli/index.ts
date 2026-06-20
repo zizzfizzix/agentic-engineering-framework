@@ -64,7 +64,6 @@ program
   .option('--out <dir>', 'consumer directory to write into (default: current directory)')
   .option('--copy', 'copy rendered skills into harness dirs instead of symlinking')
   .option('-i, --interactive', 'build the config interactively via prompts')
-  .option('--force', 'with --interactive: ignore any existing config and start from scratch')
   .action((opts) => runInit(opts))
 
 program

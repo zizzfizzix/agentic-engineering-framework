@@ -117,22 +117,46 @@ export async function runWizard(
 ): Promise<Record<string, unknown>> {
   p.intro('aef init')
 
+  // When an existing config is present, ask whether to update it or start fresh.
+  let cfg: FrameworkConfig | undefined = existingConfig
   if (existingConfig) {
-    p.note('Existing values shown as defaults — press Enter to keep each one.', 'Updating configuration')
+    const mode = bail(
+      await p.select({
+        message: 'framework.config.json already exists — what would you like to do?',
+        options: [
+          {
+            value: 'update' as const,
+            label: 'Update',
+            hint: 'pre-fill each prompt with the current value',
+          },
+          {
+            value: 'scratch' as const,
+            label: 'Start from scratch',
+            hint: 'ignore the existing config entirely',
+          },
+        ],
+        initialValue: 'update' as const,
+      }),
+    )
+    if (mode === 'scratch') {
+      cfg = undefined
+    } else {
+      p.note('Existing values shown as defaults — press Enter to keep each one.', 'Updating')
+    }
   }
 
   const projectName = bail(
     await p.text({
       message: 'Project name',
       placeholder: 'my-app',
-      defaultValue: existingConfig?.projectName ?? 'my-app',
+      defaultValue: cfg?.projectName ?? 'my-app',
     }),
   )
   const harnesses = bail(
     await p.multiselect({
       message: 'Which AI harnesses should be wired?',
       options: listAdapters(root, 'harness').map((v) => ({ value: v, label: v })),
-      initialValues: existingConfig?.harnesses,
+      initialValues: cfg?.harnesses,
       required: true,
     }),
   )
@@ -140,21 +164,21 @@ export async function runWizard(
     await p.select({
       message: 'ORM adapter',
       options: axisOptions(root, 'orm'),
-      initialValue: existingConfig?.orm !== undefined ? existingConfig.orm : null,
+      initialValue: cfg?.orm !== undefined ? cfg.orm : null,
     }),
   )
   const ui = bail(
     await p.select({
       message: 'UI adapter',
       options: axisOptions(root, 'ui'),
-      initialValue: existingConfig?.ui !== undefined ? existingConfig.ui : null,
+      initialValue: cfg?.ui !== undefined ? cfg.ui : null,
     }),
   )
   const stack = bail(
     await p.select({
       message: 'Stack adapter',
       options: axisOptions(root, 'stack'),
-      initialValue: existingConfig?.stack !== undefined ? existingConfig.stack : null,
+      initialValue: cfg?.stack !== undefined ? cfg.stack : null,
     }),
   )
 
@@ -173,7 +197,7 @@ export async function runWizard(
           await p.multiselect({
             message: 'Opt-in skill tiers (space to toggle, none for core only)',
             options: optInTierOptions,
-            initialValues: existingConfig?.tiers ?? [],
+            initialValues: cfg?.tiers ?? [],
             required: false,
           }),
         )
@@ -181,7 +205,7 @@ export async function runWizard(
 
   // Validation commands: on reinit offer to keep existing; otherwise collect interactively.
   const validationCommands: string[] = []
-  const existingCmds = existingConfig?.validation ?? []
+  const existingCmds = cfg?.validation ?? []
   if (existingCmds.length > 0) {
     const keep = bail(
       await p.confirm({
@@ -213,35 +237,35 @@ export async function runWizard(
     await p.text({
       message: 'Default git branch',
       placeholder: 'main',
-      defaultValue: existingConfig?.git?.defaultBranch ?? 'main',
+      defaultValue: cfg?.git?.defaultBranch ?? 'main',
     }),
   )
   const sourceRepo = bail(
     await p.text({
       message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
       placeholder: 'git@github.com:owner/agentic-engineering-framework.git',
-      defaultValue: existingConfig?.source?.repo || undefined,
+      defaultValue: cfg?.source?.repo || undefined,
     }),
   )
   const modulesRoot = bail(
     await p.text({
       message: 'Modules root path (blank for default)',
       placeholder: 'src/modules',
-      defaultValue: existingConfig?.paths?.modulesRoot || undefined,
+      defaultValue: cfg?.paths?.modulesRoot || undefined,
     }),
   )
   const specsRoot = bail(
     await p.text({
       message: 'Specs root path (blank for default)',
       placeholder: '.ai/specs',
-      defaultValue: existingConfig?.paths?.specsRoot || undefined,
+      defaultValue: cfg?.paths?.specsRoot || undefined,
     }),
   )
   const testsRoot = bail(
     await p.text({
       message: 'Tests root path (blank for default)',
       placeholder: '.ai/qa/tests',
-      defaultValue: existingConfig?.paths?.testsRoot || undefined,
+      defaultValue: cfg?.paths?.testsRoot || undefined,
     }),
   )
   const feedbackMode = bail(
@@ -256,7 +280,7 @@ export async function runWizard(
         { value: 'prompt' as const, label: 'prompt', hint: 'Ask before routing each batch' },
         { value: 'off' as const, label: 'off', hint: 'Capture locally only, never route upstream' },
       ],
-      initialValue: existingConfig?.feedback?.upstream?.mode ?? 'scheduled-pr',
+      initialValue: cfg?.feedback?.upstream?.mode ?? 'scheduled-pr',
     }),
   )
 
@@ -278,8 +302,8 @@ export async function runWizard(
     feedbackMode,
   })
 
-  if (existingConfig) {
-    mergeNonPromptedFields(result, existingConfig)
+  if (cfg) {
+    mergeNonPromptedFields(result, cfg)
   }
 
   return result

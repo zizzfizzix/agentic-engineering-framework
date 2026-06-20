@@ -24,7 +24,6 @@ export interface InitOptions {
   out?: string
   copy?: boolean
   interactive?: boolean
-  force?: boolean
 }
 
 export async function runInit(opts: InitOptions): Promise<void> {
@@ -49,7 +48,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   if (opts.interactive) {
     const existingPath = join(out, 'framework.config.json')
     let existingConfig: FrameworkConfig | undefined
-    if (!opts.force && existsSync(existingPath)) {
+    if (existsSync(existingPath)) {
       try {
         existingConfig = FrameworkConfigSchema.parse(JSON.parse(readFileSync(existingPath, 'utf8')))
       } catch {
