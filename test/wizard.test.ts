@@ -1,6 +1,7 @@
 // Unit tests for the pure buildConfig helper extracted from the interactive wizard.
 import { test, expect, describe } from 'vitest'
 import { buildConfig, type WizardAnswers } from '../src/cli/wizard.js'
+import { FrameworkConfigSchema } from '../src/core/contracts.js'
 
 const base: WizardAnswers = {
   projectName: 'my-app',
@@ -103,5 +104,36 @@ describe('buildConfig', () => {
     expect(upstream.schedule).toBe('weekly')
     expect(upstream.sanitize).toBe(true)
     expect(upstream.requireHumanApproval).toBe(true)
+  })
+
+  test('feedbackMode prompt is reflected in upstream.mode', () => {
+    const upstream = (buildConfig({ ...base, feedbackMode: 'prompt' }).feedback as Record<string, unknown>)
+      .upstream as Record<string, unknown>
+    expect(upstream.mode).toBe('prompt')
+  })
+
+  test('stack value is passed through to config', () => {
+    expect(buildConfig({ ...base, stack: 'next-js' }).stack).toBe('next-js')
+  })
+
+  test('minimal answers pass FrameworkConfigSchema validation', () => {
+    expect(() => FrameworkConfigSchema.parse(buildConfig(base))).not.toThrow()
+  })
+
+  test('fully populated answers pass FrameworkConfigSchema validation', () => {
+    expect(() =>
+      FrameworkConfigSchema.parse(
+        buildConfig({
+          ...base,
+          selectedTiers: ['automation'],
+          validationCommands: ['pnpm test'],
+          sourceRepo: 'git@github.com:org/aef.git',
+          modulesRoot: 'src/modules',
+          specsRoot: '.ai/specs',
+          testsRoot: '.ai/qa/tests',
+          feedbackMode: 'prompt',
+        }),
+      ),
+    ).not.toThrow()
   })
 })

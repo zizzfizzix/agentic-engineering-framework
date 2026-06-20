@@ -37,7 +37,7 @@ export interface WizardAnswers {
   modulesRoot: string
   specsRoot: string
   testsRoot: string
-  feedbackMode: string
+  feedbackMode: 'scheduled-pr' | 'prompt' | 'off'
 }
 
 export function buildConfig(a: WizardAnswers): Record<string, unknown> {
@@ -119,7 +119,6 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
     }),
   )
 
-  // Collect gate commands one per prompt; blank line ends input.
   const validationCommands: string[] = []
   while (true) {
     const cmd = bail(
@@ -158,14 +157,18 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
     await p.text({ message: 'Tests root path (blank for default)', placeholder: '.ai/qa/tests' }),
   )
   const feedbackMode = bail(
-    await p.select({
+    await p.select<'scheduled-pr' | 'prompt' | 'off'>({
       message: 'Feedback upstream routing',
       options: [
-        { value: 'scheduled-pr', label: 'scheduled-pr', hint: 'Open a PR with lessons on a schedule' },
-        { value: 'prompt', label: 'prompt', hint: 'Ask before routing each batch' },
-        { value: 'off', label: 'off', hint: 'Capture locally only, never route upstream' },
+        {
+          value: 'scheduled-pr' as const,
+          label: 'scheduled-pr',
+          hint: 'Open a PR with lessons on a schedule',
+        },
+        { value: 'prompt' as const, label: 'prompt', hint: 'Ask before routing each batch' },
+        { value: 'off' as const, label: 'off', hint: 'Capture locally only, never route upstream' },
       ],
-      initialValue: 'scheduled-pr' as string,
+      initialValue: 'scheduled-pr',
     }),
   )
 
@@ -173,11 +176,11 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
 
   return buildConfig({
     projectName,
-    harnesses: harnesses as string[],
-    orm: orm as string | null,
-    ui: ui as string | null,
-    stack: stack as string | null,
-    selectedTiers: selectedTiers as string[],
+    harnesses,
+    orm,
+    ui,
+    stack,
+    selectedTiers,
     validationCommands,
     defaultBranch,
     sourceRepo,
