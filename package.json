@@ -43,7 +43,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "prepare": "lefthook install || true"
+    "prepare": "lefthook install || true && (tsx src/cli/index.ts dev || true)"
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",

@@ -27,9 +27,16 @@ JSON Schema), **vitest** (tests), ESLint + Prettier, **tsup** (build), **tsx** (
 gate/test/typecheck — installed on `pnpm install`).
 
 ```bash
-pnpm install                    # deps + git hooks
-pnpm cli dev                    # wire .claude/.codex/.cursor skills -> dev/skills (gitignored)
+pnpm install                    # deps + git hooks + auto-wires dev skills (via prepare)
 ```
+
+Dev skills are wired automatically — no manual step needed:
+
+- **`pnpm install`** runs `pnpm cli dev` via the `prepare` script (harness-agnostic; wires all).
+- **Claude Code** fires the `SessionStart` hook in `.claude/settings.json` → `pnpm cli dev`.
+- **Other harnesses** (Codex, Cursor): add an equivalent session-start hook in their settings file
+  (e.g. `.codex/settings.json`) pointing to `pnpm cli dev`. The hook file is tracked; the
+  generated `skills/` subdir stays gitignored.
 
 `pnpm cli dev` installs the **dev** skills, not the shipped ones — you author shipped skills, you
 don't run them here. `pnpm build` emits the distributable `agentic` bin to `dist/`.
