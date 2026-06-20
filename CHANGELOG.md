@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.4.0...v0.4.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* **cli:** add aef script alias so pnpm aef works in the repo ([#31](https://github.com/zizzfizzix/agentic-engineering-framework/issues/31)) ([3cb99e0](https://github.com/zizzfizzix/agentic-engineering-framework/commit/3cb99e0738d80915214f00ce5b4c743cc0d0df25))
+
 ## [0.4.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.3.0...v0.4.0) (2026-06-20)
 
 ### Features
