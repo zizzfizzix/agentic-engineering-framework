@@ -2,16 +2,14 @@
 
 ## [0.4.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.3.0...v0.4.0) (2026-06-20)
 
-
 ### Features
 
-* **init:** add @zizzfizzix/aef to devDependencies after init ([#30](https://github.com/zizzfizzix/agentic-engineering-framework/issues/30)) ([3f7eaf0](https://github.com/zizzfizzix/agentic-engineering-framework/commit/3f7eaf03208f77ac8c2d500c93d666aeeee8ab33))
-
+- **init:** add @zizzfizzix/aef to devDependencies after init ([#30](https://github.com/zizzfizzix/agentic-engineering-framework/issues/30)) ([3f7eaf0](https://github.com/zizzfizzix/agentic-engineering-framework/commit/3f7eaf03208f77ac8c2d500c93d666aeeee8ab33))
 
 ### Bug Fixes
 
-* **dev:** prompt /reload-skills after session-start hook installs skills ([#25](https://github.com/zizzfizzix/agentic-engineering-framework/issues/25)) ([c3708df](https://github.com/zizzfizzix/agentic-engineering-framework/commit/c3708dfaf15d6fc0e1eff085c3ae48e9c878963c))
-* **sync:** default --out to cwd instead of examples/consumer ([#29](https://github.com/zizzfizzix/agentic-engineering-framework/issues/29)) ([27b75d7](https://github.com/zizzfizzix/agentic-engineering-framework/commit/27b75d760523425d052215e176732cff31bacb34))
+- **dev:** prompt /reload-skills after session-start hook installs skills ([#25](https://github.com/zizzfizzix/agentic-engineering-framework/issues/25)) ([c3708df](https://github.com/zizzfizzix/agentic-engineering-framework/commit/c3708dfaf15d6fc0e1eff085c3ae48e9c878963c))
+- **sync:** default --out to cwd instead of examples/consumer ([#29](https://github.com/zizzfizzix/agentic-engineering-framework/issues/29)) ([27b75d7](https://github.com/zizzfizzix/agentic-engineering-framework/commit/27b75d760523425d052215e176732cff31bacb34))
 
 ## [0.3.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.2.0...v0.3.0) (2026-06-20)
 
