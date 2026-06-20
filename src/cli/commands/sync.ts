@@ -1,12 +1,13 @@
 // `aef sync` — re-render from the (updated) framework source and reconcile with
 // local edits via a git-native 3-way merge (BASE = last render, LOCAL = on-disk,
 // NEW = fresh render). Exit code 2 signals unresolved conflicts written to the tree.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { FrameworkConfigSchema } from '../../core/contracts.js'
+import { selectSkills } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
 import { reconcileSkill, type ReconcileStatus } from '../reconcile.js'
-import type { ManifestSkills } from '../consumer-io.js'
+import { writeManifest, wireNewSkills, harnessSkillsDir, type ManifestSkills } from '../consumer-io.js'
 
 interface RenderManifestFile {
   selection: unknown
@@ -34,15 +35,38 @@ export function runSync(opts: SyncOptions): void {
   const manifestPath = join(out, '.ai', '.render-manifest.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as RenderManifestFile
 
+  const { skills: desired } = selectSkills(root, config)
+  const desiredSet = new Set(desired)
+  const installed = Object.keys(manifest.skills)
+
+  const harnessDirs = new Map<string, string | null>()
+  for (const h of config.harnesses) harnessDirs.set(h, harnessSkillsDir(root, h))
+
+  // Remove skills no longer in the desired set (tier removed or axis cleared).
+  for (const s of installed) {
+    if (desiredSet.has(s)) continue
+    rmSync(join(out, '.ai', 'skills', s), { recursive: true, force: true })
+    rmSync(join(out, '.ai', '.base', s), { recursive: true, force: true })
+    delete manifest.skills[s]
+    for (const dir of harnessDirs.values())
+      if (dir) rmSync(join(out, dir, s), { recursive: true, force: true })
+  }
+
   const report: string[] = []
   let conflicts = 0
-  for (const skill of Object.keys(manifest.skills)) {
+  const newSkills: string[] = []
+  for (const skill of desired) {
+    const isNew = !manifest.skills[skill]
     const r = reconcileSkill(root, out, config, skill)
     manifest.skills[skill] = { digest: r.digest, inputs: r.inputs }
     conflicts += r.conflicts
     report.push(REPORT[r.status](skill))
+    if (isNew) newSkills.push(skill)
   }
-  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
+
+  if (newSkills.length > 0) wireNewSkills(root, out, config, newSkills)
+
+  writeManifest(out, config, manifest.skills)
 
   console.log(`Synced ${relative(process.cwd(), out) || '.'} from framework source`)
   // Refresh synced read-only framework lessons (loop closure, decision #8).

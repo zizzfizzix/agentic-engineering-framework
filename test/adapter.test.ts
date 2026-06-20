@@ -81,4 +81,8 @@ describe('add / remove', () => {
   test('remove non-enabled tier is rejected', () => {
     expect(() => runRemove('framework', { out: consumer })).toThrow(/not enabled/)
   })
+
+  test('add default tier is rejected', () => {
+    expect(() => runAdd('core', { out: consumer })).toThrow(/default tier/)
+  })
 })

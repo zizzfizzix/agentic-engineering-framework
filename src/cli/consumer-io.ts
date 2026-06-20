@@ -97,8 +97,34 @@ export function writeManifest(out: string, config: FrameworkConfig, skills: Mani
   mkdirSync(join(out, '.ai'), { recursive: true })
   writeFileSync(
     join(out, '.ai', '.render-manifest.json'),
-    JSON.stringify({ selection: pick(config, ['orm', 'ui', 'stack', 'harnesses']), skills }, null, 2) + '\n',
+    JSON.stringify(
+      { selection: pick(config, ['orm', 'ui', 'stack', 'harnesses', 'tiers']), skills },
+      null,
+      2,
+    ) + '\n',
   )
+}
+
+export function harnessSkillsDir(root: string, harness: string): string | null {
+  const p = join(root, 'adapters', 'harness', harness, 'adapter.json')
+  if (!existsSync(p)) return null
+  const ad = AdapterSchema.parse(JSON.parse(readFileSync(p, 'utf8')))
+  return ad.skillsDir ?? null
+}
+
+export function wireNewSkills(root: string, out: string, config: FrameworkConfig, skills: string[]): void {
+  for (const harness of config.harnesses) {
+    const adPath = join(root, 'adapters', 'harness', harness, 'adapter.json')
+    if (!existsSync(adPath)) continue
+    const ad = AdapterSchema.parse(JSON.parse(readFileSync(adPath, 'utf8')))
+    if (!ad.skillsDir || !ad.linkBase) continue
+    const hdir = join(out, ad.skillsDir)
+    mkdirSync(hdir, { recursive: true })
+    for (const skill of skills) {
+      const link = join(hdir, skill)
+      if (!existsSync(link) && !isLink(link)) symlinkSync(`${ad.linkBase}/${skill}`, link)
+    }
+  }
 }
 
 export function wireHarnesses(

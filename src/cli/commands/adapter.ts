@@ -7,15 +7,10 @@
 // The adapter's axis is read from its adapter.json, so the command is `add <name>`.
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import {
-  FrameworkConfigSchema,
-  AdapterSchema,
-  TiersSchema,
-  type FrameworkConfig,
-} from '../../core/contracts.js'
-import { selectSkills } from '../../core/select.js'
+import { FrameworkConfigSchema, type FrameworkConfig } from '../../core/contracts.js'
+import { selectSkills, loadTiers } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
-import { writeManifest, wireHarnesses, type ManifestSkills } from '../consumer-io.js'
+import { writeManifest, wireHarnesses, harnessSkillsDir, type ManifestSkills } from '../consumer-io.js'
 import { reconcileSkill } from '../reconcile.js'
 
 const AXES = ['orm', 'ui', 'stack', 'harness'] as const
@@ -38,21 +33,6 @@ function resolveAxis(root: string, name: string): (typeof AXES)[number] {
   throw new Error(`no adapter '${name}' found under adapters/{${AXES.join(',')}}/`)
 }
 
-/** Return the set of known tier names from tiers.json, or null if the file is missing. */
-function knownTierNames(root: string): Set<string> | null {
-  const tiersPath = join(root, 'core/ai/skills/tiers.json')
-  if (!existsSync(tiersPath)) return null
-  const parsed = TiersSchema.parse(JSON.parse(readFileSync(tiersPath, 'utf8')))
-  return new Set(Object.keys(parsed.tiers))
-}
-
-function harnessSkillsDir(root: string, harness: string): string | null {
-  const p = join(root, 'adapters', 'harness', harness, 'adapter.json')
-  if (!existsSync(p)) return null
-  const ad = AdapterSchema.parse(JSON.parse(readFileSync(p, 'utf8')))
-  return ad.skillsDir ?? null
-}
-
 export function runAdd(name: string, opts: AdapterCmdOptions): void {
   mutate(name, 'add', opts)
 }
@@ -68,20 +48,25 @@ function mutate(name: string, op: 'add' | 'remove', opts: AdapterCmdOptions): vo
   const cfgPath = join(out, 'framework.config.json')
 
   const raw = JSON.parse(readFileSync(cfgPath, 'utf8')) as Record<string, unknown>
-  const prevHarnesses = [...(FrameworkConfigSchema.parse(raw).harnesses ?? [])]
+  const prevConfig = FrameworkConfigSchema.parse(raw)
+  const prevHarnesses = [...(prevConfig.harnesses ?? [])]
 
-  // Check if the name refers to a tier rather than an adapter.
-  const tierNames = knownTierNames(root)
-  const isTier = tierNames?.has(name) ?? false
+  const tierDef = loadTiers(root)
+  const isTier = name in tierDef.tiers
 
   if (isTier) {
-    const current: string[] = Array.isArray(raw.tiers) ? (raw.tiers as string[]) : []
+    if (tierDef.default.includes(name))
+      throw new Error(
+        `tier '${name}' is a default tier — it is always active and cannot be ${op === 'add' ? 'explicitly opted in' : 'removed'}`,
+      )
+    const current = prevConfig.tiers ?? []
     if (op === 'add') {
       if (!current.includes(name)) raw.tiers = [...current, name]
     } else {
       if (!current.includes(name)) throw new Error(`tier '${name}' is not enabled; nothing to remove`)
-      raw.tiers = current.filter((t) => t !== name)
-      if ((raw.tiers as string[]).length === 0) delete raw.tiers
+      const after = current.filter((t) => t !== name)
+      if (after.length > 0) raw.tiers = after
+      else delete raw.tiers
     }
   } else {
     const axis = resolveAxis(root, name)
@@ -98,7 +83,6 @@ function mutate(name: string, op: 'add' | 'remove', opts: AdapterCmdOptions): vo
     } else if (op === 'add') {
       raw[axis] = name
     } else {
-      // remove: only clear the axis if this adapter is the one selected
       if (raw[axis] !== name)
         throw new Error(`'${name}' is not the active ${axis} adapter; nothing to remove`)
       raw[axis] = null
