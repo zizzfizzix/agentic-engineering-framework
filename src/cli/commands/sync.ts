@@ -74,7 +74,7 @@ export function runSync(opts: SyncOptions): void {
   if (newSkills.length > 0) wireNewSkills(root, out, config, newSkills)
 
   writeManifest(out, config, manifest.skills)
-  copySchema(root, out)
+  if (copySchema(root, out)) report.push('  ↑ schemas/framework.config.schema.json: refreshed')
 
   console.log(`Synced ${relative(process.cwd(), out) || '.'} from framework source`)
   // Refresh synced read-only framework lessons (loop closure, decision #8).
