@@ -115,4 +115,16 @@ describe('sync reconcile', () => {
     expect(merged).toMatch(/MYORM/)
     expect(process.exitCode).toBe(2) // non-zero exit signals unresolved conflicts
   })
+
+  test('sync updates @zizzfizzix/aef version pin when package.json exists', () => {
+    writeFileSync(
+      join(consumer, 'package.json'),
+      JSON.stringify({ name: 'my-app', devDependencies: { '@zizzfizzix/aef': '^0.0.1' } }, null, 2) + '\n',
+    )
+    runSync({ out: consumer })
+    const pkg = JSON.parse(readFileSync(join(consumer, 'package.json'), 'utf8'))
+    expect(pkg.devDependencies?.['@zizzfizzix/aef']).not.toBe('^0.0.1')
+    expect(pkg.devDependencies?.['@zizzfizzix/aef']).toMatch(/^\^\d+\.\d+\.\d+/)
+    expect(pkg.scripts?.['aef']).toBe('aef')
+  })
 })
