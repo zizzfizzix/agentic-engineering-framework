@@ -42,7 +42,7 @@ program
   .command('render')
   .description('Render a single skill to stdout (or --out <dir>) for inspection.')
   .requiredOption('--skill <name>', 'skill id to render')
-  .option('--config <path>', 'path to framework.config.json (defaults to the bundled example)')
+  .option('--config <path>', 'path to framework.config.json (required)')
   .option('--out <dir>', 'write SKILL.md + provenance.json under <dir>/<skill>/ instead of stdout')
   .action((opts) => runRender(opts))
 

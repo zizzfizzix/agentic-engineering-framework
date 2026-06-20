@@ -25,4 +25,7 @@ for (const skill of ['migrate-orm', 'ui-consistency']) {
 
 // 2. Full consumer install under examples/consumer/.
 rmSync(join(ROOT, 'examples', 'consumer'), { recursive: true, force: true })
-await runInit({ out: join(ROOT, 'examples', 'consumer') })
+await runInit({
+  config: join(ROOT, 'framework.config.example.json'),
+  out: join(ROOT, 'examples', 'consumer'),
+})

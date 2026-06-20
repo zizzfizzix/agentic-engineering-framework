@@ -14,10 +14,13 @@ export interface RenderOptions {
 }
 
 export function runRender(opts: RenderOptions): void {
+  if (!opts.config) {
+    throw new Error(
+      `--config is required.\n\nUsage: aef render --skill <name> --config framework.config.json\n\nRun 'aef render --help' for all options.`,
+    )
+  }
   const root = FRAMEWORK_ROOT
-  const config = FrameworkConfigSchema.parse(
-    JSON.parse(readFileSync(opts.config ?? join(root, 'framework.config.example.json'), 'utf8')),
-  )
+  const config = FrameworkConfigSchema.parse(JSON.parse(readFileSync(opts.config, 'utf8')))
   const { rendered, manifest, digest } = renderSkill(root, config, opts.skill)
 
   if (opts.out) {

@@ -27,6 +27,11 @@ export interface InitOptions {
 export async function runInit(opts: InitOptions): Promise<void> {
   const root = FRAMEWORK_ROOT
 
+  if (opts.config && opts.interactive) {
+    throw new Error(
+      `--config and --interactive are mutually exclusive. Pass --config to use a file or --interactive to build one via prompts.`,
+    )
+  }
   if (!opts.config && !opts.interactive) {
     throw new Error(
       `--config is required.\n\nUsage: aef init --config framework.config.json --out . --copy\n\nTo get started, create a framework.config.json. Minimum required:\n  {\n    "harnesses": ["claude-code"]\n  }\n\nRun 'aef init --help' for all options.`,
