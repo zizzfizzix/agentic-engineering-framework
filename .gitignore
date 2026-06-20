@@ -1,9 +1,15 @@
-# Generated harness wiring (regenerate with `aef dev` for framework development,
-# or `aef init` in a consumer). Anchored to repo root so examples/consumer/ stays tracked.
-# Only the skills/ subdirs are ignored — settings files (settings.json, etc.) are tracked.
-/.claude/skills/
-/.codex/skills/
-/.cursor/skills/
+# Harness dirs: track only committed settings/hooks files; ignore everything else
+# (generated skills/, machine-written mcp.json, user-local overrides, etc.).
+# Anchored to repo root so examples/consumer/ stays tracked.
+/.claude/*
+!/.claude/settings.json
+/.codex/*
+!/.codex/hooks.json
+/.cursor/*
+!/.cursor/hooks.json
+!/.cursor/hooks/
+/.cursor/hooks/*
+!/.cursor/hooks/session-start.sh
 
 node_modules/
 

@@ -33,9 +33,15 @@ pnpm install    # deps + git hooks — run by the session-start hook
 pnpm cli dev    # wire dev skills  — run by the session-start hook
 ```
 
-Each harness has a committed settings file with a session-start hook that runs both in order
-(`.claude/settings.json`, `.codex/hooks.json`, `.cursor/hooks.json`). Only the generated
-`skills/` subdirs are gitignored. When adding a new harness adapter, add the equivalent hook.
+Each harness has a committed settings file with a session-start hook that calls
+`scripts/dev-setup.sh` in sequence (`.claude/settings.json`, `.codex/hooks.json`,
+`.cursor/hooks.json`). Only the generated `skills/` subdirs are gitignored — everything
+else inside the harness dirs (machine-written files, local overrides) is also gitignored via
+allowlist patterns. When adding a new harness adapter, add the equivalent hook.
+
+If hooks don't fire, run both commands manually from the repo root. Per-developer Claude Code
+settings belong in `.claude/settings.local.json` (gitignored). The `.codex/hooks.json` format
+mirrors Claude Code's schema and should be verified against the Codex CLI docs if hooks don't fire.
 
 `pnpm cli dev` installs the **dev** skills, not the shipped ones — you author shipped skills, you
 don't run them here. `pnpm build` emits the distributable `agentic` bin to `dist/`.
