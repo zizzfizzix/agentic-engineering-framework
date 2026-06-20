@@ -7,9 +7,6 @@
 !/.codex/hooks.json
 /.cursor/*
 !/.cursor/hooks.json
-!/.cursor/hooks/
-/.cursor/hooks/*
-!/.cursor/hooks/session-start.sh
 
 node_modules/
 

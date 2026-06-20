@@ -1,10 +1,6 @@
 {
   "version": 1,
   "hooks": {
-    "sessionStart": [
-      {
-        "command": ".cursor/hooks/session-start.sh"
-      }
-    ]
+    "sessionStart": [{ "command": "bash scripts/dev-setup.sh" }]
   }
 }
