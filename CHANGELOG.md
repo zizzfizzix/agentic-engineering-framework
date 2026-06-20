@@ -2,10 +2,9 @@
 
 ## [0.3.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.2.0...v0.3.0) (2026-06-20)
 
-
 ### Features
 
-* **dev:** render shipped skills into harness on pnpm cli dev ([#23](https://github.com/zizzfizzix/agentic-engineering-framework/issues/23)) ([a0c1cba](https://github.com/zizzfizzix/agentic-engineering-framework/commit/a0c1cba103e7eb0ce08a5a2a3e654b10b0d3d009))
+- **dev:** render shipped skills into harness on pnpm cli dev ([#23](https://github.com/zizzfizzix/agentic-engineering-framework/issues/23)) ([a0c1cba](https://github.com/zizzfizzix/agentic-engineering-framework/commit/a0c1cba103e7eb0ce08a5a2a3e654b10b0d3d009))
 
 ## [0.2.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.1.0...v0.2.0) (2026-06-20)
 
