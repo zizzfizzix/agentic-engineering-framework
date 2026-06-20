@@ -1,7 +1,7 @@
 // Unit tests for the pure buildConfig helper extracted from the interactive wizard.
 import { test, expect, describe } from 'vitest'
-import { buildConfig, type WizardAnswers } from '../src/cli/wizard.js'
-import { FrameworkConfigSchema } from '../src/core/contracts.js'
+import { buildConfig, mergeNonPromptedFields, type WizardAnswers } from '../src/cli/wizard.js'
+import { FrameworkConfigSchema, type FrameworkConfig } from '../src/core/contracts.js'
 
 const base: WizardAnswers = {
   projectName: 'my-app',
@@ -146,5 +146,90 @@ describe('buildConfig', () => {
         }),
       ),
     ).not.toThrow()
+  })
+})
+
+describe('mergeNonPromptedFields', () => {
+  const makeResult = () =>
+    buildConfig({
+      ...base,
+      sourceRepo: 'git@github.com:org/repo.git',
+    })
+
+  const existing: FrameworkConfig = {
+    harnesses: ['claude-code'],
+    git: { defaultBranch: 'main', labels: ['bug', 'feat'] },
+    source: { repo: 'git@github.com:org/repo.git', path: '/home/user/aef' },
+    feedback: {
+      capture: true,
+      upstream: {
+        mode: 'off',
+        channel: 'issue',
+        schedule: 'monthly',
+        sanitize: false,
+        requireHumanApproval: false,
+      },
+    },
+  }
+
+  test('preserves non-empty git.labels from existing config', () => {
+    const result = makeResult()
+    mergeNonPromptedFields(result, existing)
+    expect((result.git as Record<string, unknown>).labels).toEqual(['bug', 'feat'])
+  })
+
+  test('leaves git.labels as [] when existing labels are empty', () => {
+    const result = makeResult()
+    mergeNonPromptedFields(result, { ...existing, git: { defaultBranch: 'main', labels: [] } })
+    expect((result.git as Record<string, unknown>).labels).toEqual([])
+  })
+
+  test('preserves source.path when result has a source', () => {
+    const result = makeResult()
+    mergeNonPromptedFields(result, existing)
+    expect((result.source as Record<string, unknown>).path).toBe('/home/user/aef')
+  })
+
+  test('does not add source.path when result has no source', () => {
+    const result = buildConfig(base) // no sourceRepo → no source field
+    mergeNonPromptedFields(result, existing)
+    expect(result.source).toBeUndefined()
+  })
+
+  test('preserves feedback.upstream channel from existing config', () => {
+    const result = makeResult()
+    mergeNonPromptedFields(result, existing)
+    const upstream = (result.feedback as Record<string, unknown>).upstream as Record<string, unknown>
+    expect(upstream.channel).toBe('issue')
+  })
+
+  test('preserves feedback.upstream schedule from existing config', () => {
+    const result = makeResult()
+    mergeNonPromptedFields(result, existing)
+    const upstream = (result.feedback as Record<string, unknown>).upstream as Record<string, unknown>
+    expect(upstream.schedule).toBe('monthly')
+  })
+
+  test('preserves feedback.upstream sanitize and requireHumanApproval', () => {
+    const result = makeResult()
+    mergeNonPromptedFields(result, existing)
+    const upstream = (result.feedback as Record<string, unknown>).upstream as Record<string, unknown>
+    expect(upstream.sanitize).toBe(false)
+    expect(upstream.requireHumanApproval).toBe(false)
+  })
+
+  test('does not overwrite the prompted feedbackMode', () => {
+    const result = buildConfig({ ...base, feedbackMode: 'prompt' })
+    mergeNonPromptedFields(result, existing)
+    const upstream = (result.feedback as Record<string, unknown>).upstream as Record<string, unknown>
+    // mode comes from the wizard answer, not from existing
+    expect(upstream.mode).toBe('prompt')
+  })
+
+  test('skips feedback merge when existing has no upstream', () => {
+    const result = makeResult()
+    mergeNonPromptedFields(result, { ...existing, feedback: { capture: true } })
+    const upstream = (result.feedback as Record<string, unknown>).upstream as Record<string, unknown>
+    expect(upstream.channel).toBe('pr') // built-in default unchanged
   })
 })

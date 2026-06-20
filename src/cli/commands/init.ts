@@ -1,9 +1,9 @@
 // `aef init` — render the configured skill set into <out>/.ai/skills/, snapshot a
 // BASE under <out>/.ai/.base/, write the render manifest (sync's base), persist the
 // resolved config, and wire each harness.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { FrameworkConfigSchema } from '../../core/contracts.js'
+import { FrameworkConfigSchema, type FrameworkConfig } from '../../core/contracts.js'
 import { renderSkill } from '../../core/render.js'
 import { selectSkills } from '../../core/select.js'
 import { FRAMEWORK_ROOT } from '../root.js'
@@ -40,14 +40,26 @@ export async function runInit(opts: InitOptions): Promise<void> {
     )
   }
 
+  const out = opts.out ?? process.cwd()
+
   // `raw` is what we persist to framework.config.json (byte-stable); `config` is the
   // zod-validated view the renderer consumes.
-  const raw: unknown = opts.interactive
-    ? await runWizard(root)
-    : JSON.parse(readFileSync(opts.config!, 'utf8'))
+  let raw: unknown
+  if (opts.interactive) {
+    const existingPath = join(out, 'framework.config.json')
+    let existingConfig: FrameworkConfig | undefined
+    if (existsSync(existingPath)) {
+      try {
+        existingConfig = FrameworkConfigSchema.parse(JSON.parse(readFileSync(existingPath, 'utf8')))
+      } catch {
+        // ignore — wizard starts fresh if the existing config is unreadable
+      }
+    }
+    raw = await runWizard(root, existingConfig)
+  } else {
+    raw = JSON.parse(readFileSync(opts.config!, 'utf8'))
+  }
   const config = FrameworkConfigSchema.parse(raw)
-
-  const out = opts.out ?? process.cwd()
   const useCopy = Boolean(opts.copy)
 
   const { skills, skipped } = selectSkills(root, config)
