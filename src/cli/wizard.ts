@@ -3,6 +3,7 @@
 import { readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as p from '@clack/prompts'
+import { loadTiers } from '../core/select.js'
 
 function listAdapters(root: string, axis: string): string[] {
   const dir = join(root, 'adapters', axis)
@@ -23,6 +24,64 @@ const axisOptions = (root: string, axis: string): { value: string | null; label:
   ...listAdapters(root, axis).map((v) => ({ value: v, label: v })),
 ]
 
+export interface WizardAnswers {
+  projectName: string
+  harnesses: string[]
+  orm: string | null
+  ui: string | null
+  stack: string | null
+  selectedTiers: string[]
+  validationCommands: string[]
+  defaultBranch: string
+  sourceRepo: string
+  modulesRoot: string
+  specsRoot: string
+  testsRoot: string
+  feedbackMode: 'scheduled-pr' | 'prompt' | 'off'
+}
+
+export function buildConfig(a: WizardAnswers): Record<string, unknown> {
+  const tiers = a.selectedTiers.length > 0 ? a.selectedTiers : undefined
+  const validation = a.validationCommands.length > 0 ? a.validationCommands : undefined
+  const sourceRepoUrl = a.sourceRepo.trim()
+
+  const modulesRoot = a.modulesRoot.trim()
+  const specsRoot = a.specsRoot.trim()
+  const testsRoot = a.testsRoot.trim()
+  const paths: Record<string, string> = {}
+  if (modulesRoot) paths.modulesRoot = modulesRoot
+  if (specsRoot) paths.specsRoot = specsRoot
+  if (testsRoot) paths.testsRoot = testsRoot
+
+  const config: Record<string, unknown> = {
+    $schema: './schemas/framework.config.schema.json',
+    projectName: a.projectName.trim(),
+    harnesses: a.harnesses,
+    orm: a.orm,
+    ui: a.ui,
+    stack: a.stack,
+    git: { defaultBranch: a.defaultBranch.trim(), labels: [] },
+  }
+
+  if (Object.keys(paths).length > 0) config.paths = paths
+  if (tiers !== undefined) config.tiers = tiers
+  if (validation !== undefined) config.validation = validation
+  if (sourceRepoUrl) config.source = { repo: sourceRepoUrl, path: null }
+
+  config.feedback = {
+    capture: true,
+    upstream: {
+      mode: a.feedbackMode,
+      channel: 'pr',
+      schedule: 'weekly',
+      sanitize: true,
+      requireHumanApproval: true,
+    },
+  }
+
+  return config
+}
+
 export async function runWizard(root: string): Promise<Record<string, unknown>> {
   p.intro('aef init')
 
@@ -42,14 +101,98 @@ export async function runWizard(root: string): Promise<Record<string, unknown>> 
   const ui = bail(
     await p.select({ message: 'UI adapter', options: axisOptions(root, 'ui'), initialValue: null }),
   )
+  const stack = bail(
+    await p.select({ message: 'Stack adapter', options: axisOptions(root, 'stack'), initialValue: null }),
+  )
+
+  // Opt-in tiers: read dynamically from tiers.json so new tiers appear automatically.
+  const { default: defaultTiers, tiers: tiersData } = loadTiers(root)
+  const optInTierOptions = Object.entries(tiersData)
+    .filter(([key]) => !defaultTiers.includes(key))
+    .map(([key, val]) => ({
+      value: key,
+      label: key,
+      hint: String((val as Record<string, unknown>).description ?? ''),
+    }))
+  const selectedTiers =
+    optInTierOptions.length > 0
+      ? bail(
+          await p.multiselect({
+            message: 'Opt-in skill tiers (space to toggle, none for core only)',
+            options: optInTierOptions,
+            required: false,
+          }),
+        )
+      : []
+
+  const validationCommands: string[] = []
+  while (true) {
+    const cmd = bail(
+      await p.text({
+        message:
+          validationCommands.length === 0
+            ? 'Gate command (e.g. pnpm test; blank to skip)'
+            : `Gate command ${validationCommands.length + 1} (blank to finish)`,
+        placeholder: validationCommands.length === 0 ? 'pnpm test' : 'pnpm build',
+      }),
+    )
+    if (!cmd.trim()) break
+    validationCommands.push(cmd.trim())
+  }
+
+  const defaultBranch = bail(
+    await p.text({
+      message: 'Default git branch',
+      placeholder: 'main',
+      defaultValue: 'main',
+    }),
+  )
+  const sourceRepo = bail(
+    await p.text({
+      message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
+      placeholder: 'git@github.com:owner/agentic-engineering-framework.git',
+    }),
+  )
+  const modulesRoot = bail(
+    await p.text({ message: 'Modules root path (blank for default)', placeholder: 'src/modules' }),
+  )
+  const specsRoot = bail(
+    await p.text({ message: 'Specs root path (blank for default)', placeholder: '.ai/specs' }),
+  )
+  const testsRoot = bail(
+    await p.text({ message: 'Tests root path (blank for default)', placeholder: '.ai/qa/tests' }),
+  )
+  const feedbackMode = bail(
+    await p.select<'scheduled-pr' | 'prompt' | 'off'>({
+      message: 'Feedback upstream routing',
+      options: [
+        {
+          value: 'scheduled-pr' as const,
+          label: 'scheduled-pr',
+          hint: 'Open a PR with lessons on a schedule',
+        },
+        { value: 'prompt' as const, label: 'prompt', hint: 'Ask before routing each batch' },
+        { value: 'off' as const, label: 'off', hint: 'Capture locally only, never route upstream' },
+      ],
+      initialValue: 'scheduled-pr',
+    }),
+  )
 
   p.outro('Configuration ready.')
 
-  return {
-    $schema: './schemas/framework.config.schema.json',
+  return buildConfig({
     projectName,
     harnesses,
     orm,
     ui,
-  }
+    stack,
+    selectedTiers,
+    validationCommands,
+    defaultBranch,
+    sourceRepo,
+    modulesRoot,
+    specsRoot,
+    testsRoot,
+    feedbackMode,
+  })
 }
