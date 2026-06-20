@@ -14,8 +14,9 @@ export function selectSkills(root: string, config: FrameworkConfig): SkillSelect
   const tiers = TiersSchema.parse(JSON.parse(readFileSync(join(root, 'core/ai/skills/tiers.json'), 'utf8')))
   const requires = tiers.requires ?? {}
 
+  const activeTiers = [...tiers.default, ...(config.tiers ?? [])]
   const candidates: string[] = []
-  for (const t of tiers.default)
+  for (const t of activeTiers)
     for (const s of tiers.tiers[t]?.skills ?? []) if (!candidates.includes(s)) candidates.push(s)
 
   const skills: string[] = []

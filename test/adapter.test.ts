@@ -62,4 +62,23 @@ describe('add / remove', () => {
   test('unknown adapter name throws', () => {
     expect(() => runAdd('nonexistent-xyz', { out: consumer })).toThrow(/no adapter/)
   })
+
+  test('add tier installs its skills and writes tiers to config', () => {
+    expect(existsSync(skillDir('improve-framework'))).toBe(false)
+    runAdd('framework', { out: consumer })
+    expect(cfg().tiers).toContain('framework')
+    expect(existsSync(skillDir('improve-framework'))).toBe(true)
+  })
+
+  test('remove tier uninstalls its skills and removes tiers key when empty', () => {
+    runAdd('framework', { out: consumer })
+    expect(existsSync(skillDir('improve-framework'))).toBe(true)
+    runRemove('framework', { out: consumer })
+    expect(cfg().tiers).toBeUndefined()
+    expect(existsSync(skillDir('improve-framework'))).toBe(false)
+  })
+
+  test('remove non-enabled tier is rejected', () => {
+    expect(() => runRemove('framework', { out: consumer })).toThrow(/not enabled/)
+  })
 })

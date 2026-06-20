@@ -76,6 +76,13 @@
       },
       "additionalProperties": false
     },
+    "tiers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Opt-in tiers to install in addition to the defaults (e.g. [\"framework\", \"automation\"])."
+    },
     "source": {
       "type": "object",
       "properties": {
