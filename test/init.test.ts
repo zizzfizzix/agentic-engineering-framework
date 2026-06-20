@@ -25,6 +25,96 @@ describe('runInit error handling', () => {
   })
 })
 
+describe('runInit package.json pinning', () => {
+  test('adds @zizzfizzix/aef to devDependencies and scripts when package.json exists', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-init-pkg-'))
+    writeFileSync(join(out, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 2) + '\n')
+    const cfgPath = join(ROOT, 'framework.config.example.json')
+    try {
+      await runInit({ config: cfgPath, out })
+      const pkg = JSON.parse(readFileSync(join(out, 'package.json'), 'utf8'))
+      expect(pkg.devDependencies?.['@zizzfizzix/aef']).toMatch(/^\^\d+\.\d+\.\d+/)
+      expect(pkg.scripts?.['aef']).toBe('aef')
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('preserves existing package.json fields when adding entries', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-init-pkg-'))
+    writeFileSync(
+      join(out, 'package.json'),
+      JSON.stringify(
+        { name: 'my-app', scripts: { build: 'tsc' }, devDependencies: { typescript: '^5.0.0' } },
+        null,
+        2,
+      ) + '\n',
+    )
+    const cfgPath = join(ROOT, 'framework.config.example.json')
+    try {
+      await runInit({ config: cfgPath, out })
+      const pkg = JSON.parse(readFileSync(join(out, 'package.json'), 'utf8'))
+      expect(pkg.scripts?.['build']).toBe('tsc')
+      expect(pkg.devDependencies?.['typescript']).toBe('^5.0.0')
+      expect(pkg.devDependencies?.['@zizzfizzix/aef']).toMatch(/^\^\d+\.\d+\.\d+/)
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('does not throw when package.json is absent', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-init-nopkg-'))
+    const cfgPath = join(ROOT, 'framework.config.example.json')
+    try {
+      await expect(runInit({ config: cfgPath, out })).resolves.toBeUndefined()
+      expect(existsSync(join(out, 'package.json'))).toBe(false)
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('updates an existing stale @zizzfizzix/aef pin to the current version (L1)', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-init-pkg-'))
+    writeFileSync(
+      join(out, 'package.json'),
+      JSON.stringify({ name: 'my-app', devDependencies: { '@zizzfizzix/aef': '^0.0.1' } }, null, 2) + '\n',
+    )
+    const cfgPath = join(ROOT, 'framework.config.example.json')
+    try {
+      await runInit({ config: cfgPath, out })
+      const pkg = JSON.parse(readFileSync(join(out, 'package.json'), 'utf8'))
+      expect(pkg.devDependencies?.['@zizzfizzix/aef']).not.toBe('^0.0.1')
+      expect(pkg.devDependencies?.['@zizzfizzix/aef']).toMatch(/^\^\d+\.\d+\.\d+/)
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('preserves non-default (4-space) indentation of existing package.json (M1)', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-init-pkg-'))
+    writeFileSync(join(out, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 4) + '\n')
+    const cfgPath = join(ROOT, 'framework.config.example.json')
+    try {
+      await runInit({ config: cfgPath, out })
+      const raw = readFileSync(join(out, 'package.json'), 'utf8')
+      expect(raw).toMatch(/\n {4}"/)
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+
+  test('throws a friendly error when package.json is malformed (L2)', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'agentic-init-pkg-'))
+    writeFileSync(join(out, 'package.json'), 'not valid json')
+    const cfgPath = join(ROOT, 'framework.config.example.json')
+    try {
+      await expect(runInit({ config: cfgPath, out })).rejects.toThrow('Failed to parse')
+    } finally {
+      rmSync(out, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('runInit conventions', () => {
   test('framework tier active: outbox is written', async () => {
     const out = mkdtempSync(join(tmpdir(), 'agentic-init-'))

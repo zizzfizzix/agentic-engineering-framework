@@ -97,4 +97,15 @@ describe('add / remove', () => {
     const manifest = JSON.parse(readFileSync(join(consumer, '.ai', '.render-manifest.json'), 'utf8'))
     expect(manifest.selection.tiers).toContain('framework')
   })
+
+  test('add updates @zizzfizzix/aef version pin when package.json exists', () => {
+    writeFileSync(
+      join(consumer, 'package.json'),
+      JSON.stringify({ name: 'my-app', devDependencies: { '@zizzfizzix/aef': '^0.0.1' } }, null, 2) + '\n',
+    )
+    runAdd('mikro-orm', { out: consumer })
+    const pkg = JSON.parse(readFileSync(join(consumer, 'package.json'), 'utf8'))
+    expect(pkg.devDependencies?.['@zizzfizzix/aef']).not.toBe('^0.0.1')
+    expect(pkg.devDependencies?.['@zizzfizzix/aef']).toMatch(/^\^\d+\.\d+\.\d+/)
+  })
 })

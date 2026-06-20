@@ -13,6 +13,7 @@ import {
   writeManifest,
   wireHarnesses,
   writeConventions,
+  pinAefInPackageJson,
   type ManifestSkills,
 } from '../consumer-io.js'
 import { runWizard } from '../wizard.js'
@@ -63,9 +64,15 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const conventions = writeConventions(root, out, config)
   const wired = wireHarnesses(root, out, config, skills, useCopy)
 
+  const { version } = JSON.parse(readFileSync(join(FRAMEWORK_ROOT, 'package.json'), 'utf8')) as {
+    version: string
+  }
+  const pkgNote = pinAefInPackageJson(out, version)
+
   console.log(`Initialised agentic framework into ${relative(process.cwd(), out) || '.'}`)
   console.log(`  skills installed: ${skills.join(', ') || '(none)'}`)
   console.log(`  conventions: ${conventions.join(', ')}`)
   if (skipped.length) console.log(`  skipped (axis not configured): ${skipped.join(', ')}`)
   console.log(`  harnesses wired: ${wired.join(' | ') || '(none)'}`)
+  console.log(`  package.json: ${pkgNote}`)
 }
