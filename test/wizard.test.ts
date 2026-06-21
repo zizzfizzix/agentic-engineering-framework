@@ -48,8 +48,6 @@ describe('buildConfig', () => {
   })
 
   test('blank sourceRepo omits source field', () => {
-    // Also documents the "clear to remove" contract: the wizard uses initialValue with no
-    // defaultValue for sourceRepo, so clearing the field and pressing Enter yields '' here.
     expect(buildConfig({ ...base, sourceRepo: '' }).source).toBeUndefined()
     expect(buildConfig({ ...base, sourceRepo: '   ' }).source).toBeUndefined()
   })
@@ -150,14 +148,10 @@ describe('buildConfig', () => {
   })
 
   test('empty-string projectName passes through buildConfig as empty string', () => {
-    // The prompt guards against this at the UI layer (defaultValue: 'my-app' fires on
-    // empty submit), but buildConfig itself does not enforce non-empty.
     expect(buildConfig({ ...base, projectName: '' }).projectName).toBe('')
   })
 
   test('empty-string defaultBranch passes through buildConfig as empty string', () => {
-    // The prompt guards against this at the UI layer (defaultValue: 'main' fires on
-    // empty submit), but buildConfig itself does not enforce non-empty.
     expect(buildConfig({ ...base, defaultBranch: '' }).git).toEqual({ defaultBranch: '', labels: [] })
   })
 
