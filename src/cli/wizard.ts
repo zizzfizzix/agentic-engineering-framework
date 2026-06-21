@@ -234,7 +234,7 @@ export async function runWizard(
         }),
       )
       if (!(cmd ?? '').trim()) break
-      validationCommands.push((cmd ?? '').trim())
+      validationCommands.push(cmd!.trim())
     }
   }
 
@@ -248,7 +248,7 @@ export async function runWizard(
   )
   const sourceRepo = bail(
     await p.text({
-      message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
+      message: 'Framework source repo URL (for aef sync / improve-framework; Enter for default)',
       placeholder: CANONICAL_REPO,
       defaultValue: CANONICAL_REPO,
       initialValue: cfg?.source?.repo || undefined, // || coerces '' to absent
@@ -258,21 +258,21 @@ export async function runWizard(
     await p.text({
       message: 'Modules root path (blank for default)',
       placeholder: 'src/modules',
-      initialValue: cfg?.paths?.modulesRoot || undefined,
+      initialValue: cfg?.paths?.modulesRoot || undefined, // || coerces '' to absent
     }),
   )
   const specsRoot = bail(
     await p.text({
       message: 'Specs root path (blank for default)',
       placeholder: '.ai/specs',
-      initialValue: cfg?.paths?.specsRoot || undefined,
+      initialValue: cfg?.paths?.specsRoot || undefined, // || coerces '' to absent
     }),
   )
   const testsRoot = bail(
     await p.text({
       message: 'Tests root path (blank for default)',
       placeholder: '.ai/qa/tests',
-      initialValue: cfg?.paths?.testsRoot || undefined,
+      initialValue: cfg?.paths?.testsRoot || undefined, // || coerces '' to absent
     }),
   )
   const feedbackMode = bail(
