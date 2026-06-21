@@ -246,11 +246,12 @@ export async function runWizard(
       defaultValue: 'main',
     }),
   )
+  const sourceRepoDefault = cfg?.source?.repo ? undefined : CANONICAL_REPO
   const sourceRepo = bail(
     await p.text({
-      message: 'Framework source repo URL (for aef sync / improve-framework; Enter for default)',
+      message: `Framework source repo URL (for aef sync / improve-framework; ${sourceRepoDefault ? 'Enter for default' : 'blank to clear'})`,
       placeholder: CANONICAL_REPO,
-      defaultValue: CANONICAL_REPO,
+      defaultValue: sourceRepoDefault,
       initialValue: cfg?.source?.repo || undefined, // || coerces '' to absent
     }),
   )
