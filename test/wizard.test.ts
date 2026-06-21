@@ -52,16 +52,16 @@ describe('buildConfig', () => {
     expect(buildConfig({ ...base, sourceRepo: '   ' }).source).toBeUndefined()
   })
 
-  test('undefined text fields do not crash (p.text returns undefined when defaultValue is undefined)', () => {
-    expect(() =>
-      buildConfig({
-        ...base,
-        sourceRepo: undefined as unknown as string,
-        modulesRoot: undefined as unknown as string,
-        specsRoot: undefined as unknown as string,
-        testsRoot: undefined as unknown as string,
-      }),
-    ).not.toThrow()
+  test('undefined text fields do not crash and omit optional output fields', () => {
+    const result = buildConfig({
+      ...base,
+      sourceRepo: undefined,
+      modulesRoot: undefined,
+      specsRoot: undefined,
+      testsRoot: undefined,
+    })
+    expect(result.source).toBeUndefined()
+    expect(result.paths).toBeUndefined()
   })
 
   test('sourceRepo is trimmed and sets path:null', () => {

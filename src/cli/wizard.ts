@@ -34,10 +34,10 @@ export interface WizardAnswers {
   selectedTiers: string[]
   validationCommands: string[]
   defaultBranch: string
-  sourceRepo: string
-  modulesRoot: string
-  specsRoot: string
-  testsRoot: string
+  sourceRepo: string | undefined
+  modulesRoot: string | undefined
+  specsRoot: string | undefined
+  testsRoot: string | undefined
   feedbackMode: 'scheduled-pr' | 'prompt' | 'off'
 }
 
