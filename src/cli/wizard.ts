@@ -6,6 +6,8 @@ import * as p from '@clack/prompts'
 import { loadTiers } from '../core/select.js'
 import { type FrameworkConfig } from '../core/contracts.js'
 
+const CANONICAL_REPO = 'https://github.com/zizzfizzix/agentic-engineering-framework'
+
 function listAdapters(root: string, axis: string): string[] {
   const dir = join(root, 'adapters', axis)
   if (!existsSync(dir)) return []
@@ -231,8 +233,8 @@ export async function runWizard(
           placeholder: validationCommands.length === 0 ? 'pnpm test' : 'pnpm build',
         }),
       )
-      if (!cmd.trim()) break
-      validationCommands.push(cmd.trim())
+      if (!(cmd ?? '').trim()) break
+      validationCommands.push(cmd!.trim())
     }
   }
 
@@ -244,32 +246,34 @@ export async function runWizard(
       defaultValue: 'main',
     }),
   )
+  const sourceRepoDefault = cfg?.source?.repo ? undefined : CANONICAL_REPO
   const sourceRepo = bail(
     await p.text({
-      message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
-      placeholder: 'git@github.com:owner/agentic-engineering-framework.git',
-      initialValue: cfg?.source?.repo || undefined,
+      message: `Framework source repo URL (for aef sync / improve-framework; ${sourceRepoDefault ? 'Enter for default' : 'blank to clear'})`,
+      placeholder: CANONICAL_REPO,
+      defaultValue: sourceRepoDefault,
+      initialValue: cfg?.source?.repo || undefined, // || coerces '' to absent
     }),
   )
   const modulesRoot = bail(
     await p.text({
       message: 'Modules root path (blank for default)',
       placeholder: 'src/modules',
-      initialValue: cfg?.paths?.modulesRoot || undefined,
+      initialValue: cfg?.paths?.modulesRoot || undefined, // || coerces '' to absent
     }),
   )
   const specsRoot = bail(
     await p.text({
       message: 'Specs root path (blank for default)',
       placeholder: '.ai/specs',
-      initialValue: cfg?.paths?.specsRoot || undefined,
+      initialValue: cfg?.paths?.specsRoot || undefined, // || coerces '' to absent
     }),
   )
   const testsRoot = bail(
     await p.text({
       message: 'Tests root path (blank for default)',
       placeholder: '.ai/qa/tests',
-      initialValue: cfg?.paths?.testsRoot || undefined,
+      initialValue: cfg?.paths?.testsRoot || undefined, // || coerces '' to absent
     }),
   )
   const feedbackMode = bail(
