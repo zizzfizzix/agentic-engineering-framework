@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.1](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.5.0...v0.5.1) (2026-06-21)
+
+### Bug Fixes
+
+- **cli:** canonical source repo URL, defaultValue, and gate-command crash ([#44](https://github.com/zizzfizzix/agentic-engineering-framework/issues/44)) ([#51](https://github.com/zizzfizzix/agentic-engineering-framework/issues/51)) ([d60944b](https://github.com/zizzfizzix/agentic-engineering-framework/commit/d60944b72b44a9eb5dc357dfbbf3dc1a12d5edb7))
+- **cli:** surface --interactive flag in aef init error message ([#46](https://github.com/zizzfizzix/agentic-engineering-framework/issues/46)) ([3a28221](https://github.com/zizzfizzix/agentic-engineering-framework/commit/3a28221c373e934f82dc3fe21625ffa566de5587))
+- **wizard:** fix aef init -i crash after selecting scheduled-pr ([#45](https://github.com/zizzfizzix/agentic-engineering-framework/issues/45)) ([#48](https://github.com/zizzfizzix/agentic-engineering-framework/issues/48)) ([de79d71](https://github.com/zizzfizzix/agentic-engineering-framework/commit/de79d71ee6b7318fcf0d52b738f3f86f0bd4e9a2))
+- **wizard:** prefill prompts with existing config values on reinit ([#50](https://github.com/zizzfizzix/agentic-engineering-framework/issues/50)) ([eebac20](https://github.com/zizzfizzix/agentic-engineering-framework/commit/eebac20007ad6b68f17d8ce8b17a646e57be6875))
+
 ## [0.5.0](https://github.com/zizzfizzix/agentic-engineering-framework/compare/v0.4.1...v0.5.0) (2026-06-20)
 
 ### Features
