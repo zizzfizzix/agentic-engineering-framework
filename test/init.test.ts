@@ -10,11 +10,19 @@ const ROOT = process.cwd()
 
 describe('runInit error handling', () => {
   test('throws a helpful error when --config is omitted and not interactive', async () => {
-    await expect(runInit({})).rejects.toThrow('--config is required.')
+    await expect(runInit({})).rejects.toThrow('--config is required')
+  })
+
+  test('error message mentions --interactive for guided setup', async () => {
+    await expect(runInit({})).rejects.toThrow('--interactive for guided setup')
   })
 
   test('error message includes usage example', async () => {
     await expect(runInit({})).rejects.toThrow('aef init --config aef.config.json --out . --copy')
+  })
+
+  test('error message includes --interactive usage example', async () => {
+    await expect(runInit({})).rejects.toThrow('aef init --interactive')
   })
 
   test('error message includes minimum config snippet', async () => {
