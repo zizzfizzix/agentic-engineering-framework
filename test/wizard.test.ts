@@ -52,6 +52,30 @@ describe('buildConfig', () => {
     expect(buildConfig({ ...base, sourceRepo: '   ' }).source).toBeUndefined()
   })
 
+  test('undefined text fields do not crash and omit optional output fields', () => {
+    const result = buildConfig({
+      ...base,
+      sourceRepo: undefined,
+      modulesRoot: undefined,
+      specsRoot: undefined,
+      testsRoot: undefined,
+    })
+    expect(result.source).toBeUndefined()
+    expect(result.paths).toBeUndefined()
+  })
+
+  test('partial undefined: undefined sourceRepo with defined paths omits source but keeps paths', () => {
+    const result = buildConfig({
+      ...base,
+      sourceRepo: undefined,
+      modulesRoot: 'src/modules',
+      specsRoot: undefined,
+      testsRoot: undefined,
+    })
+    expect(result.source).toBeUndefined()
+    expect(result.paths).toEqual({ modulesRoot: 'src/modules' })
+  })
+
   test('sourceRepo is trimmed and sets path:null', () => {
     expect(buildConfig({ ...base, sourceRepo: '  git@github.com:foo/bar.git  ' }).source).toEqual({
       repo: 'git@github.com:foo/bar.git',

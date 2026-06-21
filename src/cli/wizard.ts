@@ -34,21 +34,23 @@ export interface WizardAnswers {
   selectedTiers: string[]
   validationCommands: string[]
   defaultBranch: string
-  sourceRepo: string
-  modulesRoot: string
-  specsRoot: string
-  testsRoot: string
+  sourceRepo: string | undefined
+  modulesRoot: string | undefined
+  specsRoot: string | undefined
+  testsRoot: string | undefined
   feedbackMode: 'scheduled-pr' | 'prompt' | 'off'
 }
+
+const norm = (v: string | undefined) => (v ?? '').trim()
 
 export function buildConfig(a: WizardAnswers): Record<string, unknown> {
   const tiers = a.selectedTiers.length > 0 ? a.selectedTiers : undefined
   const validation = a.validationCommands.length > 0 ? a.validationCommands : undefined
-  const sourceRepoUrl = a.sourceRepo.trim()
+  const sourceRepoUrl = norm(a.sourceRepo)
 
-  const modulesRoot = a.modulesRoot.trim()
-  const specsRoot = a.specsRoot.trim()
-  const testsRoot = a.testsRoot.trim()
+  const modulesRoot = norm(a.modulesRoot)
+  const specsRoot = norm(a.specsRoot)
+  const testsRoot = norm(a.testsRoot)
   const paths: Record<string, string> = {}
   if (modulesRoot) paths.modulesRoot = modulesRoot
   if (specsRoot) paths.specsRoot = specsRoot
@@ -56,12 +58,12 @@ export function buildConfig(a: WizardAnswers): Record<string, unknown> {
 
   const config: Record<string, unknown> = {
     $schema: './schemas/aef.config.schema.json',
-    projectName: a.projectName.trim(),
+    projectName: norm(a.projectName),
     harnesses: a.harnesses,
     orm: a.orm,
     ui: a.ui,
     stack: a.stack,
-    git: { defaultBranch: a.defaultBranch.trim(), labels: [] },
+    git: { defaultBranch: norm(a.defaultBranch), labels: [] },
   }
 
   if (Object.keys(paths).length > 0) config.paths = paths
