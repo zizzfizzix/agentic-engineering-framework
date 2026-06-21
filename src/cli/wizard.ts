@@ -151,6 +151,7 @@ export async function runWizard(
     await p.text({
       message: 'Project name',
       placeholder: 'my-app',
+      initialValue: cfg?.projectName,
       defaultValue: cfg?.projectName ?? 'my-app',
     }),
   )
@@ -239,6 +240,7 @@ export async function runWizard(
     await p.text({
       message: 'Default git branch',
       placeholder: 'main',
+      initialValue: cfg?.git?.defaultBranch,
       defaultValue: cfg?.git?.defaultBranch ?? 'main',
     }),
   )
@@ -246,6 +248,7 @@ export async function runWizard(
     await p.text({
       message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
       placeholder: 'git@github.com:owner/agentic-engineering-framework.git',
+      initialValue: cfg?.source?.repo || undefined,
       defaultValue: cfg?.source?.repo || undefined,
     }),
   )
@@ -253,6 +256,7 @@ export async function runWizard(
     await p.text({
       message: 'Modules root path (blank for default)',
       placeholder: 'src/modules',
+      initialValue: cfg?.paths?.modulesRoot || undefined,
       defaultValue: cfg?.paths?.modulesRoot || undefined,
     }),
   )
@@ -260,6 +264,7 @@ export async function runWizard(
     await p.text({
       message: 'Specs root path (blank for default)',
       placeholder: '.ai/specs',
+      initialValue: cfg?.paths?.specsRoot || undefined,
       defaultValue: cfg?.paths?.specsRoot || undefined,
     }),
   )
@@ -267,6 +272,7 @@ export async function runWizard(
     await p.text({
       message: 'Tests root path (blank for default)',
       placeholder: '.ai/qa/tests',
+      initialValue: cfg?.paths?.testsRoot || undefined,
       defaultValue: cfg?.paths?.testsRoot || undefined,
     }),
   )
