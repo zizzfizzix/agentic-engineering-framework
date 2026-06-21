@@ -151,7 +151,7 @@ export async function runWizard(
     await p.text({
       message: 'Project name',
       placeholder: 'my-app',
-      initialValue: cfg?.projectName || undefined,
+      initialValue: cfg?.projectName || undefined, // || coerces '' to absent so empty-string stored values don't pre-fill
       defaultValue: 'my-app',
     }),
   )
@@ -240,7 +240,7 @@ export async function runWizard(
     await p.text({
       message: 'Default git branch',
       placeholder: 'main',
-      initialValue: cfg?.git?.defaultBranch || undefined,
+      initialValue: cfg?.git?.defaultBranch || undefined, // || coerces '' to absent
       defaultValue: 'main',
     }),
   )
