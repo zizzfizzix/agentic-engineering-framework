@@ -6,6 +6,8 @@ import * as p from '@clack/prompts'
 import { loadTiers } from '../core/select.js'
 import { type FrameworkConfig } from '../core/contracts.js'
 
+const CANONICAL_REPO = 'https://github.com/zizzfizzix/agentic-engineering-framework'
+
 function listAdapters(root: string, axis: string): string[] {
   const dir = join(root, 'adapters', axis)
   if (!existsSync(dir)) return []
@@ -231,8 +233,8 @@ export async function runWizard(
           placeholder: validationCommands.length === 0 ? 'pnpm test' : 'pnpm build',
         }),
       )
-      if (!cmd.trim()) break
-      validationCommands.push(cmd.trim())
+      if (!(cmd ?? '').trim()) break
+      validationCommands.push((cmd ?? '').trim())
     }
   }
 
@@ -247,8 +249,9 @@ export async function runWizard(
   const sourceRepo = bail(
     await p.text({
       message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
-      placeholder: 'https://github.com/zizzfizzix/agentic-engineering-framework',
-      initialValue: cfg?.source?.repo || undefined,
+      placeholder: CANONICAL_REPO,
+      defaultValue: CANONICAL_REPO,
+      initialValue: cfg?.source?.repo || undefined, // || coerces '' to absent
     }),
   )
   const modulesRoot = bail(
