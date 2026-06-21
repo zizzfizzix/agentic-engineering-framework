@@ -17,8 +17,11 @@ describe('runInit error handling', () => {
     await expect(runInit({})).rejects.toThrow('--interactive for guided setup')
   })
 
-  test('error message includes usage example', async () => {
-    await expect(runInit({})).rejects.toThrow('aef init --config aef.config.json --out .')
+  test('error message includes usage example without --copy', async () => {
+    const err = await runInit({}).catch((e: Error) => e)
+    expect(err).toBeInstanceOf(Error)
+    expect((err as Error).message).toContain('aef init --config aef.config.json --out .')
+    expect((err as Error).message).not.toContain('--copy')
   })
 
   test('error message includes --interactive usage example', async () => {
