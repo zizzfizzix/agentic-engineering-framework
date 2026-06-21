@@ -58,12 +58,12 @@ export function buildConfig(a: WizardAnswers): Record<string, unknown> {
 
   const config: Record<string, unknown> = {
     $schema: './schemas/aef.config.schema.json',
-    projectName: a.projectName.trim(),
+    projectName: norm(a.projectName),
     harnesses: a.harnesses,
     orm: a.orm,
     ui: a.ui,
     stack: a.stack,
-    git: { defaultBranch: a.defaultBranch.trim(), labels: [] },
+    git: { defaultBranch: norm(a.defaultBranch), labels: [] },
   }
 
   if (Object.keys(paths).length > 0) config.paths = paths
