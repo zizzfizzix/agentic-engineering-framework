@@ -47,6 +47,10 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Publish PR snapshot
+        if: github.event_name == 'pull_request'
+        run: pnpm exec pkg-pr-new publish
+
       - name: Verify generated artifacts are committed
         # schemas/ and examples/ are generated; CI fails if they drift from source.
         run: |
