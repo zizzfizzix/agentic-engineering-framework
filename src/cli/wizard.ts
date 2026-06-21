@@ -41,14 +41,16 @@ export interface WizardAnswers {
   feedbackMode: 'scheduled-pr' | 'prompt' | 'off'
 }
 
+const norm = (v: string | undefined) => (v ?? '').trim()
+
 export function buildConfig(a: WizardAnswers): Record<string, unknown> {
   const tiers = a.selectedTiers.length > 0 ? a.selectedTiers : undefined
   const validation = a.validationCommands.length > 0 ? a.validationCommands : undefined
-  const sourceRepoUrl = (a.sourceRepo ?? '').trim()
+  const sourceRepoUrl = norm(a.sourceRepo)
 
-  const modulesRoot = (a.modulesRoot ?? '').trim()
-  const specsRoot = (a.specsRoot ?? '').trim()
-  const testsRoot = (a.testsRoot ?? '').trim()
+  const modulesRoot = norm(a.modulesRoot)
+  const specsRoot = norm(a.specsRoot)
+  const testsRoot = norm(a.testsRoot)
   const paths: Record<string, string> = {}
   if (modulesRoot) paths.modulesRoot = modulesRoot
   if (specsRoot) paths.specsRoot = specsRoot
