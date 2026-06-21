@@ -247,7 +247,7 @@ export async function runWizard(
   const sourceRepo = bail(
     await p.text({
       message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
-      placeholder: 'git@github.com:owner/agentic-engineering-framework.git',
+      placeholder: 'https://github.com/zizzfizzix/agentic-engineering-framework',
       initialValue: cfg?.source?.repo || undefined,
     }),
   )
