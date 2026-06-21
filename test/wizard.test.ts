@@ -147,6 +147,14 @@ describe('buildConfig', () => {
     expect(buildConfig({ ...base, projectName: '  my-app  ' }).projectName).toBe('my-app')
   })
 
+  test('empty-string projectName passes through buildConfig as empty string', () => {
+    expect(buildConfig({ ...base, projectName: '' }).projectName).toBe('')
+  })
+
+  test('empty-string defaultBranch passes through buildConfig as empty string', () => {
+    expect(buildConfig({ ...base, defaultBranch: '' }).git).toEqual({ defaultBranch: '', labels: [] })
+  })
+
   test('stack value is passed through to config', () => {
     expect(buildConfig({ ...base, stack: 'next-js' }).stack).toBe('next-js')
   })

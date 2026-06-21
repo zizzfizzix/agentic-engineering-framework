@@ -143,7 +143,7 @@ export async function runWizard(
     if (mode === 'scratch') {
       cfg = undefined
     } else {
-      p.note('Existing values shown as defaults — press Enter to keep each one.', 'Updating')
+      p.note('Existing values pre-filled — edit or press Enter to keep, clear to remove.', 'Updating')
     }
   }
 
@@ -151,7 +151,8 @@ export async function runWizard(
     await p.text({
       message: 'Project name',
       placeholder: 'my-app',
-      defaultValue: cfg?.projectName ?? 'my-app',
+      initialValue: cfg?.projectName || undefined, // || coerces '' to absent so empty-string stored values don't pre-fill
+      defaultValue: 'my-app',
     }),
   )
   const harnesses = bail(
@@ -239,35 +240,36 @@ export async function runWizard(
     await p.text({
       message: 'Default git branch',
       placeholder: 'main',
-      defaultValue: cfg?.git?.defaultBranch ?? 'main',
+      initialValue: cfg?.git?.defaultBranch || undefined, // || coerces '' to absent
+      defaultValue: 'main',
     }),
   )
   const sourceRepo = bail(
     await p.text({
       message: 'Framework source repo URL (for aef sync / improve-framework; blank to skip)',
       placeholder: 'git@github.com:owner/agentic-engineering-framework.git',
-      defaultValue: cfg?.source?.repo || undefined,
+      initialValue: cfg?.source?.repo || undefined,
     }),
   )
   const modulesRoot = bail(
     await p.text({
       message: 'Modules root path (blank for default)',
       placeholder: 'src/modules',
-      defaultValue: cfg?.paths?.modulesRoot || undefined,
+      initialValue: cfg?.paths?.modulesRoot || undefined,
     }),
   )
   const specsRoot = bail(
     await p.text({
       message: 'Specs root path (blank for default)',
       placeholder: '.ai/specs',
-      defaultValue: cfg?.paths?.specsRoot || undefined,
+      initialValue: cfg?.paths?.specsRoot || undefined,
     }),
   )
   const testsRoot = bail(
     await p.text({
       message: 'Tests root path (blank for default)',
       placeholder: '.ai/qa/tests',
-      defaultValue: cfg?.paths?.testsRoot || undefined,
+      initialValue: cfg?.paths?.testsRoot || undefined,
     }),
   )
   const feedbackMode = bail(
