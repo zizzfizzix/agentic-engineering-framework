@@ -44,11 +44,11 @@ export interface WizardAnswers {
 export function buildConfig(a: WizardAnswers): Record<string, unknown> {
   const tiers = a.selectedTiers.length > 0 ? a.selectedTiers : undefined
   const validation = a.validationCommands.length > 0 ? a.validationCommands : undefined
-  const sourceRepoUrl = a.sourceRepo.trim()
+  const sourceRepoUrl = (a.sourceRepo ?? '').trim()
 
-  const modulesRoot = a.modulesRoot.trim()
-  const specsRoot = a.specsRoot.trim()
-  const testsRoot = a.testsRoot.trim()
+  const modulesRoot = (a.modulesRoot ?? '').trim()
+  const specsRoot = (a.specsRoot ?? '').trim()
+  const testsRoot = (a.testsRoot ?? '').trim()
   const paths: Record<string, string> = {}
   if (modulesRoot) paths.modulesRoot = modulesRoot
   if (specsRoot) paths.specsRoot = specsRoot

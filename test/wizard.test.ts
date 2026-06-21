@@ -52,6 +52,18 @@ describe('buildConfig', () => {
     expect(buildConfig({ ...base, sourceRepo: '   ' }).source).toBeUndefined()
   })
 
+  test('undefined text fields do not crash (p.text returns undefined when defaultValue is undefined)', () => {
+    expect(() =>
+      buildConfig({
+        ...base,
+        sourceRepo: undefined as unknown as string,
+        modulesRoot: undefined as unknown as string,
+        specsRoot: undefined as unknown as string,
+        testsRoot: undefined as unknown as string,
+      }),
+    ).not.toThrow()
+  })
+
   test('sourceRepo is trimmed and sets path:null', () => {
     expect(buildConfig({ ...base, sourceRepo: '  git@github.com:foo/bar.git  ' }).source).toEqual({
       repo: 'git@github.com:foo/bar.git',
