@@ -37,7 +37,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   }
   if (!opts.config && !opts.interactive) {
     throw new Error(
-      `--config is required (or use --interactive for guided setup).\n\nUsage:\n  aef init --config aef.config.json --out . --copy\n  aef init --interactive\n\nTo get started, create a aef.config.json. Minimum required:\n  {\n    "harnesses": ["claude-code"]\n  }\n\nRun 'aef init --help' for all options.`,
+      `--config is required (or use --interactive for guided setup).\n\nUsage:\n  aef init --config aef.config.json --out .\n  aef init --interactive\n\nTo get started, create a aef.config.json. Minimum required:\n  {\n    "harnesses": ["claude-code"]\n  }\n\nRun 'aef init --help' for all options.`,
     )
   }
 

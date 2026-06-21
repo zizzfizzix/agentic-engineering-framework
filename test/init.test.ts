@@ -18,7 +18,7 @@ describe('runInit error handling', () => {
   })
 
   test('error message includes usage example', async () => {
-    await expect(runInit({})).rejects.toThrow('aef init --config aef.config.json --out . --copy')
+    await expect(runInit({})).rejects.toThrow('aef init --config aef.config.json --out .')
   })
 
   test('error message includes --interactive usage example', async () => {
